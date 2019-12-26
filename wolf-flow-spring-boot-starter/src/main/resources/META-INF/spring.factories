@@ -1,0 +1,2 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+me.kpali.horcrux.autoconfigure.HorcruxAutoConfiguration
