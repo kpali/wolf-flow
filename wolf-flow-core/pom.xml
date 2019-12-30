@@ -14,7 +14,7 @@
     <properties>
         <commons-lang.version>3.8</commons-lang.version>
         <quartz.version>2.3.0</quartz.version>
-        <fastjson.version>1.2.6</fastjson.version>
+        <fastjson.version>1.2.25</fastjson.version>
         <guava.version>20.0</guava.version>
     </properties>
 
