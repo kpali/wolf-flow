@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-me.kpali.horcrux.autoconfigure.HorcruxAutoConfiguration
+me.kpali.wolfflow.autoconfigure.WolfFlowAutoConfiguration
