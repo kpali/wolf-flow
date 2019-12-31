@@ -8,14 +8,14 @@
         <version>0.0.1-SNAPSHOT</version>
     </parent>
     <artifactId>wolf-flow-spring-boot-starter</artifactId>
-    <version>${parent.version}</version>
+    <version>0.0.1-SNAPSHOT</version>
     <name>wolf-flow-spring-boot-starter</name>
 
     <dependencies>
         <dependency>
             <groupId>me.kpali</groupId>
             <artifactId>wolf-flow-core</artifactId>
-            <version>${parent.version}</version>
+            <version>${project.parent.version}</version>
         </dependency>
 
         <dependency>
