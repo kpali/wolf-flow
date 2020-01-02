@@ -10,9 +10,6 @@ import java.io.Serializable;
 public class Task implements Serializable {
     private static final long serialVersionUID = 1097164523753393528L;
 
-    /**
-     * 任务ID
-     */
     private Long id;
 
     public Long getId() {
