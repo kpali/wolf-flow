@@ -12,8 +12,6 @@ import me.kpali.wolfflow.core.quartz.MyDynamicScheduler;
 import org.quartz.JobKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -26,26 +24,30 @@ import java.util.concurrent.*;
  *
  * @author kpali
  */
-@Component
 public class TaskFlowScheduler {
+
+    public TaskFlowScheduler(Integer scanInterval,
+                             Integer execCorePoolSize, Integer execMaximumPoolSize,
+                             Integer monitoringInterval) {
+        this.scanInterval = scanInterval;
+        this.execCorePoolSize = execCorePoolSize;
+        this.execMaximumPoolSize = execMaximumPoolSize;
+        this.monitoringInterval = monitoringInterval;
+    }
 
     private static final Logger log = LoggerFactory.getLogger(TaskFlowScheduler.class);
     private boolean started = false;
 
     private ITaskFlowScaner taskFlowScaner;
-    @Value("${wolfflow.schedule.scan-interval}")
     private Integer scanInterval;
 
     private ITaskFlowExecutor taskFlowExecutor;
-    @Value("${wolfflow.schedule.exec-core-pool-size}")
     private Integer execCorePoolSize;
-    @Value("${wolfflow.schedule.exec-maximum-pool-size}")
     private Integer execMaximumPoolSize;
     private ExecutorService execThreadPoolExecutor;
     private Object execLock = new Object();
 
     private ITaskFlowMonitor taskFlowMonitor;
-    @Value("${wolfflow.schedule.monitoring-interval}")
     private Integer monitoringInterval;
 
     /**
@@ -61,6 +63,8 @@ public class TaskFlowScheduler {
         if (this.started) {
             return;
         }
+        log.info("任务流调度器启动，扫描间隔：{}秒，执行核心线程数：{}，执行最大线程数：{}，监视间隔：{}秒",
+                this.scanInterval, this.execCorePoolSize, this.execMaximumPoolSize, this.monitoringInterval);
         this.started = true;
         this.taskFlowScaner = taskFlowScaner;
         this.taskFlowExecutor = taskFlowExecutor;
@@ -78,7 +82,7 @@ public class TaskFlowScheduler {
         ExecutorService scanerThreadPool = new ThreadPoolExecutor(1, 1,
                 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<Runnable>(1024), scanerThreadFactory, new ThreadPoolExecutor.AbortPolicy());
-        log.info("任务流扫描线程启动，扫描间隔:{}秒", this.scanInterval);
+        log.info("任务流扫描线程启动");
         scanerThreadPool.execute(() -> {
             while (true) {
                 try {
@@ -157,7 +161,7 @@ public class TaskFlowScheduler {
         ExecutorService monitorThreadPool = new ThreadPoolExecutor(1, 1,
                 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<Runnable>(1024), monitorThreadFactory, new ThreadPoolExecutor.AbortPolicy());
-        log.info("任务流监视线程启动，监视间隔:{}秒", this.monitoringInterval);
+        log.info("任务流监视线程启动");
         monitorThreadPool.execute(() -> {
             while (true) {
                 try {

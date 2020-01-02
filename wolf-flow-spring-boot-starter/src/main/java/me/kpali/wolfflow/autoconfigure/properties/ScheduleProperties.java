@@ -2,7 +2,7 @@ package me.kpali.wolfflow.autoconfigure.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties(prefix = "wolfflow.schedule")
+@ConfigurationProperties(prefix = "wolf-flow.schedule")
 public class ScheduleProperties {
 
     private Integer scanInterval = 10;
