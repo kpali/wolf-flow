@@ -29,7 +29,7 @@ public class MyDynamicScheduler {
 
     public void start() throws Exception {
         Assert.notNull(scheduler, "quartz scheduler is null");
-        System.out.println(">>>>>>>>> init scheduler success.");
+        log.info("Quartz 调度器初始化完成");
     }
 
     public void destroy() throws Exception {
@@ -49,14 +49,14 @@ public class MyDynamicScheduler {
             Class<? extends Job> jobClass_ = MyQuartzJobBean.class;
             JobDetail jobDetail = JobBuilder.newJob(jobClass_).withIdentity(jobKey).build();
             Date date = scheduler.scheduleJob(jobDetail, cronTrigger);
-            log.info("add job success, jobKey:{}",  jobKey);
+            log.info("Quartz 新增任务成功 -> jobKey:{}",  jobKey);
         }
     }
 
     public static void removeJob(String jobName, String jobGroup) throws SchedulerException {
         JobKey jobKey = new JobKey(jobName, jobGroup);
         scheduler.deleteJob(jobKey);
-        log.info("remove job success, jobKey:{}", jobKey);
+        log.info("Quartz 删除任务成功 -> jobKey:{}", jobKey);
     }
 
     public static void updateJobCron(String jobGroup, String jobName, String cronExpression) throws SchedulerException {
@@ -68,7 +68,7 @@ public class MyDynamicScheduler {
                 CronScheduleBuilder cronScheduleBuilder = CronScheduleBuilder.cronSchedule(cronExpression).withMisfireHandlingInstructionDoNothing();
                 oldTrigger = (CronTrigger) oldTrigger.getTriggerBuilder().withIdentity(triggerKey).withSchedule(cronScheduleBuilder).build();
                 scheduler.rescheduleJob(triggerKey, oldTrigger);
-                log.info("update job cron, jobGroup:{}, jobName:{}, cronExpression:{}", jobGroup, jobName, cronExpression);
+                log.info("Quartz 更新任务成功 -> jobGroup:{}, jobName:{}, cronExpression:{}", jobGroup, jobName, cronExpression);
             }
         }
     }

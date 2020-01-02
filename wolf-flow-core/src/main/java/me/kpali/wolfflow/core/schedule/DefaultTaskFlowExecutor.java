@@ -1,7 +1,6 @@
 package me.kpali.wolfflow.core.schedule;
 
 import me.kpali.wolfflow.core.model.TaskFlowContext;
-import me.kpali.wolfflow.core.model.TaskFlowLog;
 
 /**
  * 任务流执行器的默认实现
@@ -9,13 +8,9 @@ import me.kpali.wolfflow.core.model.TaskFlowLog;
  * @author kpali
  */
 public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
-    @Override
-    public TaskFlowContext createContext(Long taskFlowId) {
-        return null;
-    }
 
     @Override
-    public Long insertLog(TaskFlowLog taskFlowLog) {
+    public TaskFlowContext createContext(Long taskFlowId) {
         return null;
     }
 

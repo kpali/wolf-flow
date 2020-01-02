@@ -1,7 +1,6 @@
 package me.kpali.wolfflow.core.schedule;
 
 import me.kpali.wolfflow.core.model.TaskFlowContext;
-import me.kpali.wolfflow.core.model.TaskFlowLog;
 
 /**
  * 任务流执行器接口
@@ -17,13 +16,6 @@ public interface ITaskFlowExecutor {
      * @return
      */
     TaskFlowContext createContext(Long taskFlowId);
-
-    /**
-     * 新增任务流日志
-     *
-     * @return taskFlowLogId 任务流日志ID
-     */
-    Long insertLog(TaskFlowLog taskFlowLog);
 
     /**
      * 任务流执行前置处理

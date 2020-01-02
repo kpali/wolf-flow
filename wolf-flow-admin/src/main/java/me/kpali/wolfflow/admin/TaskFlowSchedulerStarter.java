@@ -1,6 +1,7 @@
 package me.kpali.wolfflow.admin;
 
 import me.kpali.wolfflow.admin.taskflow.TaskFlowExecutor;
+import me.kpali.wolfflow.admin.taskflow.TaskFlowLogger;
 import me.kpali.wolfflow.admin.taskflow.TaskFlowMonitor;
 import me.kpali.wolfflow.admin.taskflow.TaskFlowScaner;
 import me.kpali.wolfflow.core.schedule.TaskFlowScheduler;
@@ -17,9 +18,6 @@ public class TaskFlowSchedulerStarter implements ApplicationListener<Application
 
     @Override
     public void onApplicationEvent(ApplicationReadyEvent applicationReadyEvent) {
-        TaskFlowScaner taskFlowScaner = new TaskFlowScaner();
-        TaskFlowExecutor taskFlowExecutor = new TaskFlowExecutor();
-        TaskFlowMonitor taskFlowMonitor = new TaskFlowMonitor();
-        taskFlowScheduler.startup(taskFlowScaner, taskFlowExecutor, taskFlowMonitor);
+        taskFlowScheduler.startup(new TaskFlowScaner(), new TaskFlowExecutor(), new TaskFlowMonitor(), new TaskFlowLogger());
     }
 }

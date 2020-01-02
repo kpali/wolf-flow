@@ -50,16 +50,60 @@ public class TaskFlowScheduler {
     private ITaskFlowMonitor taskFlowMonitor;
     private Integer monitoringInterval;
 
+    private ITaskFlowLogger taskFlowLogger;
+
+    public boolean isStarted() {
+        return started;
+    }
+
+    public ITaskFlowScaner getTaskFlowScaner() {
+        return taskFlowScaner;
+    }
+
+    public Integer getScanInterval() {
+        return scanInterval;
+    }
+
+    public ITaskFlowExecutor getTaskFlowExecutor() {
+        return taskFlowExecutor;
+    }
+
+    public Integer getExecCorePoolSize() {
+        return execCorePoolSize;
+    }
+
+    public Integer getExecMaximumPoolSize() {
+        return execMaximumPoolSize;
+    }
+
+    public ExecutorService getExecThreadPoolExecutor() {
+        return execThreadPoolExecutor;
+    }
+
+    public ITaskFlowMonitor getTaskFlowMonitor() {
+        return taskFlowMonitor;
+    }
+
+    public Integer getMonitoringInterval() {
+        return monitoringInterval;
+    }
+
+    public ITaskFlowLogger getTaskFlowLogger() {
+        return taskFlowLogger;
+    }
+
     /**
      * 启动任务流调度器
      *
      * @param taskFlowScaner
      * @param taskFlowExecutor
      * @param taskFlowMonitor
+     * @param taskFlowLogger
      */
     public void startup(ITaskFlowScaner taskFlowScaner,
-                               ITaskFlowExecutor taskFlowExecutor,
-                               ITaskFlowMonitor taskFlowMonitor) {
+                        ITaskFlowExecutor taskFlowExecutor,
+                        ITaskFlowMonitor taskFlowMonitor,
+                        ITaskFlowLogger taskFlowLogger) {
         if (this.started) {
             return;
         }
@@ -69,6 +113,7 @@ public class TaskFlowScheduler {
         this.taskFlowScaner = taskFlowScaner;
         this.taskFlowExecutor = taskFlowExecutor;
         this.taskFlowMonitor = taskFlowMonitor;
+        this.taskFlowLogger = taskFlowLogger;
         this.startScaner();
         this.startMonitor();
     }
@@ -92,7 +137,7 @@ public class TaskFlowScheduler {
                     boolean res = this.taskFlowScaner.tryLock();
                     if (res) {
                         log.info("任务流调度线程获取锁成功");
-                        String jobGroup = "JobGroup";
+                        String jobGroup = "DefaultJobGroup";
 
                         // 任务流扫描前置处理
                         this.taskFlowScaner.beforeScanning();
@@ -100,6 +145,7 @@ public class TaskFlowScheduler {
                         // 任务流扫描
                         List<TaskFlow> scannedTaskFlowList = this.taskFlowScaner.scan();
                         List<TaskFlow> taskFlowList = (scannedTaskFlowList == null ? new ArrayList<>() : scannedTaskFlowList);
+                        log.info("共扫描到{}个任务流", taskFlowList.size());
 
                         // 删除无需调度的任务流
                         List<JobKey> removedJobKeyList = new ArrayList<>();
@@ -167,9 +213,10 @@ public class TaskFlowScheduler {
                 try {
                     // 线程休眠
                     Thread.sleep(this.monitoringInterval * 1000);
-                    // 获取监视中的任务流日志列表
-                    List<TaskFlowLog> monitoringTaskFlowLogList = this.taskFlowMonitor.listMonitoringTaskFlowLog();
-                    List<TaskFlowLog> taskFlowLogList = (monitoringTaskFlowLogList == null ? new ArrayList<>() : monitoringTaskFlowLogList);
+                    // 获取未完成的任务流日志列表
+                    List<TaskFlowLog> unfinishedTaskFlowLogList = this.taskFlowLogger.listUnfinishedLog();
+                    List<TaskFlowLog> taskFlowLogList = (unfinishedTaskFlowLogList == null ? new ArrayList<>() : unfinishedTaskFlowLogList);
+                    log.info("当前共有{}个未完成的任务流", taskFlowLogList.size());
                     for (TaskFlowLog taskFlowLog : taskFlowLogList) {
                         try {
                             // 监视前置处理
@@ -178,7 +225,7 @@ public class TaskFlowScheduler {
                             TaskFlowLog updatedTaskFlowLog = this.taskFlowMonitor.monitoring(taskFlowLog);
                             if (updatedTaskFlowLog != null) {
                                 // 更新任务流日志
-                                this.taskFlowMonitor.updateTaskFlowLog(updatedTaskFlowLog);
+                                this.taskFlowLogger.update(updatedTaskFlowLog);
                                 // 检查任务流状态是否有变化
                                 String updatedTaskStatus = updatedTaskFlowLog.getStatus();
                                 if (updatedTaskStatus != null && !taskFlowLog.getStatus().equals(updatedTaskStatus)) {
@@ -246,7 +293,7 @@ public class TaskFlowScheduler {
         Date now = new Date();
         taskFlowLog.setCreationTime(now);
         taskFlowLog.setUpdateTime(now);
-        Long taskFlowLogId = this.taskFlowExecutor.insertLog(taskFlowLog);
+        Long taskFlowLogId = this.taskFlowLogger.insert(taskFlowLog);
 
         // 任务流执行
         this.execThreadPoolExecutor.execute(() -> {
