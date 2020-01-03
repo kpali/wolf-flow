@@ -1,6 +1,6 @@
-package me.kpali.wolfflow.admin.controller;
+package me.kpali.wolfflow.sample.controller;
 
-import me.kpali.wolfflow.admin.service.TestService;
+import me.kpali.wolfflow.sample.service.TestService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

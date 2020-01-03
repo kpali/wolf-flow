@@ -1,4 +1,4 @@
-package me.kpali.wolfflow.admin.taskflow;
+package me.kpali.wolfflow.sample.taskflow;
 
 import me.kpali.wolfflow.core.model.Link;
 import me.kpali.wolfflow.core.model.Task;
@@ -10,7 +10,7 @@ import java.util.List;
 
 public class TaskFlowScaner extends DefaultTaskFlowScaner {
     @Override
-    public List<TaskFlow> scan() {
+    public List<TaskFlow> scanCronTaskFlow() {
         List<TaskFlow> taskFlowList = new ArrayList<>();
 
         TaskFlow taskFlow = new TaskFlow();
@@ -30,7 +30,6 @@ public class TaskFlowScaner extends DefaultTaskFlowScaner {
         link.setSource(4L);
         link.setTarget(5L);
         taskFlow.getLinkList().add(link);
-
 
         taskFlowList.add(taskFlow);
         return taskFlowList;

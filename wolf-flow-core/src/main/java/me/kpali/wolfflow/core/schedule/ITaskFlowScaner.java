@@ -24,11 +24,11 @@ public interface ITaskFlowScaner {
     void beforeScanning();
 
     /**
-     * 任务流扫描
+     * 定时任务流扫描
      *
      * @return
      */
-    List<TaskFlow> scan();
+    List<TaskFlow> scanCronTaskFlow();
 
     /**
      * 任务流扫描后置处理

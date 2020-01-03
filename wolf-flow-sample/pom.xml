@@ -7,9 +7,9 @@
         <artifactId>wolf-flow</artifactId>
         <version>0.0.1-SNAPSHOT</version>
     </parent>
-    <artifactId>wolf-flow-admin</artifactId>
+    <artifactId>wolf-flow-sample</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>wolf-flow-admin</name>
+    <name>wolf-flow-sample</name>
 
     <dependencies>
         <dependency>

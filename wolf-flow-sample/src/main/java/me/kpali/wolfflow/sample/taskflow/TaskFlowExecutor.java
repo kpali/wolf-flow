@@ -1,4 +1,4 @@
-package me.kpali.wolfflow.admin.taskflow;
+package me.kpali.wolfflow.sample.taskflow;
 
 import me.kpali.wolfflow.core.model.TaskFlowContext;
 import me.kpali.wolfflow.core.schedule.DefaultTaskFlowExecutor;

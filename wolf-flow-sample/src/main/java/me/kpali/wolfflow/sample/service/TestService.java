@@ -1,4 +1,4 @@
-package me.kpali.wolfflow.admin.service;
+package me.kpali.wolfflow.sample.service;
 
 public interface TestService {
 

@@ -22,7 +22,7 @@
     <modules>
         <module>wolf-flow-core</module>
         <module>wolf-flow-spring-boot-starter</module>
-        <module>wolf-flow-admin</module>
+        <module>wolf-flow-sample</module>
     </modules>
 
 </project>

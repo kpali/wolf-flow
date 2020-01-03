@@ -21,7 +21,7 @@ public class DefaultTaskFlowScaner implements ITaskFlowScaner {
     }
 
     @Override
-    public List<TaskFlow> scan() {
+    public List<TaskFlow> scanCronTaskFlow() {
         return null;
     }
 

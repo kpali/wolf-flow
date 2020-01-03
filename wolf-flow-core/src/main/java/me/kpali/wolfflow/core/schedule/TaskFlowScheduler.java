@@ -136,23 +136,23 @@ public class TaskFlowScheduler {
                     // 任务流扫描前尝试获取锁
                     boolean res = this.taskFlowScaner.tryLock();
                     if (res) {
-                        log.info("任务流调度线程获取锁成功");
+                        log.info("任务流扫描线程获取锁成功");
                         String jobGroup = "DefaultJobGroup";
 
                         // 任务流扫描前置处理
                         this.taskFlowScaner.beforeScanning();
 
-                        // 任务流扫描
-                        List<TaskFlow> scannedTaskFlowList = this.taskFlowScaner.scan();
-                        List<TaskFlow> taskFlowList = (scannedTaskFlowList == null ? new ArrayList<>() : scannedTaskFlowList);
-                        log.info("共扫描到{}个任务流", taskFlowList.size());
+                        // 定时任务流扫描
+                        List<TaskFlow> scannedCronTaskFlowList = this.taskFlowScaner.scanCronTaskFlow();
+                        List<TaskFlow> cronTaskFlowList = (scannedCronTaskFlowList == null ? new ArrayList<>() : scannedCronTaskFlowList);
+                        log.info("共扫描到{}个定时任务流", cronTaskFlowList.size());
 
                         // 删除无需调度的任务流
                         List<JobKey> removedJobKeyList = new ArrayList<>();
                         Set<JobKey> jobKeySet = MyDynamicScheduler.getJobKeysGroupEquals(jobGroup);
                         for (JobKey jobKey : jobKeySet) {
                             boolean isFound = false;
-                            for (TaskFlow taskFlow : taskFlowList) {
+                            for (TaskFlow taskFlow : cronTaskFlowList) {
                                 String name = String.valueOf(taskFlow.getId());
                                 if (name.equals(jobKey.getName())) {
                                     isFound = true;
@@ -168,7 +168,7 @@ public class TaskFlowScheduler {
                         }
 
                         // 新增或更新任务流调度
-                        for (TaskFlow taskFlow : taskFlowList) {
+                        for (TaskFlow taskFlow : cronTaskFlowList) {
                             try {
                                 String name = String.valueOf(taskFlow.getId());
                                 String cronExpression = taskFlow.getCron();

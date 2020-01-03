@@ -1,6 +1,6 @@
-package me.kpali.wolfflow.admin.service.impl;
+package me.kpali.wolfflow.sample.service.impl;
 
-import me.kpali.wolfflow.admin.service.TestService;
+import me.kpali.wolfflow.sample.service.TestService;
 import org.springframework.stereotype.Service;
 
 @Service
