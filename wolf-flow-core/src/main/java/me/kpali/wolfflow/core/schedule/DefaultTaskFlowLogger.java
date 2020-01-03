@@ -47,8 +47,13 @@ public class DefaultTaskFlowLogger implements ITaskFlowLogger {
     }
 
     @Override
+    public List<TaskFlowLog> list() {
+        return new ArrayList<>(taskFlowLogMap.values());
+    }
+
+    @Override
     public List<TaskFlowLog> listUnfinishedLog() {
-        List<TaskFlowLog> taskFlowLogList = new ArrayList<>(taskFlowLogMap.values());
+        List<TaskFlowLog> taskFlowLogList = this.list();
         return taskFlowLogList.stream().filter(taskFlowLog -> {
             String status = taskFlowLog.getStatus();
             return (!TaskFlowStatusEnum.TRIGGER_FAIL.getCode().equals(status)

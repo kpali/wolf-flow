@@ -27,6 +27,13 @@ public interface ITaskFlowLogger {
     void update(TaskFlowLog taskFlowLog);
 
     /**
+     * 获取所有任务流日志列表
+     *
+     * @return
+     */
+    List<TaskFlowLog> list();
+
+    /**
      * 获取未完成的任务流日志列表
      *
      * @return
