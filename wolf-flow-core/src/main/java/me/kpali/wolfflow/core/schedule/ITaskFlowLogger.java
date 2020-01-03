@@ -47,4 +47,9 @@ public interface ITaskFlowLogger {
      */
     void delete(Long taskFlowLogId);
 
+    /**
+     * 清理所有日志
+     */
+    void clear();
+
 }

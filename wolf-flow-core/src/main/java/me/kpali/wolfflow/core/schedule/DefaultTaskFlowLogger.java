@@ -66,4 +66,9 @@ public class DefaultTaskFlowLogger implements ITaskFlowLogger {
     public void delete(Long taskFlowLogId) {
         this.taskFlowLogMap.remove(taskFlowLogId);
     }
+
+    @Override
+    public void clear() {
+        this.taskFlowLogMap.clear();
+    }
 }
