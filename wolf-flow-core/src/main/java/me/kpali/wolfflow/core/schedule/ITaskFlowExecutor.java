@@ -20,22 +20,25 @@ public interface ITaskFlowExecutor {
     /**
      * 任务流执行前置处理
      *
+     * @param taskFlowId
      * @param taskFlowContext
      */
-    void beforeExecute(TaskFlowContext taskFlowContext);
+    void beforeExecute(Long taskFlowId, TaskFlowContext taskFlowContext);
 
     /**
      * 任务流执行
      *
+     * @param taskFlowId
      * @param taskFlowContext
      */
-    void execute(TaskFlowContext taskFlowContext);
+    void execute(Long taskFlowId, TaskFlowContext taskFlowContext);
 
     /**
      * 任务流后置处理
      *
+     * @param taskFlowId
      * @param taskFlowContext
      */
-    void afterExecute(TaskFlowContext taskFlowContext);
+    void afterExecute(Long taskFlowId, TaskFlowContext taskFlowContext);
 
 }

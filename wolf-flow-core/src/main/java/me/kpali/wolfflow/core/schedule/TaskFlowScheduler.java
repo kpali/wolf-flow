@@ -297,9 +297,9 @@ public class TaskFlowScheduler {
 
         // 任务流执行
         this.execThreadPoolExecutor.execute(() -> {
-            this.taskFlowExecutor.beforeExecute(context);
-            this.taskFlowExecutor.execute(context);
-            this.taskFlowExecutor.afterExecute(context);
+            this.taskFlowExecutor.beforeExecute(taskFlowId, context);
+            this.taskFlowExecutor.execute(taskFlowId, context);
+            this.taskFlowExecutor.afterExecute(taskFlowId, context);
         });
 
         return taskFlowLogId;

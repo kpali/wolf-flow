@@ -15,17 +15,17 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     }
 
     @Override
-    public void beforeExecute(TaskFlowContext taskFlowContext) {
+    public void beforeExecute(Long taskFlowId, TaskFlowContext taskFlowContext) {
         // 不做任何操作
     }
 
     @Override
-    public void execute(TaskFlowContext taskFlowContext) {
+    public void execute(Long taskFlowId, TaskFlowContext taskFlowContext) {
         // 不做任何操作
     }
 
     @Override
-    public void afterExecute(TaskFlowContext taskFlowContext) {
+    public void afterExecute(Long taskFlowId, TaskFlowContext taskFlowContext) {
         // 不做任何操作
     }
 }
