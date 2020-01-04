@@ -137,6 +137,8 @@ public class TaskFlowScheduler {
                     boolean res = this.taskFlowScaner.tryLock();
                     if (res) {
                         log.info("任务流扫描线程获取锁成功");
+                        this.taskFlowScaner.whenLockSuccess();
+
                         String jobGroup = "DefaultJobGroup";
 
                         // 任务流扫描前置处理
@@ -177,11 +179,14 @@ public class TaskFlowScheduler {
                                 }
                                 if (!MyDynamicScheduler.checkExists(name, jobGroup)) {
                                     MyDynamicScheduler.addJob(name, jobGroup, cronExpression);
+                                    this.taskFlowScaner.whenJoinSchedule(taskFlow);
                                 } else {
                                     MyDynamicScheduler.updateJobCron(name, jobGroup, cronExpression);
+                                    this.taskFlowScaner.whenUpdateSchedule(taskFlow);
                                 }
                             } catch (Exception e) {
                                 log.error("任务流调度失败，任务流ID：" + taskFlow.getId() + "，失败原因：" + e.getMessage());
+                                this.taskFlowScaner.whenSheduleFail(taskFlow);
                             }
                         }
 
@@ -190,6 +195,7 @@ public class TaskFlowScheduler {
                     } else {
                         log.info("任务流调度线程获取锁失败");
                         MyDynamicScheduler.clear();
+                        this.taskFlowScaner.whenLockFail();
                     }
                 } catch (Exception e) {
                     log.error("任务流调度异常！" + e.getMessage(), e);
@@ -211,8 +217,8 @@ public class TaskFlowScheduler {
         monitorThreadPool.execute(() -> {
             while (true) {
                 try {
-                    // 线程休眠
                     Thread.sleep(this.monitoringInterval * 1000);
+
                     // 获取未完成的任务流日志列表
                     List<TaskFlowLog> unfinishedTaskFlowLogList = this.taskFlowLogger.listUnfinishedLog();
                     List<TaskFlowLog> taskFlowLogList = (unfinishedTaskFlowLogList == null ? new ArrayList<>() : unfinishedTaskFlowLogList);

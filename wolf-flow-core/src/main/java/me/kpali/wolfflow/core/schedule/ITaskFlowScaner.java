@@ -19,6 +19,16 @@ public interface ITaskFlowScaner {
     boolean tryLock();
 
     /**
+     * 当获取锁成功
+     */
+    void whenLockSuccess();
+
+    /**
+     * 当获取锁失败
+     */
+    void whenLockFail();
+
+    /**
      * 任务流扫描前置处理
      */
     void beforeScanning();
@@ -29,6 +39,27 @@ public interface ITaskFlowScaner {
      * @return
      */
     List<TaskFlow> scanCronTaskFlow();
+
+    /**
+     * 当任务流加入调度
+     *
+     * @param taskFlow
+     */
+    void whenJoinSchedule(TaskFlow taskFlow);
+
+    /**
+     * 当任务流更新调度
+     *
+     * @param taskFlow
+     */
+    void whenUpdateSchedule(TaskFlow taskFlow);
+
+    /**
+     * 当任务流调度失败
+     *
+     * @param taskFlow
+     */
+    void whenSheduleFail(TaskFlow taskFlow);
 
     /**
      * 任务流扫描后置处理
