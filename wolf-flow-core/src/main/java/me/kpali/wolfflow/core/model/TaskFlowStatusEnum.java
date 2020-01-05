@@ -7,8 +7,7 @@ package me.kpali.wolfflow.core.model;
  */
 public enum TaskFlowStatusEnum {
 
-    WAIT_FOR_TRIGGER("WAIT_FOR_TRIGGER", "等待触发"),
-    TRIGGER_FAIL("TRIGGER_FAIL", "触发失败"),
+    WAIT_FOR_EXECUTE("WAIT_FOR_EXECUTE", "等待执行"),
     EXECUTING("EXECUTING", "执行中"),
     EXECUTE_SUCCESS("EXECUTE_SUCCESS", "执行成功"),
     EXECUTE_FAIL("EXECUTE_FAIL", "执行失败");

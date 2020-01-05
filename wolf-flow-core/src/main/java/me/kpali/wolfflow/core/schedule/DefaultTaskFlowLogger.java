@@ -56,8 +56,7 @@ public class DefaultTaskFlowLogger implements ITaskFlowLogger {
         List<TaskFlowLog> taskFlowLogList = this.list();
         return taskFlowLogList.stream().filter(taskFlowLog -> {
             String status = taskFlowLog.getStatus();
-            return (!TaskFlowStatusEnum.TRIGGER_FAIL.getCode().equals(status)
-                    && !TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode().equals(status)
+            return (!TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode().equals(status)
                     && !TaskFlowStatusEnum.EXECUTE_FAIL.getCode().equals(status));
         }).collect(Collectors.toList());
     }

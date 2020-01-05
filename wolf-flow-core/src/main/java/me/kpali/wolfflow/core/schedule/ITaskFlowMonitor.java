@@ -25,18 +25,11 @@ public interface ITaskFlowMonitor {
     TaskFlowLog monitoring(TaskFlowLog taskFlowLog);
 
     /**
-     * 当任务流处于WAIT_FOR_TRIGGER状态时
+     * 当任务流处于WAIT_FOR_EXECUTE状态时
      *
      * @param taskFlowLog
      */
-    void whenWaitForTrigger(TaskFlowLog taskFlowLog);
-
-    /**
-     * 当任务流处于TRIGGER_FAIL状态时
-     *
-     * @param taskFlowLog
-     */
-    void whenTriggerFail(TaskFlowLog taskFlowLog);
+    void whenWaitForExecute(TaskFlowLog taskFlowLog);
 
     /**
      * 当任务流处于EXECUTING状态时

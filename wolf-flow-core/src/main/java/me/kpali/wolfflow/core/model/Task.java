@@ -19,4 +19,8 @@ public class Task implements Serializable {
     public void setId(Long id) {
         this.id = id;
     }
+
+    public void execute() {
+        // 不做任何操作
+    }
 }

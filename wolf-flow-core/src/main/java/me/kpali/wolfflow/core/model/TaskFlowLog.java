@@ -20,7 +20,7 @@ public class TaskFlowLog implements Serializable {
      */
     private Long taskFlowId;
     /**
-     * 任务流状态，默认状态有WAIT_FOR_TRIGGER, TRIGGER_FAIL, EXECUTING, EXECUTE_SUCCESS, EXECUTE_FAIL
+     * 任务流状态，默认状态有WAIT_FOR_EXECUTE, EXECUTING, EXECUTE_SUCCESS, EXECUTE_FAIL
      */
     private String status;
     /**

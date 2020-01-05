@@ -19,12 +19,7 @@ public class DefaultTaskFlowMonitor implements ITaskFlowMonitor {
     }
 
     @Override
-    public void whenWaitForTrigger(TaskFlowLog taskFlowLog) {
-        // 不做任何操作
-    }
-
-    @Override
-    public void whenTriggerFail(TaskFlowLog taskFlowLog) {
+    public void whenWaitForExecute(TaskFlowLog taskFlowLog) {
         // 不做任何操作
     }
 

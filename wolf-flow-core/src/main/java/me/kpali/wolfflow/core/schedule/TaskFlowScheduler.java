@@ -1,6 +1,5 @@
 package me.kpali.wolfflow.core.schedule;
 
-import com.alibaba.fastjson.JSONObject;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import me.kpali.wolfflow.core.exception.InvalidCronExpressionException;
 import me.kpali.wolfflow.core.exception.SchedulerNotStartedException;
@@ -41,11 +40,12 @@ public class TaskFlowScheduler {
     private ITaskFlowScaner taskFlowScaner;
     private Integer scanInterval;
 
+    private final Object triggerLock = new Object();
+
     private ITaskFlowExecutor taskFlowExecutor;
     private Integer execCorePoolSize;
     private Integer execMaximumPoolSize;
     private ExecutorService execThreadPoolExecutor;
-    private Object execLock = new Object();
 
     private ITaskFlowMonitor taskFlowMonitor;
     private Integer monitoringInterval;
@@ -235,10 +235,8 @@ public class TaskFlowScheduler {
                                 // 检查任务流状态是否有变化
                                 String updatedTaskStatus = updatedTaskFlowLog.getStatus();
                                 if (updatedTaskStatus != null && !taskFlowLog.getStatus().equals(updatedTaskStatus)) {
-                                    if (TaskFlowStatusEnum.WAIT_FOR_TRIGGER.getCode().equals(updatedTaskStatus)) {
-                                        this.taskFlowMonitor.whenWaitForTrigger(updatedTaskFlowLog);
-                                    } else if (TaskFlowStatusEnum.TRIGGER_FAIL.getCode().equals(updatedTaskStatus)) {
-                                        this.taskFlowMonitor.whenTriggerFail(updatedTaskFlowLog);
+                                    if (TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode().equals(updatedTaskStatus)) {
+                                        this.taskFlowMonitor.whenWaitForExecute(updatedTaskFlowLog);
                                     } else if (TaskFlowStatusEnum.EXECUTING.getCode().equals(updatedTaskStatus)) {
                                         this.taskFlowMonitor.whenExecuting(updatedTaskFlowLog);
                                     } else if (TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode().equals(updatedTaskStatus)) {
@@ -268,17 +266,17 @@ public class TaskFlowScheduler {
     }
 
     /**
-     * 执行任务流
+     * 触发任务流
      *
      * @param taskFlowId
      * @return taskFlowLogId 任务日志ID
      */
-    public Long execute(Long taskFlowId) {
+    public Long trigger(Long taskFlowId) {
         if (!this.started) {
             throw new SchedulerNotStartedException("请先启动调度器！");
         }
         if (this.execThreadPoolExecutor == null) {
-            synchronized (this.execLock) {
+            synchronized (this.triggerLock) {
                 if (this.execThreadPoolExecutor == null) {
                     // 初始化线程池
                     ThreadFactory execThreadFactory = new ThreadFactoryBuilder().setNameFormat("taskFlowExecutor-pool-%d").build();
@@ -288,14 +286,11 @@ public class TaskFlowScheduler {
             }
         }
 
-        // 创建任务流上下文
-        TaskFlowContext context = this.taskFlowExecutor.createContext(taskFlowId);
-
         // 新增任务流日志
         TaskFlowLog taskFlowLog = new TaskFlowLog();
         taskFlowLog.setTaskFlowId(taskFlowId);
-        taskFlowLog.setStatus(TaskFlowStatusEnum.WAIT_FOR_TRIGGER.getCode());
-        taskFlowLog.setContext(JSONObject.toJSONString(context));
+        taskFlowLog.setStatus(TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode());
+        taskFlowLog.setContext(null);
         Date now = new Date();
         taskFlowLog.setCreationTime(now);
         taskFlowLog.setUpdateTime(now);
@@ -303,9 +298,11 @@ public class TaskFlowScheduler {
 
         // 任务流执行
         this.execThreadPoolExecutor.execute(() -> {
-            this.taskFlowExecutor.beforeExecute(taskFlowId, context);
-            this.taskFlowExecutor.execute(taskFlowId, context);
-            this.taskFlowExecutor.afterExecute(taskFlowId, context);
+            TaskFlow taskFlow = this.taskFlowExecutor.getTaskFlow(taskFlowId);
+            TaskFlowContext context = this.taskFlowExecutor.initContext(taskFlow);
+            this.taskFlowExecutor.beforeExecute(taskFlow, context);
+            this.taskFlowExecutor.execute(taskFlow, context);
+            this.taskFlowExecutor.afterExecute(taskFlow, context);
         });
 
         return taskFlowLogId;

@@ -1,5 +1,6 @@
 package me.kpali.wolfflow.core.schedule;
 
+import me.kpali.wolfflow.core.model.TaskFlow;
 import me.kpali.wolfflow.core.model.TaskFlowContext;
 
 /**
@@ -10,35 +11,43 @@ import me.kpali.wolfflow.core.model.TaskFlowContext;
 public interface ITaskFlowExecutor {
 
     /**
-     * 创建任务流上下文
+     * 根据任务流ID获取任务流
      *
      * @param taskFlowId
      * @return
      */
-    TaskFlowContext createContext(Long taskFlowId);
+    TaskFlow getTaskFlow(Long taskFlowId);
+
+    /**
+     * 初始化任务流上下文
+     *
+     * @param taskFlow
+     * @return
+     */
+    TaskFlowContext initContext(TaskFlow taskFlow);
 
     /**
      * 任务流执行前置处理
      *
-     * @param taskFlowId
+     * @param taskFlow
      * @param taskFlowContext
      */
-    void beforeExecute(Long taskFlowId, TaskFlowContext taskFlowContext);
+    void beforeExecute(TaskFlow taskFlow, TaskFlowContext taskFlowContext);
 
     /**
      * 任务流执行
      *
-     * @param taskFlowId
+     * @param taskFlow
      * @param taskFlowContext
      */
-    void execute(Long taskFlowId, TaskFlowContext taskFlowContext);
+    void execute(TaskFlow taskFlow, TaskFlowContext taskFlowContext);
 
     /**
      * 任务流后置处理
      *
-     * @param taskFlowId
+     * @param taskFlow
      * @param taskFlowContext
      */
-    void afterExecute(Long taskFlowId, TaskFlowContext taskFlowContext);
+    void afterExecute(TaskFlow taskFlow, TaskFlowContext taskFlowContext);
 
 }
