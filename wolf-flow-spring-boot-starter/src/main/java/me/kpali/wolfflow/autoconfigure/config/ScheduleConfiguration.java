@@ -12,9 +12,6 @@ public class ScheduleConfiguration {
         Integer scanInterval = scheduleProperties.getScanInterval();
         Integer execCorePoolSize = scheduleProperties.getExecCorePoolSize();
         Integer execMaximumPoolSize = scheduleProperties.getExecMaximumPoolSize();
-        Integer monitoringInterval = scheduleProperties.getMonitoringInterval();
-        return new TaskFlowScheduler(scanInterval,
-                execCorePoolSize, execMaximumPoolSize,
-                monitoringInterval);
+        return new TaskFlowScheduler(scanInterval, execCorePoolSize, execMaximumPoolSize);
     }
 }

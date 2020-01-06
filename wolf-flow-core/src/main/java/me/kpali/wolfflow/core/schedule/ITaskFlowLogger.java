@@ -20,6 +20,14 @@ public interface ITaskFlowLogger {
     Long insert(TaskFlowLog taskFlowLog);
 
     /**
+     * 根据ID查询任务流日志
+     *
+     * @param taskFlowLogId
+     * @return
+     */
+    TaskFlowLog select(Long taskFlowLogId);
+
+    /**
      * 更新任务流日志
      *
      * @param taskFlowLog

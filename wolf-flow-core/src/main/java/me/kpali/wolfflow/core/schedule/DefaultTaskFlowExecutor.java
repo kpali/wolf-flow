@@ -1,5 +1,6 @@
 package me.kpali.wolfflow.core.schedule;
 
+import me.kpali.wolfflow.core.model.Task;
 import me.kpali.wolfflow.core.model.TaskFlow;
 import me.kpali.wolfflow.core.model.TaskFlowContext;
 
@@ -9,11 +10,6 @@ import me.kpali.wolfflow.core.model.TaskFlowContext;
  * @author kpali
  */
 public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
-    @Override
-    public TaskFlow getTaskFlow(Long taskFlowId) {
-        return null;
-    }
-
     @Override
     public TaskFlowContext initContext(TaskFlow taskFlow) {
         return null;
@@ -26,7 +22,12 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
 
     @Override
     public void execute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) {
-        taskFlow.execute();
+        if (taskFlow == null) {
+            throw new NullPointerException("任务流不能为空");
+        }
+        for (Task task : taskFlow.getTaskList()) {
+            task.execute();
+        }
     }
 
     @Override

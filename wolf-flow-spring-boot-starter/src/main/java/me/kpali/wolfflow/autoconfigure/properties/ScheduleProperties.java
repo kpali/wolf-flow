@@ -4,13 +4,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @ConfigurationProperties(prefix = "wolf-flow.schedule")
 public class ScheduleProperties {
-
     private Integer scanInterval = 10;
-
     private Integer execCorePoolSize = 10;
     private Integer execMaximumPoolSize = 10;
-
-    private Integer monitoringInterval = 10;
 
     public Integer getScanInterval() {
         return scanInterval;
@@ -34,13 +30,5 @@ public class ScheduleProperties {
 
     public void setExecMaximumPoolSize(Integer execMaximumPoolSize) {
         this.execMaximumPoolSize = execMaximumPoolSize;
-    }
-
-    public Integer getMonitoringInterval() {
-        return monitoringInterval;
-    }
-
-    public void setMonitoringInterval(Integer monitoringInterval) {
-        this.monitoringInterval = monitoringInterval;
     }
 }

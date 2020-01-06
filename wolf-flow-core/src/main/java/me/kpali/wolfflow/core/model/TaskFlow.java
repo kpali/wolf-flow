@@ -47,8 +47,4 @@ public class TaskFlow implements Serializable {
     public void setLinkList(List<Link> linkList) {
         this.linkList = linkList;
     }
-
-    public void execute() {
-        // 不做任何操作
-    }
 }

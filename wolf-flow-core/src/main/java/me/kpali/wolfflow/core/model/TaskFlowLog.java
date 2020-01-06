@@ -28,6 +28,10 @@ public class TaskFlowLog implements Serializable {
      */
     private String context;
     /**
+     * 说明
+     */
+    private String description;
+    /**
      * 创建时间
      */
     private Date creationTime;
@@ -66,6 +70,14 @@ public class TaskFlowLog implements Serializable {
 
     public void setContext(String context) {
         this.context = context;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 
     public Date getCreationTime() {

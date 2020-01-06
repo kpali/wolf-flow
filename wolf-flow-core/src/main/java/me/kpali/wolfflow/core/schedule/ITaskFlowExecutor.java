@@ -11,14 +11,6 @@ import me.kpali.wolfflow.core.model.TaskFlowContext;
 public interface ITaskFlowExecutor {
 
     /**
-     * 根据任务流ID获取任务流
-     *
-     * @param taskFlowId
-     * @return
-     */
-    TaskFlow getTaskFlow(Long taskFlowId);
-
-    /**
      * 初始化任务流上下文
      *
      * @param taskFlow
