@@ -8,6 +8,14 @@ import java.io.Serializable;
  * @author kpali
  */
 public class Link implements Serializable {
+    public Link() {
+    }
+
+    public Link(Long source, Long target) {
+        this.source = source;
+        this.target = target;
+    }
+
     private static final long serialVersionUID = -4190148088560825591L;
 
     private Long source;

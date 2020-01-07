@@ -9,23 +9,52 @@ import java.util.List;
 
 public class MyTaskFlowQuerier extends DefaultTaskFlowQuerier {
     public MyTaskFlowQuerier() {
+        /**
+         * 示例拓扑图：
+         *                    --> 9
+         * 1 --> 2 --> 4     |    ^
+         *  \    \    ^     |    |
+         *   \    v  /    /  --> 8
+         *    --> 3 --> 5 --> 6
+         *               \    |
+         *                \   v
+         *                --> 7
+         * 10 --> 11
+         *
+         * 正确排序之一：[1, 2, 3, 4, 5, 6, 7, 8, 9] [10, 11]
+         */
+
         TaskFlow taskFlow = new TaskFlow();
-        taskFlow.setId(1L);
+        taskFlow.setId(100L);
         taskFlow.setCron("0 * * * * ?");
         taskFlow.setTaskList(new ArrayList<>());
         taskFlow.setLinkList(new ArrayList<>());
 
-        MyTask task1 = new MyTask();
-        task1.setId(2L);
-        MyTask task2 = new MyTask();
-        task2.setId(3L);
-        taskFlow.getTaskList().add(task1);
-        taskFlow.getTaskList().add(task2);
+        taskFlow.getTaskList().add(new MyTask(3L));
+        taskFlow.getTaskList().add(new MyTask(5L));
+        taskFlow.getTaskList().add(new MyTask(1L));
+        taskFlow.getTaskList().add(new MyTask(10L));
+        taskFlow.getTaskList().add(new MyTask(9L));
+        taskFlow.getTaskList().add(new MyTask(6L));
+        taskFlow.getTaskList().add(new MyTask(4L));
+        taskFlow.getTaskList().add(new MyTask(2L));
+        taskFlow.getTaskList().add(new MyTask(7L));
+        taskFlow.getTaskList().add(new MyTask(11L));
+        taskFlow.getTaskList().add(new MyTask(8L));
 
-        Link link = new Link();
-        link.setSource(4L);
-        link.setTarget(5L);
-        taskFlow.getLinkList().add(link);
+        taskFlow.getLinkList().add(new Link(1L, 2L));
+        taskFlow.getLinkList().add(new Link(1L, 3L));
+        taskFlow.getLinkList().add(new Link(2L, 3L));
+        taskFlow.getLinkList().add(new Link(2L, 4L));
+        taskFlow.getLinkList().add(new Link(3L, 4L));
+        taskFlow.getLinkList().add(new Link(3L, 5L));
+        taskFlow.getLinkList().add(new Link(5L, 6L));
+        taskFlow.getLinkList().add(new Link(5L, 7L));
+        taskFlow.getLinkList().add(new Link(6L, 7L));
+        taskFlow.getLinkList().add(new Link(5L, 8L));
+        taskFlow.getLinkList().add(new Link(5L, 9L));
+        taskFlow.getLinkList().add(new Link(8L, 9L));
+        taskFlow.getLinkList().add(new Link(10L, 11L));
 
         taskFlowList.add(taskFlow);
     }

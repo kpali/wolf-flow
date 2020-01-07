@@ -8,6 +8,13 @@ import java.io.Serializable;
  * @author kpali
  */
 public class Task implements Serializable {
+    public Task() {
+    }
+
+    public Task(Long id) {
+        this.id = id;
+    }
+
     private static final long serialVersionUID = 1097164523753393528L;
 
     private Long id;
