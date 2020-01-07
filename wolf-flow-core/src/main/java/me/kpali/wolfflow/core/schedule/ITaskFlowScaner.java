@@ -14,14 +14,4 @@ public interface ITaskFlowScaner {
      */
     boolean tryLock();
 
-    /**
-     * 任务流扫描前置处理
-     */
-    void beforeScanning();
-
-    /**
-     * 任务流扫描后置处理
-     */
-    void afterScanning();
-
 }

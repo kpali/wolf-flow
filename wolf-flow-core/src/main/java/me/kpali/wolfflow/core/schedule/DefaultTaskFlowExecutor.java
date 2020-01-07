@@ -25,7 +25,8 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     }
 
     @Override
-    public void execute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) {
+    public void execute(TaskFlow taskFlow, TaskFlowContext taskFlowContext,
+                        Integer taskFlowCorePoolSize, Integer taskFlowMaximumPoolSize) {
         List<Task> sortedTaskList = TaskFlowUtils.topologicalSort(taskFlow);
         if (sortedTaskList == null) {
             throw new InvalidTaskFlowException("任务流不是一个有向无环图，请检查是否存在回路！");

@@ -6,8 +6,6 @@ import me.kpali.wolfflow.core.exception.InvalidCronExpressionException;
 import me.kpali.wolfflow.core.exception.SchedulerNotStartedException;
 import me.kpali.wolfflow.core.model.TaskFlow;
 import me.kpali.wolfflow.core.model.TaskFlowContext;
-import me.kpali.wolfflow.core.model.TaskFlowLog;
-import me.kpali.wolfflow.core.model.TaskFlowStatusEnum;
 import me.kpali.wolfflow.core.quartz.MyDynamicScheduler;
 import org.quartz.JobKey;
 import org.slf4j.Logger;
@@ -16,7 +14,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.*;
@@ -29,10 +26,13 @@ import java.util.concurrent.*;
 public class TaskFlowScheduler {
 
     public TaskFlowScheduler(Integer scanInterval,
-                             Integer execCorePoolSize, Integer execMaximumPoolSize) {
+                             Integer executorCorePoolSize, Integer executorMaximumPoolSize,
+                             Integer taskFlowCorePoolSize, Integer taskFlowMaximumPoolSize) {
         this.scanInterval = scanInterval;
-        this.execCorePoolSize = execCorePoolSize;
-        this.execMaximumPoolSize = execMaximumPoolSize;
+        this.executorCorePoolSize = executorCorePoolSize;
+        this.executorMaximumPoolSize = executorMaximumPoolSize;
+        this.taskFlowCorePoolSize = taskFlowCorePoolSize;
+        this.taskFlowMaximumPoolSize = taskFlowMaximumPoolSize;
     }
 
     private static final Logger log = LoggerFactory.getLogger(TaskFlowScheduler.class);
@@ -50,47 +50,11 @@ public class TaskFlowScheduler {
     private final Object triggerLock = new Object();
 
     private ITaskFlowExecutor taskFlowExecutor;
-    private Integer execCorePoolSize;
-    private Integer execMaximumPoolSize;
-    private ExecutorService execThreadPoolExecutor;
-
-    private ITaskFlowLogger taskFlowLogger;
-
-    public boolean isStarted() {
-        return started;
-    }
-
-    public ITaskFlowQuerier getTaskFlowQuerier() {
-        return taskFlowQuerier;
-    }
-
-    public ITaskFlowScaner getTaskFlowScaner() {
-        return taskFlowScaner;
-    }
-
-    public Integer getScanInterval() {
-        return scanInterval;
-    }
-
-    public ITaskFlowExecutor getTaskFlowExecutor() {
-        return taskFlowExecutor;
-    }
-
-    public Integer getExecCorePoolSize() {
-        return execCorePoolSize;
-    }
-
-    public Integer getExecMaximumPoolSize() {
-        return execMaximumPoolSize;
-    }
-
-    public ExecutorService getExecThreadPoolExecutor() {
-        return execThreadPoolExecutor;
-    }
-
-    public ITaskFlowLogger getTaskFlowLogger() {
-        return taskFlowLogger;
-    }
+    private Integer executorCorePoolSize;
+    private Integer executorMaximumPoolSize;
+    private ExecutorService executorThreadPool;
+    private Integer taskFlowCorePoolSize;
+    private Integer taskFlowMaximumPoolSize;
 
     /**
      * 启动任务流调度器
@@ -98,22 +62,19 @@ public class TaskFlowScheduler {
      * @param taskFlowQuerier
      * @param taskFlowScaner
      * @param taskFlowExecutor
-     * @param taskFlowLogger
      */
     public void startup(ITaskFlowQuerier taskFlowQuerier,
                         ITaskFlowScaner taskFlowScaner,
-                        ITaskFlowExecutor taskFlowExecutor,
-                        ITaskFlowLogger taskFlowLogger) {
+                        ITaskFlowExecutor taskFlowExecutor) {
         if (this.started) {
             return;
         }
         log.info("任务流调度器启动，扫描间隔：{}秒，执行核心线程数：{}，执行最大线程数：{}",
-                this.scanInterval, this.execCorePoolSize, this.execMaximumPoolSize);
+                this.scanInterval, this.executorCorePoolSize, this.executorMaximumPoolSize);
         this.started = true;
         this.taskFlowQuerier = taskFlowQuerier;
         this.taskFlowScaner = taskFlowScaner;
         this.taskFlowExecutor = taskFlowExecutor;
-        this.taskFlowLogger = taskFlowLogger;
         this.startScaner();
     }
 
@@ -142,8 +103,9 @@ public class TaskFlowScheduler {
 
                         String jobGroup = "DefaultJobGroup";
 
-                        // 任务流扫描前置处理
-                        this.taskFlowScaner.beforeScanning();
+                        // 任务流扫描前
+                        BeforeScaningEvent beforeScaningEvent = new BeforeScaningEvent(this);
+                        this.eventPublisher.publishEvent(beforeScaningEvent);
 
                         // 定时任务流扫描
                         List<TaskFlow> scannedCronTaskFlowList = this.taskFlowQuerier.listCronTaskFlow();
@@ -197,8 +159,9 @@ public class TaskFlowScheduler {
                             }
                         }
 
-                        // 任务流扫描后置处理
-                        this.taskFlowScaner.afterScanning();
+                        // 任务流扫描后
+                        AfterScaningEvent afterScaningEvent = new AfterScaningEvent(this);
+                        this.eventPublisher.publishEvent(afterScaningEvent);
                     } else {
                         log.info("任务流调度线程获取锁失败");
                         MyDynamicScheduler.clear();
@@ -217,19 +180,18 @@ public class TaskFlowScheduler {
      * 触发任务流
      *
      * @param taskFlowId
-     * @return taskFlowLogId 任务日志ID
      */
-    public Long trigger(Long taskFlowId) {
+    public void trigger(Long taskFlowId) {
         if (!this.started) {
             throw new SchedulerNotStartedException("请先启动调度器！");
         }
-        if (this.execThreadPoolExecutor == null) {
+        if (this.executorThreadPool == null) {
             synchronized (this.triggerLock) {
-                if (this.execThreadPoolExecutor == null) {
+                if (this.executorThreadPool == null) {
                     // 初始化线程池
-                    ThreadFactory execThreadFactory = new ThreadFactoryBuilder().setNameFormat("taskFlowExecutor-pool-%d").build();
-                    this.execThreadPoolExecutor = new ThreadPoolExecutor(this.execCorePoolSize, this.execMaximumPoolSize, 60, TimeUnit.SECONDS,
-                            new LinkedBlockingQueue<Runnable>(1024), execThreadFactory, new ThreadPoolExecutor.AbortPolicy());
+                    ThreadFactory executorThreadFactory = new ThreadFactoryBuilder().setNameFormat("taskFlowExecutor-pool-%d").build();
+                    this.executorThreadPool = new ThreadPoolExecutor(this.executorCorePoolSize, this.executorMaximumPoolSize, 60, TimeUnit.SECONDS,
+                            new LinkedBlockingQueue<Runnable>(1024), executorThreadFactory, new ThreadPoolExecutor.AbortPolicy());
                 }
             }
         }
@@ -237,57 +199,31 @@ public class TaskFlowScheduler {
         // 获取任务流
         TaskFlow taskFlow = this.taskFlowQuerier.getTaskFlow(taskFlowId);
 
-        // 新增任务流日志
-        TaskFlowLog taskFlowLog = new TaskFlowLog();
-        taskFlowLog.setTaskFlowId(taskFlowId);
-        taskFlowLog.setStatus(TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode());
-        taskFlowLog.setContext(null);
-        taskFlowLog.setDescription(null);
-        Date now = new Date();
-        taskFlowLog.setCreationTime(now);
-        taskFlowLog.setUpdateTime(now);
-        Long taskFlowLogId = this.taskFlowLogger.insert(taskFlowLog);
         // 任务流等待执行
         TaskFlowWaitForExecuteEvent taskFlowWaitForExecuteEvent = new TaskFlowWaitForExecuteEvent(this, taskFlow);
         this.eventPublisher.publishEvent(taskFlowWaitForExecuteEvent);
 
         // 任务流执行
-        this.execThreadPoolExecutor.execute(() -> {
+        this.executorThreadPool.execute(() -> {
             try {
-                // 更新任务流日志状态为执行中
-                TaskFlowLog log = this.taskFlowLogger.select(taskFlowLogId);
-                log.setStatus(TaskFlowStatusEnum.EXECUTING.getCode());
-                log.setUpdateTime(new Date());
-                this.taskFlowLogger.update(log);
                 // 任务流执行中
                 TaskFlowExecutingEvent taskFlowExecutingEvent = new TaskFlowExecutingEvent(this, taskFlow);
                 this.eventPublisher.publishEvent(taskFlowExecutingEvent);
                 // 开始执行
                 TaskFlowContext context = this.taskFlowExecutor.initContext(taskFlow);
                 this.taskFlowExecutor.beforeExecute(taskFlow, context);
-                this.taskFlowExecutor.execute(taskFlow, context);
+                this.taskFlowExecutor.execute(taskFlow, context, this.taskFlowCorePoolSize, this.taskFlowMaximumPoolSize);
                 this.taskFlowExecutor.afterExecute(taskFlow, context);
                 // 任务流执行成功
                 TaskFlowExecuteSuccessEvent taskFlowExecuteSuccessEvent = new TaskFlowExecuteSuccessEvent(this, taskFlow);
                 this.eventPublisher.publishEvent(taskFlowExecuteSuccessEvent);
             } catch (Exception e) {
                 log.error("任务流执行失败！任务流ID：" + taskFlowId + " 异常信息：" + e.getMessage(), e);
-                try {
-                    TaskFlowLog log = this.taskFlowLogger.select(taskFlowLogId);
-                    log.setStatus(TaskFlowStatusEnum.EXECUTE_FAIL.getCode());
-                    log.setDescription(e.getMessage());
-                    log.setUpdateTime(new Date());
-                    this.taskFlowLogger.update(log);
-                } catch (Exception e1) {
-                    log.error("任务流执行失败后更新日志失败！任务流ID：" + taskFlowId + " 异常信息：" + e1.getMessage(), e1);
-                }
                 // 任务流执行失败
                 TaskFlowExecuteFailEvent taskFlowExecuteFailEvent = new TaskFlowExecuteFailEvent(this, taskFlow);
                 this.eventPublisher.publishEvent(taskFlowExecuteFailEvent);
             }
         });
-
-        return taskFlowLogId;
     }
 
 }

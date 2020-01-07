@@ -10,14 +10,4 @@ public class DefaultTaskFlowScaner implements ITaskFlowScaner {
     public boolean tryLock() {
         return true;
     }
-
-    @Override
-    public void beforeScanning() {
-        // 不做任何操作
-    }
-
-    @Override
-    public void afterScanning() {
-        // 不做任何操作
-    }
 }
