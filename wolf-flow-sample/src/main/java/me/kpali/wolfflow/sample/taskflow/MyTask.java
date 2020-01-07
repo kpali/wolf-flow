@@ -3,6 +3,10 @@ package me.kpali.wolfflow.sample.taskflow;
 import me.kpali.wolfflow.core.model.Task;
 
 public class MyTask extends Task {
+    public MyTask() {
+        super();
+    }
+
     public MyTask(Long id) {
         super(id);
     }
