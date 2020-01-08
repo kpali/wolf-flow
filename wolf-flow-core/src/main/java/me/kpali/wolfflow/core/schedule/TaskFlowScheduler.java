@@ -6,6 +6,7 @@ import me.kpali.wolfflow.core.exception.InvalidCronExpressionException;
 import me.kpali.wolfflow.core.exception.SchedulerNotStartedException;
 import me.kpali.wolfflow.core.model.TaskFlow;
 import me.kpali.wolfflow.core.model.TaskFlowContext;
+import me.kpali.wolfflow.core.model.TaskFlowStatusEnum;
 import me.kpali.wolfflow.core.quartz.MyDynamicScheduler;
 import org.quartz.JobKey;
 import org.slf4j.Logger;
@@ -200,14 +201,14 @@ public class TaskFlowScheduler {
         TaskFlow taskFlow = this.taskFlowQuerier.getTaskFlow(taskFlowId);
 
         // 任务流等待执行
-        TaskFlowWaitForExecuteEvent taskFlowWaitForExecuteEvent = new TaskFlowWaitForExecuteEvent(this, taskFlow);
+        TaskFlowStatusChangeEvent taskFlowWaitForExecuteEvent = new TaskFlowStatusChangeEvent(this, taskFlow, TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode());
         this.eventPublisher.publishEvent(taskFlowWaitForExecuteEvent);
 
         // 任务流执行
         this.executorThreadPool.execute(() -> {
             try {
                 // 任务流执行中
-                TaskFlowExecutingEvent taskFlowExecutingEvent = new TaskFlowExecutingEvent(this, taskFlow);
+                TaskFlowStatusChangeEvent taskFlowExecutingEvent = new TaskFlowStatusChangeEvent(this, taskFlow, TaskFlowStatusEnum.EXECUTING.getCode());
                 this.eventPublisher.publishEvent(taskFlowExecutingEvent);
                 // 开始执行
                 TaskFlowContext context = this.taskFlowExecutor.initContext(taskFlow);
@@ -215,12 +216,12 @@ public class TaskFlowScheduler {
                 this.taskFlowExecutor.execute(taskFlow, context, this.taskFlowCorePoolSize, this.taskFlowMaximumPoolSize);
                 this.taskFlowExecutor.afterExecute(taskFlow, context);
                 // 任务流执行成功
-                TaskFlowExecuteSuccessEvent taskFlowExecuteSuccessEvent = new TaskFlowExecuteSuccessEvent(this, taskFlow);
+                TaskFlowStatusChangeEvent taskFlowExecuteSuccessEvent = new TaskFlowStatusChangeEvent(this, taskFlow, TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode());
                 this.eventPublisher.publishEvent(taskFlowExecuteSuccessEvent);
             } catch (Exception e) {
                 log.error("任务流执行失败！任务流ID：" + taskFlowId + " 异常信息：" + e.getMessage(), e);
                 // 任务流执行失败
-                TaskFlowExecuteFailEvent taskFlowExecuteFailEvent = new TaskFlowExecuteFailEvent(this, taskFlow);
+                TaskFlowStatusChangeEvent taskFlowExecuteFailEvent = new TaskFlowStatusChangeEvent(this, taskFlow, TaskFlowStatusEnum.EXECUTE_FAIL.getCode());
                 this.eventPublisher.publishEvent(taskFlowExecuteFailEvent);
             }
         });
