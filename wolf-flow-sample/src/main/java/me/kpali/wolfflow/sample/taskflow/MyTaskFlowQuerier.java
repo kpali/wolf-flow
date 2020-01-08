@@ -3,10 +3,12 @@ package me.kpali.wolfflow.sample.taskflow;
 import me.kpali.wolfflow.core.model.Link;
 import me.kpali.wolfflow.core.model.TaskFlow;
 import me.kpali.wolfflow.core.schedule.DefaultTaskFlowQuerier;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 
+@Component
 public class MyTaskFlowQuerier extends DefaultTaskFlowQuerier {
     public MyTaskFlowQuerier() {
         /**
@@ -20,8 +22,6 @@ public class MyTaskFlowQuerier extends DefaultTaskFlowQuerier {
          *                \   v
          *                --> 7
          * 10 --> 11
-         *
-         * 正确排序之一：[1, 2, 3, 4, 5, 6, 7, 8, 9] [10, 11]
          */
 
         TaskFlow taskFlow = new TaskFlow();

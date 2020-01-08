@@ -70,8 +70,10 @@ public class TaskFlowScheduler {
         if (this.started) {
             return;
         }
-        log.info("任务流调度器启动，扫描间隔：{}秒，执行核心线程数：{}，执行最大线程数：{}",
-                this.scanInterval, this.triggerCorePoolSize, this.triggerMaximumPoolSize);
+        log.info("任务流调度器启动，扫描间隔：{}秒，触发器核心线程数：{}，触发器最大线程数：{}，执行器核心线程数：{}，执行器最大线程数：{}",
+                this.scanInterval,
+                this.triggerCorePoolSize, this.triggerMaximumPoolSize,
+                this.taskFlowExecutorCorePoolSize, this.taskFlowExecutorMaximumPoolSize);
         this.started = true;
         this.taskFlowQuerier = taskFlowQuerier;
         this.taskFlowScaner = taskFlowScaner;
