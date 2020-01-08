@@ -31,11 +31,11 @@ public interface ITaskFlowExecutor {
      *
      * @param taskFlow
      * @param taskFlowContext
-     * @param taskFlowCorePoolSize
-     * @param taskFlowMaximumPoolSize
+     * @param taskFlowExecutorCorePoolSize
+     * @param taskFlowExecutorMaximumPoolSize
      */
     void execute(TaskFlow taskFlow, TaskFlowContext taskFlowContext,
-                 Integer taskFlowCorePoolSize, Integer taskFlowMaximumPoolSize);
+                 Integer taskFlowExecutorCorePoolSize, Integer taskFlowExecutorMaximumPoolSize);
 
     /**
      * 任务流后置处理

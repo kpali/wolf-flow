@@ -10,12 +10,12 @@ public class ScheduleConfiguration {
     @Bean
     public TaskFlowScheduler getTaskFlowScheduler(ScheduleProperties scheduleProperties) {
         Integer scanInterval = scheduleProperties.getScanInterval();
-        Integer executorCorePoolSize = scheduleProperties.getExecutorCorePoolSize();
-        Integer executorMaximumPoolSize = scheduleProperties.getExecutorMaximumPoolSize();
-        Integer taskFlowCorePoolSize = scheduleProperties.getTaskFlowCorePoolSize();
-        Integer taskFlowMaximumPoolSize = scheduleProperties.getTaskFlowMaximumPoolSize();
+        Integer triggerCorePoolSize = scheduleProperties.getTriggerCorePoolSize();
+        Integer triggerMaximumPoolSize = scheduleProperties.getTriggerMaximumPoolSize();
+        Integer taskFlowExecutorCorePoolSize = scheduleProperties.getTaskFlowExecutorCorePoolSize();
+        Integer taskFlowExecutorMaximumPoolSize = scheduleProperties.getTaskFlowExecutorMaximumPoolSize();
         return new TaskFlowScheduler(scanInterval,
-                executorCorePoolSize, executorMaximumPoolSize,
-                taskFlowCorePoolSize, taskFlowMaximumPoolSize);
+                triggerCorePoolSize, triggerMaximumPoolSize,
+                taskFlowExecutorCorePoolSize, taskFlowExecutorMaximumPoolSize);
     }
 }

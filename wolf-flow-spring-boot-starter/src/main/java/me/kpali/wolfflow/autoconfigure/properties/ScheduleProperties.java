@@ -5,10 +5,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "wolf-flow.schedule")
 public class ScheduleProperties {
     private Integer scanInterval = 10;
-    private Integer executorCorePoolSize = 10;
-    private Integer executorMaximumPoolSize = 10;
-    private Integer taskFlowCorePoolSize = 3;
-    private Integer taskFlowMaximumPoolSize = 3;
+    private Integer triggerCorePoolSize = 10;
+    private Integer triggerMaximumPoolSize = 10;
+    private Integer taskFlowExecutorCorePoolSize = 3;
+    private Integer taskFlowExecutorMaximumPoolSize = 3;
 
     public Integer getScanInterval() {
         return scanInterval;
@@ -18,35 +18,35 @@ public class ScheduleProperties {
         this.scanInterval = scanInterval;
     }
 
-    public Integer getExecutorCorePoolSize() {
-        return executorCorePoolSize;
+    public Integer getTriggerCorePoolSize() {
+        return triggerCorePoolSize;
     }
 
-    public void setExecutorCorePoolSize(Integer executorCorePoolSize) {
-        this.executorCorePoolSize = executorCorePoolSize;
+    public void setTriggerCorePoolSize(Integer triggerCorePoolSize) {
+        this.triggerCorePoolSize = triggerCorePoolSize;
     }
 
-    public Integer getExecutorMaximumPoolSize() {
-        return executorMaximumPoolSize;
+    public Integer getTriggerMaximumPoolSize() {
+        return triggerMaximumPoolSize;
     }
 
-    public void setExecutorMaximumPoolSize(Integer executorMaximumPoolSize) {
-        this.executorMaximumPoolSize = executorMaximumPoolSize;
+    public void setTriggerMaximumPoolSize(Integer triggerMaximumPoolSize) {
+        this.triggerMaximumPoolSize = triggerMaximumPoolSize;
     }
 
-    public Integer getTaskFlowCorePoolSize() {
-        return taskFlowCorePoolSize;
+    public Integer getTaskFlowExecutorCorePoolSize() {
+        return taskFlowExecutorCorePoolSize;
     }
 
-    public void setTaskFlowCorePoolSize(Integer taskFlowCorePoolSize) {
-        this.taskFlowCorePoolSize = taskFlowCorePoolSize;
+    public void setTaskFlowExecutorCorePoolSize(Integer taskFlowExecutorCorePoolSize) {
+        this.taskFlowExecutorCorePoolSize = taskFlowExecutorCorePoolSize;
     }
 
-    public Integer getTaskFlowMaximumPoolSize() {
-        return taskFlowMaximumPoolSize;
+    public Integer getTaskFlowExecutorMaximumPoolSize() {
+        return taskFlowExecutorMaximumPoolSize;
     }
 
-    public void setTaskFlowMaximumPoolSize(Integer taskFlowMaximumPoolSize) {
-        this.taskFlowMaximumPoolSize = taskFlowMaximumPoolSize;
+    public void setTaskFlowExecutorMaximumPoolSize(Integer taskFlowExecutorMaximumPoolSize) {
+        this.taskFlowExecutorMaximumPoolSize = taskFlowExecutorMaximumPoolSize;
     }
 }

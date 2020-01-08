@@ -27,13 +27,13 @@ import java.util.concurrent.*;
 public class TaskFlowScheduler {
 
     public TaskFlowScheduler(Integer scanInterval,
-                             Integer executorCorePoolSize, Integer executorMaximumPoolSize,
-                             Integer taskFlowCorePoolSize, Integer taskFlowMaximumPoolSize) {
+                             Integer triggerCorePoolSize, Integer triggerMaximumPoolSize,
+                             Integer taskFlowExecutorCorePoolSize, Integer taskFlowExecutorMaximumPoolSize) {
         this.scanInterval = scanInterval;
-        this.executorCorePoolSize = executorCorePoolSize;
-        this.executorMaximumPoolSize = executorMaximumPoolSize;
-        this.taskFlowCorePoolSize = taskFlowCorePoolSize;
-        this.taskFlowMaximumPoolSize = taskFlowMaximumPoolSize;
+        this.triggerCorePoolSize = triggerCorePoolSize;
+        this.triggerMaximumPoolSize = triggerMaximumPoolSize;
+        this.taskFlowExecutorCorePoolSize = taskFlowExecutorCorePoolSize;
+        this.taskFlowExecutorMaximumPoolSize = taskFlowExecutorMaximumPoolSize;
     }
 
     private static final Logger log = LoggerFactory.getLogger(TaskFlowScheduler.class);
@@ -49,13 +49,13 @@ public class TaskFlowScheduler {
     private Integer scanInterval;
 
     private final Object triggerLock = new Object();
+    private ExecutorService triggerThreadPool;
+    private Integer triggerCorePoolSize;
+    private Integer triggerMaximumPoolSize;
 
     private ITaskFlowExecutor taskFlowExecutor;
-    private Integer executorCorePoolSize;
-    private Integer executorMaximumPoolSize;
-    private ExecutorService executorThreadPool;
-    private Integer taskFlowCorePoolSize;
-    private Integer taskFlowMaximumPoolSize;
+    private Integer taskFlowExecutorCorePoolSize;
+    private Integer taskFlowExecutorMaximumPoolSize;
 
     /**
      * 启动任务流调度器
@@ -71,7 +71,7 @@ public class TaskFlowScheduler {
             return;
         }
         log.info("任务流调度器启动，扫描间隔：{}秒，执行核心线程数：{}，执行最大线程数：{}",
-                this.scanInterval, this.executorCorePoolSize, this.executorMaximumPoolSize);
+                this.scanInterval, this.triggerCorePoolSize, this.triggerMaximumPoolSize);
         this.started = true;
         this.taskFlowQuerier = taskFlowQuerier;
         this.taskFlowScaner = taskFlowScaner;
@@ -186,13 +186,13 @@ public class TaskFlowScheduler {
         if (!this.started) {
             throw new SchedulerNotStartedException("请先启动调度器！");
         }
-        if (this.executorThreadPool == null) {
+        if (this.triggerThreadPool == null) {
             synchronized (this.triggerLock) {
-                if (this.executorThreadPool == null) {
+                if (this.triggerThreadPool == null) {
                     // 初始化线程池
-                    ThreadFactory executorThreadFactory = new ThreadFactoryBuilder().setNameFormat("taskFlowExecutor-pool-%d").build();
-                    this.executorThreadPool = new ThreadPoolExecutor(this.executorCorePoolSize, this.executorMaximumPoolSize, 60, TimeUnit.SECONDS,
-                            new LinkedBlockingQueue<Runnable>(1024), executorThreadFactory, new ThreadPoolExecutor.AbortPolicy());
+                    ThreadFactory triggerThreadFactory = new ThreadFactoryBuilder().setNameFormat("triggerExecutor-pool-%d").build();
+                    this.triggerThreadPool = new ThreadPoolExecutor(this.triggerCorePoolSize, this.triggerMaximumPoolSize, 60, TimeUnit.SECONDS,
+                            new LinkedBlockingQueue<Runnable>(1024), triggerThreadFactory, new ThreadPoolExecutor.AbortPolicy());
                 }
             }
         }
@@ -205,7 +205,7 @@ public class TaskFlowScheduler {
         this.eventPublisher.publishEvent(taskFlowWaitForExecuteEvent);
 
         // 任务流执行
-        this.executorThreadPool.execute(() -> {
+        this.triggerThreadPool.execute(() -> {
             try {
                 // 任务流执行中
                 TaskFlowStatusChangeEvent taskFlowExecutingEvent = new TaskFlowStatusChangeEvent(this, taskFlow, TaskFlowStatusEnum.EXECUTING.getCode());
@@ -213,7 +213,7 @@ public class TaskFlowScheduler {
                 // 开始执行
                 TaskFlowContext context = this.taskFlowExecutor.initContext(taskFlow);
                 this.taskFlowExecutor.beforeExecute(taskFlow, context);
-                this.taskFlowExecutor.execute(taskFlow, context, this.taskFlowCorePoolSize, this.taskFlowMaximumPoolSize);
+                this.taskFlowExecutor.execute(taskFlow, context, this.taskFlowExecutorCorePoolSize, this.taskFlowExecutorMaximumPoolSize);
                 this.taskFlowExecutor.afterExecute(taskFlow, context);
                 // 任务流执行成功
                 TaskFlowStatusChangeEvent taskFlowExecuteSuccessEvent = new TaskFlowStatusChangeEvent(this, taskFlow, TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode());
