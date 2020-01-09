@@ -45,4 +45,18 @@ public class MyDynamicSchedulerConfig {
         return myDynamicScheduler;
     }
 
+//    @Bean(
+//            initMethod = "start",
+//            destroyMethod = "destroy"
+//    )
+//    public MyDynamicScheduler getMyDynamicScheduler() throws SchedulerException {
+//        Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
+//        scheduler.setJobFactory(myJobFactory);
+//        scheduler.startDelayed(20);
+//        scheduler.start();
+//        MyDynamicScheduler myDynamicScheduler = new MyDynamicScheduler();
+//        myDynamicScheduler.setScheduler(scheduler);
+//        return myDynamicScheduler;
+//    }
+
 }
