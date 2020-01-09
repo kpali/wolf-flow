@@ -99,8 +99,8 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                             this.eventPublisher.publishEvent(taskExecuteSuccessEvent);
                         } catch (Exception e) {
                             log.error("任务执行失败！任务ID：" + task.getId() + " 异常信息：" + e.getMessage(), e);
-                            taskIdToStatusMap.put(task.getId(), TaskStatusEnum.EXECUTE_FAIL.getCode());
-                            TaskStatusChangeEvent taskExecuteFailEvent = new TaskStatusChangeEvent(this, task, TaskStatusEnum.EXECUTE_FAIL.getCode());
+                            taskIdToStatusMap.put(task.getId(), TaskStatusEnum.EXECUTE_FAILURE.getCode());
+                            TaskStatusChangeEvent taskExecuteFailEvent = new TaskStatusChangeEvent(this, task, TaskStatusEnum.EXECUTE_FAILURE.getCode());
                             this.eventPublisher.publishEvent(taskExecuteFailEvent);
                         }
                     });
@@ -121,15 +121,15 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                         }
                     }
                     taskIdToStatusMap.remove(taskId);
-                } else if (TaskStatusEnum.EXECUTE_FAIL.getCode().equals(taskStatus)
-                        || TaskStatusEnum.SKIP.getCode().equals(taskStatus)) {
+                } else if (TaskStatusEnum.EXECUTE_FAILURE.getCode().equals(taskStatus)
+                        || TaskStatusEnum.SKIPPED.getCode().equals(taskStatus)) {
                     // 执行失败 或者 跳过，将子节点状态设置为跳过，并将此节点移除状态检查
                     for (Link link : taskFlow.getLinkList()) {
                         if (link.getSource().equals(taskId)) {
                             Long childTaskId = link.getTarget();
-                            taskIdToStatusMap.put(childTaskId, TaskStatusEnum.SKIP.getCode());
+                            taskIdToStatusMap.put(childTaskId, TaskStatusEnum.SKIPPED.getCode());
                             Task childTask = idToTaskMap.get(childTaskId);
-                            TaskStatusChangeEvent taskSkipEvent = new TaskStatusChangeEvent(this, childTask, TaskStatusEnum.SKIP.getCode());
+                            TaskStatusChangeEvent taskSkipEvent = new TaskStatusChangeEvent(this, childTask, TaskStatusEnum.SKIPPED.getCode());
                             this.eventPublisher.publishEvent(taskSkipEvent);
                         }
                     }

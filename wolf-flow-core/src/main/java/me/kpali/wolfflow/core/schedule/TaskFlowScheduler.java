@@ -223,7 +223,7 @@ public class TaskFlowScheduler {
             } catch (Exception e) {
                 log.error("任务流执行失败！任务流ID：" + taskFlowId + " 异常信息：" + e.getMessage(), e);
                 // 任务流执行失败
-                TaskFlowStatusChangeEvent taskFlowExecuteFailEvent = new TaskFlowStatusChangeEvent(this, taskFlow, TaskFlowStatusEnum.EXECUTE_FAIL.getCode());
+                TaskFlowStatusChangeEvent taskFlowExecuteFailEvent = new TaskFlowStatusChangeEvent(this, taskFlow, TaskFlowStatusEnum.EXECUTE_FAILURE.getCode());
                 this.eventPublisher.publishEvent(taskFlowExecuteFailEvent);
             }
         });
