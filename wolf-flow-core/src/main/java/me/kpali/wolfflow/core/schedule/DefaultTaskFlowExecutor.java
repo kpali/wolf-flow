@@ -83,6 +83,11 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
             }
         }
         while (!taskIdToStatusMap.isEmpty()) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             for (Long taskId : taskIdToStatusMap.keySet()) {
                 String taskStatus = taskIdToStatusMap.get(taskId);
                 if (TaskStatusEnum.WAIT_FOR_EXECUTE.getCode().equals(taskStatus)) {
