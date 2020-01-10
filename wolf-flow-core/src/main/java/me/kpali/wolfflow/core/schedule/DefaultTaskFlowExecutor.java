@@ -3,6 +3,7 @@ package me.kpali.wolfflow.core.schedule;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import me.kpali.wolfflow.core.event.TaskStatusChangeEvent;
 import me.kpali.wolfflow.core.exception.InvalidTaskFlowException;
+import me.kpali.wolfflow.core.exception.TaskFlowExecuteFailException;
 import me.kpali.wolfflow.core.model.*;
 import me.kpali.wolfflow.core.util.TaskFlowUtils;
 import org.slf4j.Logger;
@@ -82,6 +83,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                 this.eventPublisher.publishEvent(taskWaitForExecuteEvent);
             }
         }
+        boolean isSuccess = true;
         while (!taskIdToStatusMap.isEmpty()) {
             try {
                 Thread.sleep(1000);
@@ -128,6 +130,9 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                     taskIdToStatusMap.remove(taskId);
                 } else if (TaskStatusEnum.EXECUTE_FAILURE.getCode().equals(taskStatus)
                         || TaskStatusEnum.SKIPPED.getCode().equals(taskStatus)) {
+                    if (TaskStatusEnum.EXECUTE_FAILURE.getCode().equals(taskStatus)) {
+                        isSuccess = false;
+                    }
                     // 执行失败 或者 跳过，将子节点状态设置为跳过，并将此节点移除状态检查
                     for (Link link : taskFlow.getLinkList()) {
                         if (link.getSource().equals(taskId)) {
@@ -141,6 +146,9 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                     taskIdToStatusMap.remove(taskId);
                 }
             }
+        }
+        if (!isSuccess) {
+            throw new TaskFlowExecuteFailException("至少有一个任务执行失败！");
         }
     }
 
