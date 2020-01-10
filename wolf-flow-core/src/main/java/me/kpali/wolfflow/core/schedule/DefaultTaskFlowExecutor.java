@@ -29,18 +29,18 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     private ApplicationEventPublisher eventPublisher;
 
     @Override
-    public TaskFlowContext initContext(TaskFlow taskFlow) {
+    public TaskFlowContext initContext(TaskFlow taskFlow) throws Exception {
         return null;
     }
 
     @Override
-    public void beforeExecute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) {
+    public void beforeExecute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws Exception {
         // 不做任何操作
     }
 
     @Override
     public void execute(TaskFlow taskFlow, TaskFlowContext taskFlowContext,
-                        Integer taskFlowExecutorCorePoolSize, Integer taskFlowExecutorMaximumPoolSize) {
+                        Integer taskFlowExecutorCorePoolSize, Integer taskFlowExecutorMaximumPoolSize) throws Exception {
         // 检查任务流是否是一个有向无环图
         List<Task> sortedTaskList = TaskFlowUtils.topologicalSort(taskFlow);
         if (sortedTaskList == null) {
@@ -98,7 +98,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                     this.eventPublisher.publishEvent(taskExecutingEvent);
                     executorThreadPool.execute(() -> {
                         try {
-                            task.execute();
+                            task.execute(taskFlowContext);
                             taskIdToStatusMap.put(task.getId(), TaskStatusEnum.EXECUTE_SUCCESS.getCode());
                             TaskStatusChangeEvent taskExecuteSuccessEvent = new TaskStatusChangeEvent(this, task, TaskStatusEnum.EXECUTE_SUCCESS.getCode());
                             this.eventPublisher.publishEvent(taskExecuteSuccessEvent);
@@ -145,7 +145,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     }
 
     @Override
-    public void afterExecute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) {
+    public void afterExecute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws Exception {
         // 不做任何操作
     }
 }
