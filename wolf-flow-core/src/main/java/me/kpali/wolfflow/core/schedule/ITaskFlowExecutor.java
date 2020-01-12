@@ -33,11 +33,14 @@ public interface ITaskFlowExecutor {
      *
      * @param taskFlow
      * @param taskFlowContext
+     * @param fromTaskId
+     * @param toTaskId
      * @param taskFlowExecutorCorePoolSize
      * @param taskFlowExecutorMaximumPoolSize
      * @throws Exception
      */
     void execute(TaskFlow taskFlow, TaskFlowContext taskFlowContext,
+                 Long fromTaskId, Long toTaskId,
                  Integer taskFlowExecutorCorePoolSize, Integer taskFlowExecutorMaximumPoolSize) throws Exception;
 
     /**

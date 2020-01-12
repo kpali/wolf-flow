@@ -9,14 +9,16 @@ import org.springframework.context.ApplicationEvent;
  * @author kpali
  */
 public class TaskStatusChangeEvent extends ApplicationEvent {
-    public TaskStatusChangeEvent(Object source, Task task, String status) {
+    public TaskStatusChangeEvent(Object source, Task task, String status, String message) {
         super(source);
         this.task = task;
         this.status = status;
+        this.message = message;
     }
 
     private Task task;
     private String status;
+    private String message;
 
     public Task getTask() {
         return task;
@@ -24,5 +26,9 @@ public class TaskStatusChangeEvent extends ApplicationEvent {
 
     public String getStatus() {
         return status;
+    }
+
+    public String getMessage() {
+        return message;
     }
 }

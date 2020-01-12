@@ -3,10 +3,12 @@ package me.kpali.wolfflow.sample.taskflow;
 import me.kpali.wolfflow.core.model.Link;
 import me.kpali.wolfflow.core.model.TaskFlow;
 import me.kpali.wolfflow.core.schedule.DefaultTaskFlowQuerier;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class MyTaskFlowQuerier extends DefaultTaskFlowQuerier {
@@ -63,13 +65,15 @@ public class MyTaskFlowQuerier extends DefaultTaskFlowQuerier {
 
     @Override
     public TaskFlow getTaskFlow(Long taskFlowId) {
-        return taskFlowList.stream().filter(taskFlow -> {
+        return this.taskFlowList.stream().filter(taskFlow -> {
            return taskFlow.getId().equals(taskFlowId);
         }).findFirst().get();
     }
 
     @Override
     public List<TaskFlow> listCronTaskFlow() {
-        return this.taskFlowList;
+        return this.taskFlowList.stream().filter(taskFlow -> {
+            return !StringUtils.isBlank(taskFlow.getCron());
+        }).collect(Collectors.toList());
     }
 }

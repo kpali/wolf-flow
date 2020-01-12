@@ -41,6 +41,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
 
     @Override
     public void execute(TaskFlow taskFlow, TaskFlowContext taskFlowContext,
+                        Long fromTaskId, Long toTaskId,
                         Integer taskFlowExecutorCorePoolSize, Integer taskFlowExecutorMaximumPoolSize) throws Exception {
         // 检查任务流是否是一个有向无环图
         List<Task> sortedTaskList = TaskFlowUtils.topologicalSort(taskFlow);
@@ -50,6 +51,8 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
         if (taskFlow.getTaskList().size() == 0) {
             return;
         }
+        // 根据从指定任务开始或到指定任务结束，对任务流进行剪裁
+        TaskFlow prunedTaskFlow = TaskFlowUtils.prune(taskFlow, fromTaskId, toTaskId);
         // 初始化线程池
         ThreadFactory executorThreadFactory = new ThreadFactoryBuilder()
                 .setNameFormat("taskFlowExecutor-pool-%d").build();
@@ -58,14 +61,14 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                 new LinkedBlockingQueue<Runnable>(1024), executorThreadFactory, new ThreadPoolExecutor.AbortPolicy());
 
         Map<Long, Task> idToTaskMap = new HashMap<>();
-        taskFlow.getTaskList().forEach(task -> {
+        prunedTaskFlow.getTaskList().forEach(task -> {
             idToTaskMap.put(task.getId(), task);
         });
         // 计算节点入度
         Map<Long, Integer> taskIdToInDegreeMap = new HashMap<>();
-        taskFlow.getTaskList().forEach(task -> {
+        prunedTaskFlow.getTaskList().forEach(task -> {
             int inDegree = 0;
-            for (Link link : taskFlow.getLinkList()) {
+            for (Link link : prunedTaskFlow.getLinkList()) {
                 if (link.getTarget().equals(task.getId())) {
                     inDegree++;
                 }
@@ -79,7 +82,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
             if (inDegree == 0) {
                 taskIdToStatusMap.put(taskId, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode());
                 Task task = idToTaskMap.get(taskId);
-                TaskStatusChangeEvent taskWaitForExecuteEvent = new TaskStatusChangeEvent(this, task, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode());
+                TaskStatusChangeEvent taskWaitForExecuteEvent = new TaskStatusChangeEvent(this, task, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode(), null);
                 this.eventPublisher.publishEvent(taskWaitForExecuteEvent);
             }
         }
@@ -96,24 +99,24 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                     // 等待执行，将节点状态改为执行中，并将任务加入线程池
                     Task task = idToTaskMap.get(taskId);
                     taskIdToStatusMap.put(task.getId(), TaskStatusEnum.EXECUTING.getCode());
-                    TaskStatusChangeEvent taskExecutingEvent = new TaskStatusChangeEvent(this, task, TaskStatusEnum.EXECUTING.getCode());
+                    TaskStatusChangeEvent taskExecutingEvent = new TaskStatusChangeEvent(this, task, TaskStatusEnum.EXECUTING.getCode(), null);
                     this.eventPublisher.publishEvent(taskExecutingEvent);
                     executorThreadPool.execute(() -> {
                         try {
                             task.execute(taskFlowContext);
                             taskIdToStatusMap.put(task.getId(), TaskStatusEnum.EXECUTE_SUCCESS.getCode());
-                            TaskStatusChangeEvent taskExecuteSuccessEvent = new TaskStatusChangeEvent(this, task, TaskStatusEnum.EXECUTE_SUCCESS.getCode());
+                            TaskStatusChangeEvent taskExecuteSuccessEvent = new TaskStatusChangeEvent(this, task, TaskStatusEnum.EXECUTE_SUCCESS.getCode(), null);
                             this.eventPublisher.publishEvent(taskExecuteSuccessEvent);
                         } catch (Exception e) {
                             log.error("任务执行失败！任务ID：" + task.getId() + " 异常信息：" + e.getMessage(), e);
                             taskIdToStatusMap.put(task.getId(), TaskStatusEnum.EXECUTE_FAILURE.getCode());
-                            TaskStatusChangeEvent taskExecuteFailEvent = new TaskStatusChangeEvent(this, task, TaskStatusEnum.EXECUTE_FAILURE.getCode());
+                            TaskStatusChangeEvent taskExecuteFailEvent = new TaskStatusChangeEvent(this, task, TaskStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage());
                             this.eventPublisher.publishEvent(taskExecuteFailEvent);
                         }
                     });
                 } else if (TaskStatusEnum.EXECUTE_SUCCESS.getCode().equals(taskStatus)) {
                     // 执行成功，将子节点的入度减1，如果子节点入度为0，则将子节点状态设置为等待执行并加入状态检查，最后将此节点移除状态检查
-                    for (Link link : taskFlow.getLinkList()) {
+                    for (Link link : prunedTaskFlow.getLinkList()) {
                         if (link.getSource().equals(taskId)) {
                             Long childTaskId = link.getTarget();
                             int childTaskInDegree = taskIdToInDegreeMap.get(childTaskId);
@@ -122,7 +125,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                             if (childTaskInDegree == 0) {
                                 taskIdToStatusMap.put(childTaskId, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode());
                                 Task childTask = idToTaskMap.get(childTaskId);
-                                TaskStatusChangeEvent taskWaitForExecuteEvent = new TaskStatusChangeEvent(this, childTask, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode());
+                                TaskStatusChangeEvent taskWaitForExecuteEvent = new TaskStatusChangeEvent(this, childTask, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode(), null);
                                 this.eventPublisher.publishEvent(taskWaitForExecuteEvent);
                             }
                         }
@@ -134,12 +137,12 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                         isSuccess = false;
                     }
                     // 执行失败 或者 跳过，将子节点状态设置为跳过，并将此节点移除状态检查
-                    for (Link link : taskFlow.getLinkList()) {
+                    for (Link link : prunedTaskFlow.getLinkList()) {
                         if (link.getSource().equals(taskId)) {
                             Long childTaskId = link.getTarget();
                             taskIdToStatusMap.put(childTaskId, TaskStatusEnum.SKIPPED.getCode());
                             Task childTask = idToTaskMap.get(childTaskId);
-                            TaskStatusChangeEvent taskSkipEvent = new TaskStatusChangeEvent(this, childTask, TaskStatusEnum.SKIPPED.getCode());
+                            TaskStatusChangeEvent taskSkipEvent = new TaskStatusChangeEvent(this, childTask, TaskStatusEnum.SKIPPED.getCode(), null);
                             this.eventPublisher.publishEvent(taskSkipEvent);
                         }
                     }

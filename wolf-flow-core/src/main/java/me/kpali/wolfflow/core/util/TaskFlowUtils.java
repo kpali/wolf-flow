@@ -69,4 +69,63 @@ public class TaskFlowUtils {
         return sortedTaskList.size() == taskCount ? sortedTaskList : null;
     }
 
+    /**
+     * 根据从指定任务开始或到指定任务结束，对任务流进行剪裁
+     *
+     * @param taskFlow
+     * @param fromTaskId
+     * @param toTaskId
+     * @return
+     */
+    public static TaskFlow prune(TaskFlow taskFlow, Long fromTaskId, Long toTaskId) {
+        if (fromTaskId == null && toTaskId == null) {
+            return taskFlow;
+        }
+
+        Map<Long, Task> id_mapto_task = new HashMap<>();
+        for (Task task : taskFlow.getTaskList()) {
+            id_mapto_task.put(task.getId(), task);
+        }
+
+        TaskFlow prunedTaskFlow = new TaskFlow();
+        prunedTaskFlow.setId(taskFlow.getId());
+        prunedTaskFlow.setCron(taskFlow.getCron());
+        prunedTaskFlow.setTaskList(new ArrayList<>());
+        prunedTaskFlow.setLinkList(new ArrayList<>());
+
+        Deque<Task> deque = new ArrayDeque<>();
+        if (fromTaskId != null) {
+            Task fromTask = id_mapto_task.get(fromTaskId);
+            prunedTaskFlow.getTaskList().add(fromTask);
+            deque.offer(fromTask);
+            while (!deque.isEmpty()) {
+                Task task = deque.poll();
+                for (Link link : taskFlow.getLinkList()) {
+                    if (link.getSource().equals(task.getId())) {
+                        Task childTask = id_mapto_task.get(link.getTarget());
+                        prunedTaskFlow.getTaskList().add(childTask);
+                        prunedTaskFlow.getLinkList().add(link);
+                        deque.offer(childTask);
+                    }
+                }
+            }
+        } else {
+            Task toTask = id_mapto_task.get(toTaskId);
+            prunedTaskFlow.getTaskList().add(toTask);
+            deque.offer(toTask);
+            while (!deque.isEmpty()) {
+                Task task = deque.poll();
+                for (Link link : taskFlow.getLinkList()) {
+                    if (link.getTarget().equals(task.getId())) {
+                        Task parentTask = id_mapto_task.get(link.getSource());
+                        prunedTaskFlow.getTaskList().add(parentTask);
+                        prunedTaskFlow.getLinkList().add(link);
+                        deque.offer(parentTask);
+                    }
+                }
+            }
+        }
+        return prunedTaskFlow;
+    }
+
 }

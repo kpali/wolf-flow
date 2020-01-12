@@ -185,6 +185,37 @@ public class TaskFlowScheduler {
      * @param taskFlowId
      */
     public void trigger(Long taskFlowId) {
+        this.trigger(taskFlowId, null, null);
+    }
+
+    /**
+     * 触发任务流，从指定任务开始
+     *
+     * @param taskFlowId
+     * @param fromTaskId
+     */
+    public void triggerFrom(Long taskFlowId, Long fromTaskId) {
+        this.trigger(taskFlowId, fromTaskId, null);
+    }
+
+    /**
+     * 触发任务流，到指定任务结束
+     *
+     * @param taskFlowId
+     * @param toTaskId
+     */
+    public void triggerTo(Long taskFlowId, Long toTaskId) {
+        this.trigger(taskFlowId, null, toTaskId);
+    }
+
+    /**
+     * 触发任务流
+     *
+     * @param taskFlowId
+     * @param fromTaskId
+     * @param toTaskId
+     */
+    private void trigger(Long taskFlowId, Long fromTaskId, Long toTaskId) {
         if (!this.started) {
             throw new SchedulerNotStartedException("请先启动调度器！");
         }
@@ -203,27 +234,27 @@ public class TaskFlowScheduler {
         TaskFlow taskFlow = this.taskFlowQuerier.getTaskFlow(taskFlowId);
 
         // 任务流等待执行
-        TaskFlowStatusChangeEvent taskFlowWaitForExecuteEvent = new TaskFlowStatusChangeEvent(this, taskFlow, TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode());
+        TaskFlowStatusChangeEvent taskFlowWaitForExecuteEvent = new TaskFlowStatusChangeEvent(this, taskFlow, TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode(), null);
         this.eventPublisher.publishEvent(taskFlowWaitForExecuteEvent);
 
         // 任务流执行
         this.triggerThreadPool.execute(() -> {
             try {
                 // 任务流执行中
-                TaskFlowStatusChangeEvent taskFlowExecutingEvent = new TaskFlowStatusChangeEvent(this, taskFlow, TaskFlowStatusEnum.EXECUTING.getCode());
+                TaskFlowStatusChangeEvent taskFlowExecutingEvent = new TaskFlowStatusChangeEvent(this, taskFlow, TaskFlowStatusEnum.EXECUTING.getCode(), null);
                 this.eventPublisher.publishEvent(taskFlowExecutingEvent);
                 // 开始执行
                 TaskFlowContext context = this.taskFlowExecutor.initContext(taskFlow);
                 this.taskFlowExecutor.beforeExecute(taskFlow, context);
-                this.taskFlowExecutor.execute(taskFlow, context, this.taskFlowExecutorCorePoolSize, this.taskFlowExecutorMaximumPoolSize);
+                this.taskFlowExecutor.execute(taskFlow, context, fromTaskId, toTaskId, this.taskFlowExecutorCorePoolSize, this.taskFlowExecutorMaximumPoolSize);
                 this.taskFlowExecutor.afterExecute(taskFlow, context);
                 // 任务流执行成功
-                TaskFlowStatusChangeEvent taskFlowExecuteSuccessEvent = new TaskFlowStatusChangeEvent(this, taskFlow, TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode());
+                TaskFlowStatusChangeEvent taskFlowExecuteSuccessEvent = new TaskFlowStatusChangeEvent(this, taskFlow, TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode(), null);
                 this.eventPublisher.publishEvent(taskFlowExecuteSuccessEvent);
             } catch (Exception e) {
                 log.error("任务流执行失败！任务流ID：" + taskFlowId + " 异常信息：" + e.getMessage(), e);
                 // 任务流执行失败
-                TaskFlowStatusChangeEvent taskFlowExecuteFailEvent = new TaskFlowStatusChangeEvent(this, taskFlow, TaskFlowStatusEnum.EXECUTE_FAILURE.getCode());
+                TaskFlowStatusChangeEvent taskFlowExecuteFailEvent = new TaskFlowStatusChangeEvent(this, taskFlow, TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), null);
                 this.eventPublisher.publishEvent(taskFlowExecuteFailEvent);
             }
         });
