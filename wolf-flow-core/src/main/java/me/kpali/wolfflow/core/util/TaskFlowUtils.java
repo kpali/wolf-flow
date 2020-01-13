@@ -103,7 +103,9 @@ public class TaskFlowUtils {
                 for (Link link : taskFlow.getLinkList()) {
                     if (link.getSource().equals(task.getId())) {
                         Task childTask = id_mapto_task.get(link.getTarget());
-                        prunedTaskFlow.getTaskList().add(childTask);
+                        if (!prunedTaskFlow.getTaskList().contains(childTask)) {
+                            prunedTaskFlow.getTaskList().add(childTask);
+                        }
                         prunedTaskFlow.getLinkList().add(link);
                         deque.offer(childTask);
                     }
@@ -118,7 +120,9 @@ public class TaskFlowUtils {
                 for (Link link : taskFlow.getLinkList()) {
                     if (link.getTarget().equals(task.getId())) {
                         Task parentTask = id_mapto_task.get(link.getSource());
-                        prunedTaskFlow.getTaskList().add(parentTask);
+                        if (!prunedTaskFlow.getTaskList().contains(parentTask)) {
+                            prunedTaskFlow.getTaskList().add(parentTask);
+                        }
                         prunedTaskFlow.getLinkList().add(link);
                         deque.offer(parentTask);
                     }

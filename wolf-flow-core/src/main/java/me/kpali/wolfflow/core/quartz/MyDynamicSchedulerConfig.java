@@ -26,7 +26,7 @@ public class MyDynamicSchedulerConfig {
         SchedulerFactoryBean schedulerFactory = new SchedulerFactoryBean();
         //schedulerFactory.setDataSource(dataSource);
         schedulerFactory.setAutoStartup(true);
-        schedulerFactory.setStartupDelay(20);
+        //schedulerFactory.setStartupDelay(20);
         schedulerFactory.setOverwriteExistingJobs(true);
         schedulerFactory.setApplicationContextSchedulerContextKey("applicationContext");
         schedulerFactory.setConfigLocation(new ClassPathResource("quartz.properties"));

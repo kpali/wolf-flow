@@ -1,4 +1,4 @@
-package me.kpali.wolfflow.sample.taskflow;
+package me.kpali.wolfflow.sample.listener;
 
 import com.alibaba.fastjson.JSON;
 import me.kpali.wolfflow.core.event.*;
@@ -6,7 +6,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 @Component
-public class MyListener {
+public class TaskFlowListener {
     @EventListener
     public void beforeScaning(BeforeScaningEvent event) {
     }

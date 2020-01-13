@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,8 +42,10 @@ public class TaskFlowScheduler {
 
     private boolean started = false;
 
+    @Autowired
     private ITaskFlowQuerier taskFlowQuerier;
 
+    @Autowired
     private ITaskFlowScaner taskFlowScaner;
     private Integer scanInterval;
 
@@ -53,20 +54,18 @@ public class TaskFlowScheduler {
     private Integer triggerCorePoolSize;
     private Integer triggerMaximumPoolSize;
 
+    @Autowired
     private ITaskFlowExecutor taskFlowExecutor;
     private Integer taskFlowExecutorCorePoolSize;
     private Integer taskFlowExecutorMaximumPoolSize;
 
+    @Autowired
+    private ITaskStatusRecorder taskStatusRecorder;
+
     /**
      * 启动任务流调度器
-     *
-     * @param taskFlowQuerier
-     * @param taskFlowScaner
-     * @param taskFlowExecutor
      */
-    public void startup(ITaskFlowQuerier taskFlowQuerier,
-                        ITaskFlowScaner taskFlowScaner,
-                        ITaskFlowExecutor taskFlowExecutor) {
+    public void startup() {
         if (this.started) {
             return;
         }
@@ -75,9 +74,6 @@ public class TaskFlowScheduler {
                 this.triggerCorePoolSize, this.triggerMaximumPoolSize,
                 this.taskFlowExecutorCorePoolSize, this.taskFlowExecutorMaximumPoolSize);
         this.started = true;
-        this.taskFlowQuerier = taskFlowQuerier;
-        this.taskFlowScaner = taskFlowScaner;
-        this.taskFlowExecutor = taskFlowExecutor;
         this.startScaner();
     }
 
@@ -238,33 +234,78 @@ public class TaskFlowScheduler {
         if (sortedTaskList == null) {
             throw new InvalidTaskFlowException("任务流不是一个有向无环图，请检查是否存在回路！");
         }
-        if (taskFlow.getTaskList().size() == 0) {
-            return;
-        }
+
         // 根据从指定任务开始或到指定任务结束，对任务流进行剪裁
         TaskFlow prunedTaskFlow = TaskFlowUtils.prune(taskFlow, fromTaskId, toTaskId);
+        if (prunedTaskFlow.getTaskList().size() == 0) {
+            return;
+        }
+
+        // 在到指定任务结束的情况下，已经执行成功的任务无需再执行，因此移除掉
+        TaskFlow unsuccessTaskFlow = null;
+        if (fromTaskId == null && toTaskId != null) {
+            unsuccessTaskFlow = this.removeSuccessTask(prunedTaskFlow);
+        }
+
+        TaskFlow finalTaskFlow = (unsuccessTaskFlow == null ? prunedTaskFlow : unsuccessTaskFlow);
 
         // 任务流等待执行
-        this.publishTaskFlowStatusChangeEvent(prunedTaskFlow, null, TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode(), null);
+        this.publishTaskFlowStatusChangeEvent(finalTaskFlow, null, TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode(), null);
 
         // 任务流执行
         this.triggerThreadPool.execute(() -> {
             TaskFlowContext taskFlowContext = new TaskFlowContext();
             try {
                 // 任务流执行中
-                this.publishTaskFlowStatusChangeEvent(prunedTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTING.getCode(), null);
+                this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTING.getCode(), null);
                 // 开始执行
-                this.taskFlowExecutor.beforeExecute(prunedTaskFlow, taskFlowContext);
-                this.taskFlowExecutor.execute(prunedTaskFlow, taskFlowContext, this.taskFlowExecutorCorePoolSize, this.taskFlowExecutorMaximumPoolSize);
-                this.taskFlowExecutor.afterExecute(prunedTaskFlow, taskFlowContext);
+                this.taskFlowExecutor.beforeExecute(finalTaskFlow, taskFlowContext);
+                this.taskFlowExecutor.execute(finalTaskFlow, taskFlowContext, this.taskFlowExecutorCorePoolSize, this.taskFlowExecutorMaximumPoolSize);
+                this.taskFlowExecutor.afterExecute(finalTaskFlow, taskFlowContext);
                 // 任务流执行成功
-                this.publishTaskFlowStatusChangeEvent(prunedTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode(), null);
+                this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode(), null);
             } catch (Exception e) {
-                log.error("任务流执行失败！任务流ID：" + prunedTaskFlow.getId() + " 异常信息：" + e.getMessage(), e);
+                log.error("任务流执行失败！任务流ID：" + finalTaskFlow.getId() + " 异常信息：" + e.getMessage(), e);
                 // 任务流执行失败
-                this.publishTaskFlowStatusChangeEvent(prunedTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage());
+                this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage());
             }
         });
+    }
+
+    /**
+     * 移除已经执行成功的任务
+     *
+     * @param taskFlow
+     * @return
+     */
+    private TaskFlow removeSuccessTask(TaskFlow taskFlow) {
+        List<Long> successTaskIdList = new ArrayList<>();
+        List<TaskStatus> taskStatusList = taskStatusRecorder.listByTaskFlowId(taskFlow.getId());
+        if (taskStatusList == null || taskStatusList.isEmpty()) {
+            return taskFlow;
+        }
+
+        for (TaskStatus taskStatus : taskStatusList) {
+            if (TaskStatusEnum.EXECUTE_SUCCESS.getCode().equals(taskStatus.getStatus())) {
+                successTaskIdList.add(taskStatus.getTask().getId());
+            }
+        }
+        TaskFlow unsuccessTaskFlow = new TaskFlow();
+        unsuccessTaskFlow.setId(taskFlow.getId());
+        unsuccessTaskFlow.setCron(taskFlow.getCron());
+        unsuccessTaskFlow.setTaskList(new ArrayList<>());
+        unsuccessTaskFlow.setLinkList(new ArrayList<>());
+        for (Task task : taskFlow.getTaskList()) {
+            if (!successTaskIdList.contains(task.getId())) {
+                unsuccessTaskFlow.getTaskList().add(task);
+            }
+        }
+        for (Link link : taskFlow.getLinkList()) {
+            if (!successTaskIdList.contains(link.getSource()) && !successTaskIdList.contains(link.getTarget())) {
+                unsuccessTaskFlow.getLinkList().add(link);
+            }
+        }
+        return unsuccessTaskFlow;
     }
 
     /**

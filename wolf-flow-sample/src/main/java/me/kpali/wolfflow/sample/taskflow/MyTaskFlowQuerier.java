@@ -4,12 +4,14 @@ import me.kpali.wolfflow.core.model.Link;
 import me.kpali.wolfflow.core.model.TaskFlow;
 import me.kpali.wolfflow.core.schedule.DefaultTaskFlowQuerier;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Primary
 @Component
 public class MyTaskFlowQuerier extends DefaultTaskFlowQuerier {
     public MyTaskFlowQuerier() {

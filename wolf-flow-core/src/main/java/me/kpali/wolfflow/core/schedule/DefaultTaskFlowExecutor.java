@@ -2,8 +2,10 @@ package me.kpali.wolfflow.core.schedule;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import me.kpali.wolfflow.core.event.TaskStatusChangeEvent;
+import me.kpali.wolfflow.core.exception.InvalidTaskFlowException;
 import me.kpali.wolfflow.core.exception.TaskFlowExecuteFailException;
 import me.kpali.wolfflow.core.model.*;
+import me.kpali.wolfflow.core.util.TaskFlowUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,6 +13,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 
@@ -25,8 +28,6 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
 
     @Autowired
     private ApplicationEventPublisher eventPublisher;
-    @Autowired
-    private ITaskStatusRecorder taskStatusRecorder;
 
     @Override
     public void beforeExecute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws Exception {
@@ -36,6 +37,14 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     @Override
     public void execute(TaskFlow taskFlow, TaskFlowContext taskFlowContext,
                         Integer taskFlowExecutorCorePoolSize, Integer taskFlowExecutorMaximumPoolSize) throws Exception {
+        // 检查任务流是否是一个有向无环图
+        List<Task> sortedTaskList = TaskFlowUtils.topologicalSort(taskFlow);
+        if (sortedTaskList == null) {
+            throw new InvalidTaskFlowException("任务流不是一个有向无环图，请检查是否存在回路！");
+        }
+        if (taskFlow.getTaskList().size() == 0) {
+            return;
+        }
         // 初始化线程池
         ThreadFactory executorThreadFactory = new ThreadFactoryBuilder()
                 .setNameFormat("taskFlowExecutor-pool-%d").build();

@@ -14,8 +14,10 @@ public class ScheduleConfiguration {
         Integer triggerMaximumPoolSize = scheduleProperties.getTriggerMaximumPoolSize();
         Integer taskFlowExecutorCorePoolSize = scheduleProperties.getTaskFlowExecutorCorePoolSize();
         Integer taskFlowExecutorMaximumPoolSize = scheduleProperties.getTaskFlowExecutorMaximumPoolSize();
-        return new TaskFlowScheduler(scanInterval,
+        TaskFlowScheduler taskFlowScheduler = new TaskFlowScheduler(scanInterval,
                 triggerCorePoolSize, triggerMaximumPoolSize,
                 taskFlowExecutorCorePoolSize, taskFlowExecutorMaximumPoolSize);
+        taskFlowScheduler.startup();
+        return taskFlowScheduler;
     }
 }
