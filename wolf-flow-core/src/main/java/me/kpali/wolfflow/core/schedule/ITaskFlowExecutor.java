@@ -11,15 +11,6 @@ import me.kpali.wolfflow.core.model.TaskFlowContext;
 public interface ITaskFlowExecutor {
 
     /**
-     * 初始化任务流上下文
-     *
-     * @param taskFlow
-     * @return
-     * @throws Exception
-     */
-    TaskFlowContext initContext(TaskFlow taskFlow) throws Exception;
-
-    /**
      * 任务流执行前置处理
      *
      * @param taskFlow
@@ -33,14 +24,11 @@ public interface ITaskFlowExecutor {
      *
      * @param taskFlow
      * @param taskFlowContext
-     * @param fromTaskId
-     * @param toTaskId
      * @param taskFlowExecutorCorePoolSize
      * @param taskFlowExecutorMaximumPoolSize
      * @throws Exception
      */
     void execute(TaskFlow taskFlow, TaskFlowContext taskFlowContext,
-                 Long fromTaskId, Long toTaskId,
                  Integer taskFlowExecutorCorePoolSize, Integer taskFlowExecutorMaximumPoolSize) throws Exception;
 
     /**

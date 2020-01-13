@@ -21,5 +21,12 @@ public class TaskFlowSchedulerStarter implements ApplicationListener<Application
     @Override
     public void onApplicationEvent(ApplicationReadyEvent applicationReadyEvent) {
         taskFlowScheduler.startup(myTaskFlowQuerier, myTaskFlowScaner, myTaskFlowExecutor);
+        taskFlowScheduler.triggerTo(100L, 5L);
+        try {
+            Thread.sleep(20 * 1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        taskFlowScheduler.triggerTo(100L, 6L);
     }
 }

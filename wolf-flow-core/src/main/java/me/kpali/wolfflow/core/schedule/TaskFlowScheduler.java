@@ -3,16 +3,17 @@ package me.kpali.wolfflow.core.schedule;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import me.kpali.wolfflow.core.event.*;
 import me.kpali.wolfflow.core.exception.InvalidCronExpressionException;
+import me.kpali.wolfflow.core.exception.InvalidTaskFlowException;
 import me.kpali.wolfflow.core.exception.SchedulerNotStartedException;
-import me.kpali.wolfflow.core.model.TaskFlow;
-import me.kpali.wolfflow.core.model.TaskFlowContext;
-import me.kpali.wolfflow.core.model.TaskFlowStatusEnum;
+import me.kpali.wolfflow.core.model.*;
 import me.kpali.wolfflow.core.quartz.MyDynamicScheduler;
+import me.kpali.wolfflow.core.util.TaskFlowUtils;
 import org.quartz.JobKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,7 +26,6 @@ import java.util.concurrent.*;
  * @author kpali
  */
 public class TaskFlowScheduler {
-
     public TaskFlowScheduler(Integer scanInterval,
                              Integer triggerCorePoolSize, Integer triggerMaximumPoolSize,
                              Integer taskFlowExecutorCorePoolSize, Integer taskFlowExecutorMaximumPoolSize) {
@@ -233,31 +233,56 @@ public class TaskFlowScheduler {
         // 获取任务流
         TaskFlow taskFlow = this.taskFlowQuerier.getTaskFlow(taskFlowId);
 
+        // 检查任务流是否是一个有向无环图
+        List<Task> sortedTaskList = TaskFlowUtils.topologicalSort(taskFlow);
+        if (sortedTaskList == null) {
+            throw new InvalidTaskFlowException("任务流不是一个有向无环图，请检查是否存在回路！");
+        }
+        if (taskFlow.getTaskList().size() == 0) {
+            return;
+        }
+        // 根据从指定任务开始或到指定任务结束，对任务流进行剪裁
+        TaskFlow prunedTaskFlow = TaskFlowUtils.prune(taskFlow, fromTaskId, toTaskId);
+
         // 任务流等待执行
-        TaskFlowStatusChangeEvent taskFlowWaitForExecuteEvent = new TaskFlowStatusChangeEvent(this, taskFlow, TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode(), null);
-        this.eventPublisher.publishEvent(taskFlowWaitForExecuteEvent);
+        this.publishTaskFlowStatusChangeEvent(prunedTaskFlow, null, TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode(), null);
 
         // 任务流执行
         this.triggerThreadPool.execute(() -> {
+            TaskFlowContext taskFlowContext = new TaskFlowContext();
             try {
                 // 任务流执行中
-                TaskFlowStatusChangeEvent taskFlowExecutingEvent = new TaskFlowStatusChangeEvent(this, taskFlow, TaskFlowStatusEnum.EXECUTING.getCode(), null);
-                this.eventPublisher.publishEvent(taskFlowExecutingEvent);
+                this.publishTaskFlowStatusChangeEvent(prunedTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTING.getCode(), null);
                 // 开始执行
-                TaskFlowContext context = this.taskFlowExecutor.initContext(taskFlow);
-                this.taskFlowExecutor.beforeExecute(taskFlow, context);
-                this.taskFlowExecutor.execute(taskFlow, context, fromTaskId, toTaskId, this.taskFlowExecutorCorePoolSize, this.taskFlowExecutorMaximumPoolSize);
-                this.taskFlowExecutor.afterExecute(taskFlow, context);
+                this.taskFlowExecutor.beforeExecute(prunedTaskFlow, taskFlowContext);
+                this.taskFlowExecutor.execute(prunedTaskFlow, taskFlowContext, this.taskFlowExecutorCorePoolSize, this.taskFlowExecutorMaximumPoolSize);
+                this.taskFlowExecutor.afterExecute(prunedTaskFlow, taskFlowContext);
                 // 任务流执行成功
-                TaskFlowStatusChangeEvent taskFlowExecuteSuccessEvent = new TaskFlowStatusChangeEvent(this, taskFlow, TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode(), null);
-                this.eventPublisher.publishEvent(taskFlowExecuteSuccessEvent);
+                this.publishTaskFlowStatusChangeEvent(prunedTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode(), null);
             } catch (Exception e) {
-                log.error("任务流执行失败！任务流ID：" + taskFlowId + " 异常信息：" + e.getMessage(), e);
+                log.error("任务流执行失败！任务流ID：" + prunedTaskFlow.getId() + " 异常信息：" + e.getMessage(), e);
                 // 任务流执行失败
-                TaskFlowStatusChangeEvent taskFlowExecuteFailEvent = new TaskFlowStatusChangeEvent(this, taskFlow, TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), null);
-                this.eventPublisher.publishEvent(taskFlowExecuteFailEvent);
+                this.publishTaskFlowStatusChangeEvent(prunedTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage());
             }
         });
+    }
+
+    /**
+     * 发布任务流状态变更事件
+     *
+     * @param taskFlow
+     * @param taskFlowContext
+     * @param status
+     * @param message
+     */
+    private void publishTaskFlowStatusChangeEvent(TaskFlow taskFlow, TaskFlowContext taskFlowContext, String status, String message) {
+        TaskFlowStatus taskFlowStatus = new TaskFlowStatus();
+        taskFlowStatus.setTaskFlow(taskFlow);
+        taskFlowStatus.setContext(taskFlowContext);
+        taskFlowStatus.setStatus(status);
+        taskFlowStatus.setMessage(message);
+        TaskFlowStatusChangeEvent taskFlowStatusChangeEvent = new TaskFlowStatusChangeEvent(this, taskFlowStatus);
+        this.eventPublisher.publishEvent(taskFlowStatusChangeEvent);
     }
 
 }

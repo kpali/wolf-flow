@@ -9,6 +9,5 @@ import org.springframework.stereotype.Component;
 public class MyTaskFlowExecutor extends DefaultTaskFlowExecutor {
     @Override
     public void afterExecute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) {
-        System.out.println("========== 任务流执行完成！任务流ID：" + taskFlow.getId());
     }
 }

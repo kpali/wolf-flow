@@ -1,6 +1,6 @@
 package me.kpali.wolfflow.core.event;
 
-import me.kpali.wolfflow.core.model.Task;
+import me.kpali.wolfflow.core.model.TaskStatus;
 import org.springframework.context.ApplicationEvent;
 
 /**
@@ -9,26 +9,18 @@ import org.springframework.context.ApplicationEvent;
  * @author kpali
  */
 public class TaskStatusChangeEvent extends ApplicationEvent {
-    public TaskStatusChangeEvent(Object source, Task task, String status, String message) {
+    public TaskStatusChangeEvent(Object source, TaskStatus taskStatus) {
         super(source);
-        this.task = task;
-        this.status = status;
-        this.message = message;
+        this.taskStatus = taskStatus;
     }
 
-    private Task task;
-    private String status;
-    private String message;
+    private TaskStatus taskStatus;
 
-    public Task getTask() {
-        return task;
+    public TaskStatus getTaskStatus() {
+        return taskStatus;
     }
 
-    public String getStatus() {
-        return status;
-    }
-
-    public String getMessage() {
-        return message;
+    public void setTaskStatus(TaskStatus taskStatus) {
+        this.taskStatus = taskStatus;
     }
 }

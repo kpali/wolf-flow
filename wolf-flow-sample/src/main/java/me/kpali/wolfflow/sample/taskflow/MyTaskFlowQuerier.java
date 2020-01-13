@@ -28,7 +28,7 @@ public class MyTaskFlowQuerier extends DefaultTaskFlowQuerier {
 
         TaskFlow taskFlow = new TaskFlow();
         taskFlow.setId(100L);
-        taskFlow.setCron("0 * * * * ?");
+        //taskFlow.setCron("0 * * * * ?");
         taskFlow.setTaskList(new ArrayList<>());
         taskFlow.setLinkList(new ArrayList<>());
 
