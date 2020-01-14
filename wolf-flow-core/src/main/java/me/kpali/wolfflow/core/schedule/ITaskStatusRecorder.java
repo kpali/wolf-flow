@@ -11,13 +11,6 @@ import java.util.List;
  */
 public interface ITaskStatusRecorder {
     /**
-     * 获取所有任务状态列表
-     *
-     * @return
-     */
-    List<TaskStatus> list();
-
-    /**
      * 根据任务流ID获取任务状态列表
      *
      * @param taskFlowId
@@ -45,11 +38,4 @@ public interface ITaskStatusRecorder {
      * @param taskId
      */
     void remove(Long taskId);
-
-    /**
-     * 根据任务流ID删除任务状态
-     *
-     * @param taskFlowId
-     */
-    void removeByTaskFlowId(Long taskFlowId);
 }

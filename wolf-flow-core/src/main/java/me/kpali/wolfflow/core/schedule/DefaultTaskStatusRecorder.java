@@ -22,21 +22,6 @@ public class DefaultTaskStatusRecorder implements ITaskStatusRecorder {
     private final Object lock = new Object();
 
     @Override
-    public List<TaskStatus> list() {
-        synchronized (lock) {
-            List<TaskStatus> taskStatusList = new ArrayList<>();
-            for (List<TaskStatus> list : taskStatusListMap.values()) {
-                taskStatusList.addAll(list);
-            }
-            String json = JSON.toJSONString(taskStatusList);
-            Type type = new TypeReference<List<TaskStatus>>() {
-            }.getType();
-            List<TaskStatus> taskStatusListCloned = JSON.parseObject(json, type);
-            return taskStatusListCloned;
-        }
-    }
-
-    @Override
     public List<TaskStatus> listByTaskFlowId(Long taskFlowId) {
         synchronized (lock) {
             List<TaskStatus> taskStatusList = new ArrayList<>();
@@ -53,8 +38,18 @@ public class DefaultTaskStatusRecorder implements ITaskStatusRecorder {
 
     @Override
     public TaskStatus get(Long taskId) {
-        List<TaskStatus> taskStatusList = this.list();
-        for (TaskStatus taskStatus : taskStatusList) {
+        List<TaskStatus> taskStatusListCloned;
+        synchronized (lock) {
+            List<TaskStatus> taskStatusList = new ArrayList<>();
+            for (List<TaskStatus> list : taskStatusListMap.values()) {
+                taskStatusList.addAll(list);
+            }
+            String json = JSON.toJSONString(taskStatusList);
+            Type type = new TypeReference<List<TaskStatus>>() {
+            }.getType();
+            taskStatusListCloned = JSON.parseObject(json, type);
+        }
+        for (TaskStatus taskStatus : taskStatusListCloned) {
             if (taskStatus.getTask().getId().equals(taskId)) {
                 return taskStatus;
             }
@@ -101,13 +96,6 @@ public class DefaultTaskStatusRecorder implements ITaskStatusRecorder {
                     taskStatusListMap.get(taskFlowId).addAll(newTaskStatusList);
                 }
             }
-        }
-    }
-
-    @Override
-    public void removeByTaskFlowId(Long taskFlowId) {
-        synchronized (lock) {
-            taskStatusListMap.remove(taskFlowId);
         }
     }
 }
