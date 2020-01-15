@@ -252,8 +252,8 @@ public class TaskFlowScheduler {
         // 任务流执行
         this.triggerThreadPool.execute(() -> {
             TaskFlowContext taskFlowContext = new TaskFlowContext();
-            taskFlowContext.put("fromTaskId", String.valueOf(fromTaskId));
-            taskFlowContext.put("toTaskId", String.valueOf(toTaskId));
+            taskFlowContext.put(ContextKey.FROM_TASK_ID, String.valueOf(fromTaskId));
+            taskFlowContext.put(ContextKey.TO_TASK_ID, String.valueOf(toTaskId));
             try {
                 // 任务流等待执行
                 this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode(), null);
