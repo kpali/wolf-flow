@@ -53,8 +53,10 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                 new LinkedBlockingQueue<Runnable>(1024), executorThreadFactory, new ThreadPoolExecutor.AbortPolicy());
 
         Map<Long, Task> idToTaskMap = new HashMap<>();
+        Map<Long, TaskContext> idToTaskContextMap = new HashMap<>();
         taskFlow.getTaskList().forEach(task -> {
             idToTaskMap.put(task.getId(), task);
+            idToTaskContextMap.put(task.getId(), new TaskContext());
         });
         // 计算节点入度
         Map<Long, Integer> taskIdToInDegreeMap = new HashMap<>();
@@ -68,13 +70,14 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
             taskIdToInDegreeMap.put(task.getId(), inDegree);
         });
         // 从入度为0的节点开始执行
-        ConcurrentHashMap<Long, String> taskIdToStatusMap = new ConcurrentHashMap<>();
+        Map<Long, String> taskIdToStatusMap = new ConcurrentHashMap<>();
         for (Long taskId : taskIdToInDegreeMap.keySet()) {
             int inDegree = taskIdToInDegreeMap.get(taskId);
             if (inDegree == 0) {
                 taskIdToStatusMap.put(taskId, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode());
                 Task task = idToTaskMap.get(taskId);
-                this.publishTaskStatusChangeEvent(task, taskFlow.getId(), null, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode(), null);
+                TaskContext taskContext = idToTaskContextMap.get(taskId);
+                this.publishTaskStatusChangeEvent(task, taskFlow.getId(), taskContext, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode(), null);
             }
         }
         boolean isSuccess = true;
@@ -89,11 +92,11 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                 if (TaskStatusEnum.WAIT_FOR_EXECUTE.getCode().equals(taskStatus)) {
                     // 等待执行，将节点状态改为执行中，并将任务加入线程池
                     Task task = idToTaskMap.get(taskId);
-                    taskIdToStatusMap.put(task.getId(), TaskStatusEnum.EXECUTING.getCode());
-                    this.publishTaskStatusChangeEvent(task, taskFlow.getId(), null, TaskStatusEnum.EXECUTING.getCode(), null);
+                    TaskContext taskContext = idToTaskContextMap.get(taskId);
                     executorThreadPool.execute(() -> {
-                        TaskContext taskContext = new TaskContext();
                         try {
+                            taskIdToStatusMap.put(task.getId(), TaskStatusEnum.EXECUTING.getCode());
+                            this.publishTaskStatusChangeEvent(task, taskFlow.getId(), taskContext, TaskStatusEnum.EXECUTING.getCode(), null);
                             task.execute(taskFlowContext, taskContext);
                             taskIdToStatusMap.put(task.getId(), TaskStatusEnum.EXECUTE_SUCCESS.getCode());
                             this.publishTaskStatusChangeEvent(task, taskFlow.getId(), taskContext, TaskStatusEnum.EXECUTE_SUCCESS.getCode(), null);
@@ -114,7 +117,8 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                             if (childTaskInDegree == 0) {
                                 taskIdToStatusMap.put(childTaskId, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode());
                                 Task childTask = idToTaskMap.get(childTaskId);
-                                this.publishTaskStatusChangeEvent(childTask, taskFlow.getId(), null, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode(), null);
+                                TaskContext childTaskContext = idToTaskContextMap.get(childTaskId);
+                                this.publishTaskStatusChangeEvent(childTask, taskFlow.getId(), childTaskContext, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode(), null);
                             }
                         }
                     }
@@ -130,7 +134,8 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                             Long childTaskId = link.getTarget();
                             taskIdToStatusMap.put(childTaskId, TaskStatusEnum.SKIPPED.getCode());
                             Task childTask = idToTaskMap.get(childTaskId);
-                            this.publishTaskStatusChangeEvent(childTask, taskFlow.getId(), null, TaskStatusEnum.SKIPPED.getCode(), null);
+                            TaskContext childTaskContext = idToTaskContextMap.get(childTaskId);
+                            this.publishTaskStatusChangeEvent(childTask, taskFlow.getId(), childTaskContext, TaskStatusEnum.SKIPPED.getCode(), null);
                         }
                     }
                     taskIdToStatusMap.remove(taskId);

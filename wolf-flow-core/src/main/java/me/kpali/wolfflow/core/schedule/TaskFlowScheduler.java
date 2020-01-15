@@ -249,17 +249,16 @@ public class TaskFlowScheduler {
 
         TaskFlow finalTaskFlow = (unsuccessTaskFlow == null ? prunedTaskFlow : unsuccessTaskFlow);
 
-        // 任务流等待执行
-        this.publishTaskFlowStatusChangeEvent(finalTaskFlow, null, TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode(), null);
-
         // 任务流执行
         this.triggerThreadPool.execute(() -> {
             TaskFlowContext taskFlowContext = new TaskFlowContext();
             try {
+                // 任务流等待执行
+                this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode(), null);
+                this.taskFlowExecutor.beforeExecute(finalTaskFlow, taskFlowContext);
                 // 任务流执行中
                 this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTING.getCode(), null);
                 // 开始执行
-                this.taskFlowExecutor.beforeExecute(finalTaskFlow, taskFlowContext);
                 this.taskFlowExecutor.execute(finalTaskFlow, taskFlowContext, this.taskFlowExecutorCorePoolSize, this.taskFlowExecutorMaximumPoolSize);
                 this.taskFlowExecutor.afterExecute(finalTaskFlow, taskFlowContext);
                 // 任务流执行成功
