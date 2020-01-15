@@ -12,7 +12,7 @@ public class TaskStatus implements Serializable {
 
     private Task task;
     private Long taskFlowId;
-    private TaskContext context;
+    private TaskFlowContext taskFlowContext;
     private String status;
     private String message;
 
@@ -32,12 +32,12 @@ public class TaskStatus implements Serializable {
         this.taskFlowId = taskFlowId;
     }
 
-    public TaskContext getContext() {
-        return context;
+    public TaskFlowContext getTaskFlowContext() {
+        return taskFlowContext;
     }
 
-    public void setContext(TaskContext context) {
-        this.context = context;
+    public void setTaskFlowContext(TaskFlowContext taskFlowContext) {
+        this.taskFlowContext = taskFlowContext;
     }
 
     public String getStatus() {

@@ -1,7 +1,6 @@
 package me.kpali.wolfflow.sample.taskflow;
 
 import me.kpali.wolfflow.core.model.Task;
-import me.kpali.wolfflow.core.model.TaskContext;
 import me.kpali.wolfflow.core.model.TaskFlowContext;
 
 public class MyTask extends Task {
@@ -14,7 +13,7 @@ public class MyTask extends Task {
     }
 
     @Override
-    public void execute(TaskFlowContext taskFlowContext, TaskContext taskContext) throws Exception {
+    public void execute(TaskFlowContext taskFlowContext) throws Exception {
         try {
             Thread.sleep(1 * 1000);
         } catch (InterruptedException e) {

@@ -27,11 +27,11 @@ public class Task implements Serializable {
         this.id = id;
     }
 
-    public void execute(TaskFlowContext taskFlowContext, TaskContext taskContext) throws Exception {
+    public void execute(TaskFlowContext taskFlowContext) throws Exception {
         // 不做任何操作
     }
 
-    public void stop(TaskFlowContext taskFlowContext, TaskContext taskContext) throws Exception {
+    public void stop(TaskFlowContext taskFlowContext) throws Exception {
         // 不做任何操作
     }
 }

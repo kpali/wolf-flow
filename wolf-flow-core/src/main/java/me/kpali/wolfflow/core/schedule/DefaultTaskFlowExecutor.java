@@ -53,10 +53,9 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                 new LinkedBlockingQueue<Runnable>(1024), executorThreadFactory, new ThreadPoolExecutor.AbortPolicy());
 
         Map<Long, Task> idToTaskMap = new HashMap<>();
-        Map<Long, TaskContext> idToTaskContextMap = new HashMap<>();
         taskFlow.getTaskList().forEach(task -> {
             idToTaskMap.put(task.getId(), task);
-            idToTaskContextMap.put(task.getId(), new TaskContext());
+            taskFlowContext.getTaskContextMap().put(task.getId(), new TaskContext());
         });
         // 计算节点入度
         Map<Long, Integer> taskIdToInDegreeMap = new HashMap<>();
@@ -76,8 +75,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
             if (inDegree == 0) {
                 taskIdToStatusMap.put(taskId, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode());
                 Task task = idToTaskMap.get(taskId);
-                TaskContext taskContext = idToTaskContextMap.get(taskId);
-                this.publishTaskStatusChangeEvent(task, taskFlow.getId(), taskContext, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode(), null);
+                this.publishTaskStatusChangeEvent(task, taskFlow.getId(), taskFlowContext, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode(), null);
             }
         }
         boolean isSuccess = true;
@@ -92,18 +90,17 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                 if (TaskStatusEnum.WAIT_FOR_EXECUTE.getCode().equals(taskStatus)) {
                     // 等待执行，将节点状态改为执行中，并将任务加入线程池
                     Task task = idToTaskMap.get(taskId);
-                    TaskContext taskContext = idToTaskContextMap.get(taskId);
                     executorThreadPool.execute(() -> {
                         try {
                             taskIdToStatusMap.put(task.getId(), TaskStatusEnum.EXECUTING.getCode());
-                            this.publishTaskStatusChangeEvent(task, taskFlow.getId(), taskContext, TaskStatusEnum.EXECUTING.getCode(), null);
-                            task.execute(taskFlowContext, taskContext);
+                            this.publishTaskStatusChangeEvent(task, taskFlow.getId(), taskFlowContext, TaskStatusEnum.EXECUTING.getCode(), null);
+                            task.execute(taskFlowContext);
                             taskIdToStatusMap.put(task.getId(), TaskStatusEnum.EXECUTE_SUCCESS.getCode());
-                            this.publishTaskStatusChangeEvent(task, taskFlow.getId(), taskContext, TaskStatusEnum.EXECUTE_SUCCESS.getCode(), null);
+                            this.publishTaskStatusChangeEvent(task, taskFlow.getId(), taskFlowContext, TaskStatusEnum.EXECUTE_SUCCESS.getCode(), null);
                         } catch (Exception e) {
                             log.error("任务执行失败！任务ID：" + task.getId() + " 异常信息：" + e.getMessage(), e);
                             taskIdToStatusMap.put(task.getId(), TaskStatusEnum.EXECUTE_FAILURE.getCode());
-                            this.publishTaskStatusChangeEvent(task, taskFlow.getId(), taskContext, TaskStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage());
+                            this.publishTaskStatusChangeEvent(task, taskFlow.getId(), taskFlowContext, TaskStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage());
                         }
                     });
                 } else if (TaskStatusEnum.EXECUTE_SUCCESS.getCode().equals(taskStatus)) {
@@ -117,8 +114,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                             if (childTaskInDegree == 0) {
                                 taskIdToStatusMap.put(childTaskId, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode());
                                 Task childTask = idToTaskMap.get(childTaskId);
-                                TaskContext childTaskContext = idToTaskContextMap.get(childTaskId);
-                                this.publishTaskStatusChangeEvent(childTask, taskFlow.getId(), childTaskContext, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode(), null);
+                                this.publishTaskStatusChangeEvent(childTask, taskFlow.getId(), taskFlowContext, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode(), null);
                             }
                         }
                     }
@@ -134,8 +130,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                             Long childTaskId = link.getTarget();
                             taskIdToStatusMap.put(childTaskId, TaskStatusEnum.SKIPPED.getCode());
                             Task childTask = idToTaskMap.get(childTaskId);
-                            TaskContext childTaskContext = idToTaskContextMap.get(childTaskId);
-                            this.publishTaskStatusChangeEvent(childTask, taskFlow.getId(), childTaskContext, TaskStatusEnum.SKIPPED.getCode(), null);
+                            this.publishTaskStatusChangeEvent(childTask, taskFlow.getId(), taskFlowContext, TaskStatusEnum.SKIPPED.getCode(), null);
                         }
                     }
                     taskIdToStatusMap.remove(taskId);
@@ -157,15 +152,15 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
      *
      * @param task
      * @param taskFlowId
-     * @param taskContext
+     * @param taskFlowContext
      * @param status
      * @param message
      */
-    private void publishTaskStatusChangeEvent(Task task, Long taskFlowId, TaskContext taskContext, String status, String message) {
+    private void publishTaskStatusChangeEvent(Task task, Long taskFlowId, TaskFlowContext taskFlowContext, String status, String message) {
         TaskStatus taskStatus = new TaskStatus();
         taskStatus.setTask(task);
         taskStatus.setTaskFlowId(taskFlowId);
-        taskStatus.setContext(taskContext);
+        taskStatus.setTaskFlowContext(taskFlowContext);
         taskStatus.setStatus(status);
         taskStatus.setMessage(message);
         TaskStatusChangeEvent taskStatusChangeEvent = new TaskStatusChangeEvent(this, taskStatus);

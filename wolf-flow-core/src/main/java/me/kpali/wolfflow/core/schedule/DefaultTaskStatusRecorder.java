@@ -69,7 +69,7 @@ public class DefaultTaskStatusRecorder implements ITaskStatusRecorder {
                     // 更新
                     oldTaskStatus.setTask(taskStatus.getTask());
                     oldTaskStatus.setTaskFlowId(taskStatus.getTaskFlowId());
-                    oldTaskStatus.setContext(taskStatus.getContext());
+                    oldTaskStatus.setTaskFlowContext(taskStatus.getTaskFlowContext());
                     oldTaskStatus.setStatus(taskStatus.getStatus());
                     oldTaskStatus.setMessage(taskStatus.getMessage());
                     return;
