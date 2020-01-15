@@ -27,7 +27,15 @@ public class Task implements Serializable {
         this.id = id;
     }
 
+    public void beforeExecute(TaskFlowContext taskFlowContext) throws Exception {
+        // 不做任何操作
+    }
+
     public void execute(TaskFlowContext taskFlowContext) throws Exception {
+        // 不做任何操作
+    }
+
+    public void afterExecute(TaskFlowContext taskFlowContext) throws Exception {
         // 不做任何操作
     }
 

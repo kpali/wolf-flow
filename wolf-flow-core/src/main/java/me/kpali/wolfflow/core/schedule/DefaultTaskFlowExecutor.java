@@ -98,9 +98,11 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                     Task task = idToTaskMap.get(taskId);
                     executorThreadPool.execute(() -> {
                         try {
+                            task.beforeExecute(taskFlowContext);
                             taskIdToStatusMap.put(task.getId(), TaskStatusEnum.EXECUTING.getCode());
                             this.publishTaskStatusChangeEvent(task, taskFlow.getId(), taskFlowContext, TaskStatusEnum.EXECUTING.getCode(), null);
                             task.execute(taskFlowContext);
+                            task.afterExecute(taskFlowContext);
                             taskIdToStatusMap.put(task.getId(), TaskStatusEnum.EXECUTE_SUCCESS.getCode());
                             this.publishTaskStatusChangeEvent(task, taskFlow.getId(), taskFlowContext, TaskStatusEnum.EXECUTE_SUCCESS.getCode(), null);
                         } catch (Exception e) {
