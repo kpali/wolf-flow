@@ -29,9 +29,15 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     @Autowired
     private ApplicationEventPublisher eventPublisher;
 
+    @Autowired
+    ITaskStatusRecorder taskStatusRecorder;
+
     @Override
     public void beforeExecute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws Exception {
-        taskFlowContext.put("taskFlowId", taskFlow.getId().toString());
+        // 清理任务状态
+        for (Task task : taskFlow.getTaskList()) {
+            this.taskStatusRecorder.remove(task.getId());
+        }
     }
 
     @Override
