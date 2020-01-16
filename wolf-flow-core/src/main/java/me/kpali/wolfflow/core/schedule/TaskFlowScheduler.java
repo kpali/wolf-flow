@@ -17,6 +17,7 @@ import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.*;
 
@@ -182,9 +183,10 @@ public class TaskFlowScheduler {
      * 触发任务流
      *
      * @param taskFlowId
+     * @param params
      */
-    public void trigger(Long taskFlowId) {
-        this.trigger(taskFlowId, null, null);
+    public void trigger(Long taskFlowId, Map<String, String> params) {
+        this.trigger(taskFlowId, null, null, params);
     }
 
     /**
@@ -192,9 +194,10 @@ public class TaskFlowScheduler {
      *
      * @param taskFlowId
      * @param fromTaskId
+     * @param params
      */
-    public void triggerFrom(Long taskFlowId, Long fromTaskId) {
-        this.trigger(taskFlowId, fromTaskId, null);
+    public void triggerFrom(Long taskFlowId, Long fromTaskId, Map<String, String> params) {
+        this.trigger(taskFlowId, fromTaskId, null, params);
     }
 
     /**
@@ -202,9 +205,10 @@ public class TaskFlowScheduler {
      *
      * @param taskFlowId
      * @param toTaskId
+     * @param params
      */
-    public void triggerTo(Long taskFlowId, Long toTaskId) {
-        this.trigger(taskFlowId, null, toTaskId);
+    public void triggerTo(Long taskFlowId, Long toTaskId, Map<String, String> params) {
+        this.trigger(taskFlowId, null, toTaskId, params);
     }
 
     /**
@@ -213,8 +217,9 @@ public class TaskFlowScheduler {
      * @param taskFlowId
      * @param fromTaskId
      * @param toTaskId
+     * @param params
      */
-    private void trigger(Long taskFlowId, Long fromTaskId, Long toTaskId) {
+    private void trigger(Long taskFlowId, Long fromTaskId, Long toTaskId, Map<String, String> params) {
         if (!this.started) {
             throw new SchedulerNotStartedException("请先启动调度器！");
         }
@@ -256,7 +261,7 @@ public class TaskFlowScheduler {
         boolean isPartialExecute = (fromTaskId != null || toTaskId != null);
         if (isPartialExecute && !this.taskStatusRecorder.listByTaskFlowId(finalTaskFlow.getId()).isEmpty()) {
             // 任务流存在执行记录或任务流部分继续执行，则使用之前的任务流执行ID
-            TaskFlowContext taskFlowContext = this.taskFlowStatusRecorder.get(finalTaskFlow.getId()).getContext();
+            TaskFlowContext taskFlowContext = this.taskFlowStatusRecorder.get(finalTaskFlow.getId()).getTaskFlowContext();
             taskFlowExecId = Long.parseLong(taskFlowContext.get(ContextKey.TASK_FLOW_EXEC_ID));
         } else {
             // 任务流从未执行过或任务流全部重新执行，则生成新的任务流执行ID
@@ -267,6 +272,9 @@ public class TaskFlowScheduler {
         // 任务流执行
         this.triggerThreadPool.execute(() -> {
             TaskFlowContext taskFlowContext = new TaskFlowContext();
+            if (params != null) {
+                taskFlowContext.setParams(params);
+            }
             taskFlowContext.put(ContextKey.FROM_TASK_ID, String.valueOf(fromTaskId));
             taskFlowContext.put(ContextKey.TO_TASK_ID, String.valueOf(toTaskId));
             taskFlowContext.put(ContextKey.TASK_FLOW_EXEC_ID, taskFlowExecIdString);
@@ -336,7 +344,7 @@ public class TaskFlowScheduler {
     private void publishTaskFlowStatusChangeEvent(TaskFlow taskFlow, TaskFlowContext taskFlowContext, String status, String message) {
         TaskFlowStatus taskFlowStatus = new TaskFlowStatus();
         taskFlowStatus.setTaskFlow(taskFlow);
-        taskFlowStatus.setContext(taskFlowContext);
+        taskFlowStatus.setTaskFlowContext(taskFlowContext);
         taskFlowStatus.setStatus(status);
         taskFlowStatus.setMessage(message);
         TaskFlowStatusChangeEvent taskFlowStatusChangeEvent = new TaskFlowStatusChangeEvent(this, taskFlowStatus);

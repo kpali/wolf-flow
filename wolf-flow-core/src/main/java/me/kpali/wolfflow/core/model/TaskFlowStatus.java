@@ -11,7 +11,7 @@ public class TaskFlowStatus implements Serializable {
     private static final long serialVersionUID = 4373673109768512258L;
 
     private TaskFlow taskFlow;
-    private TaskFlowContext context;
+    private TaskFlowContext taskFlowContext;
     private String status;
     private String message;
 
@@ -23,12 +23,12 @@ public class TaskFlowStatus implements Serializable {
         this.taskFlow = taskFlow;
     }
 
-    public TaskFlowContext getContext() {
-        return context;
+    public TaskFlowContext getTaskFlowContext() {
+        return taskFlowContext;
     }
 
-    public void setContext(TaskFlowContext context) {
-        this.context = context;
+    public void setTaskFlowContext(TaskFlowContext taskFlowContext) {
+        this.taskFlowContext = taskFlowContext;
     }
 
     public String getStatus() {

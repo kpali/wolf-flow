@@ -9,13 +9,22 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author kpali
  */
 public class TaskFlowContext extends ConcurrentHashMap<String, String> {
-    private Map<Long, TaskContext> taskContextMap = new ConcurrentHashMap<>();
+    private Map<String, String> params = new ConcurrentHashMap<>();
+    private Map<Long, TaskContext> taskContexts = new ConcurrentHashMap<>();
 
-    public Map<Long, TaskContext> getTaskContextMap() {
-        return taskContextMap;
+    public Map<String, String> getParams() {
+        return params;
     }
 
-    public void setTaskContextMap(Map<Long, TaskContext> taskContextMap) {
-        this.taskContextMap = taskContextMap;
+    public void setParams(Map<String, String> params) {
+        this.params = params;
+    }
+
+    public Map<Long, TaskContext> getTaskContexts() {
+        return taskContexts;
+    }
+
+    public void setTaskContexts(Map<Long, TaskContext> taskContexts) {
+        this.taskContexts = taskContexts;
     }
 }

@@ -24,7 +24,7 @@ public class MyQuartzJobBean extends QuartzJobBean {
     protected void executeInternal(JobExecutionContext context) throws JobExecutionException {
         JobKey jobKey = context.getTrigger().getJobKey();
         Long taskFlowId = Long.valueOf(jobKey.getName());
-        taskFlowScheduler.trigger(taskFlowId);
+        taskFlowScheduler.trigger(taskFlowId, null);
     }
 
 }

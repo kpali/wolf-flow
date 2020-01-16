@@ -14,12 +14,12 @@ public class ApplicationReadyListener implements ApplicationListener<Application
 
     @Override
     public void onApplicationEvent(ApplicationReadyEvent applicationReadyEvent) {
-        taskFlowScheduler.triggerTo(100L, 5L);
+        taskFlowScheduler.triggerTo(100L, 5L, null);
         try {
             Thread.sleep(20 * 1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        taskFlowScheduler.triggerTo(100L, 6L);
+        taskFlowScheduler.triggerTo(100L, 6L, null);
     }
 }

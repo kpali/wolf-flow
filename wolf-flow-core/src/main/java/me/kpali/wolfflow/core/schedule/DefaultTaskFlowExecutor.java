@@ -61,7 +61,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
         Map<Long, Task> idToTaskMap = new HashMap<>();
         taskFlow.getTaskList().forEach(task -> {
             idToTaskMap.put(task.getId(), task);
-            taskFlowContext.getTaskContextMap().put(task.getId(), new TaskContext());
+            taskFlowContext.getTaskContexts().put(task.getId(), new TaskContext());
         });
         // 计算节点入度
         Map<Long, Integer> taskIdToInDegreeMap = new HashMap<>();
