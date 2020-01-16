@@ -40,4 +40,12 @@ public interface ITaskFlowExecutor {
      */
     void afterExecute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws Exception;
 
+    /**
+     * 停止任务流
+     *
+     * @param taskFlowId
+     * @throws Exception
+     */
+    void stop(Long taskFlowId) throws Exception;
+
 }

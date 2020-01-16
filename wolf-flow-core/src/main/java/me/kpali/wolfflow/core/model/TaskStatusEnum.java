@@ -11,6 +11,7 @@ public enum TaskStatusEnum {
     EXECUTING("EXECUTING", "执行中"),
     EXECUTE_SUCCESS("EXECUTE_SUCCESS", "执行成功"),
     EXECUTE_FAILURE("EXECUTE_FAILURE", "执行失败"),
+    STOPPING("STOPPING", "停止中"),
     SKIPPED("SKIPPED", "跳过");
 
     public final String code;

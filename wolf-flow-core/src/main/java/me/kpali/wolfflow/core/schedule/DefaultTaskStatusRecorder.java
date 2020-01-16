@@ -3,6 +3,7 @@ package me.kpali.wolfflow.core.schedule;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.TypeReference;
 import me.kpali.wolfflow.core.model.TaskStatus;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Type;
@@ -37,53 +38,54 @@ public class DefaultTaskStatusRecorder implements ITaskStatusRecorder {
     }
 
     @Override
-    public TaskStatus get(Long taskId) {
-        List<TaskStatus> taskStatusListCloned;
+    public TaskStatus get(Long taskFlowId, Long taskId) {
         synchronized (lock) {
-            List<TaskStatus> taskStatusList = new ArrayList<>();
-            for (List<TaskStatus> list : taskStatusListMap.values()) {
-                taskStatusList.addAll(list);
+            TaskStatus taskStatusCloned = null;
+            if (taskStatusListMap.containsKey(taskFlowId)) {
+                List<TaskStatus> taskStatusList = taskStatusListMap.get(taskFlowId);
+                for (TaskStatus taskStatus : taskStatusList) {
+                    if (taskStatus.getTask().getId().equals(taskId)) {
+                        String json = JSON.toJSONString(taskStatus);
+                        Type type = new TypeReference<TaskStatus>() {
+                        }.getType();
+                        taskStatusCloned = JSON.parseObject(json, type);
+                        break;
+                    }
+                }
             }
-            String json = JSON.toJSONString(taskStatusList);
-            Type type = new TypeReference<List<TaskStatus>>() {
-            }.getType();
-            taskStatusListCloned = JSON.parseObject(json, type);
+            return taskStatusCloned;
         }
-        for (TaskStatus taskStatus : taskStatusListCloned) {
-            if (taskStatus.getTask().getId().equals(taskId)) {
-                return taskStatus;
-            }
-        }
-        return null;
     }
 
     @Override
     public void put(TaskStatus taskStatus) {
         synchronized (lock) {
-            if (!taskStatusListMap.containsKey(taskStatus.getTaskFlowId())) {
-                taskStatusListMap.put(taskStatus.getTaskFlowId(), new ArrayList<>());
-            }
-            List<TaskStatus> taskStatusList = taskStatusListMap.get(taskStatus.getTaskFlowId());
-            for (TaskStatus oldTaskStatus : taskStatusList) {
-                if (oldTaskStatus.getTask().getId().equals(taskStatus.getTask().getId())) {
-                    // 更新
-                    oldTaskStatus.setTask(taskStatus.getTask());
-                    oldTaskStatus.setTaskFlowId(taskStatus.getTaskFlowId());
-                    oldTaskStatus.setTaskFlowContext(taskStatus.getTaskFlowContext());
-                    oldTaskStatus.setStatus(taskStatus.getStatus());
-                    oldTaskStatus.setMessage(taskStatus.getMessage());
-                    return;
+            String json = JSON.toJSONString(taskStatus);
+            Type type = new TypeReference<TaskStatus>() {
+            }.getType();
+            TaskStatus taskStatusCloned = JSON.parseObject(json, type);
+            if (!taskStatusListMap.containsKey(taskStatusCloned.getTaskFlowId())) {
+                // 新增
+                List<TaskStatus> taskStatusList = new ArrayList<>();
+                taskStatusList.add(taskStatusCloned);
+                taskStatusListMap.put(taskStatusCloned.getTaskFlowId(), taskStatusList);
+            } else {
+                // 更新
+                List<TaskStatus> oldTaskStatusList = taskStatusListMap.get(taskStatusCloned.getTaskFlowId());
+                for (TaskStatus oldTaskStatus : oldTaskStatusList) {
+                    if (oldTaskStatus.getTask().getId().equals(taskStatusCloned.getTask().getId())) {
+                        BeanUtils.copyProperties(taskStatusCloned, oldTaskStatus);
+                        break;
+                    }
                 }
             }
-            // 新增
-            taskStatusList.add(taskStatus);
         }
     }
 
     @Override
-    public void remove(Long taskId) {
+    public void remove(Long taskFlowId, Long taskId) {
         synchronized (lock) {
-            for (Long taskFlowId : taskStatusListMap.keySet()) {
+            if (taskStatusListMap.containsKey(taskFlowId)) {
                 List<TaskStatus> oldTaskStatusList = taskStatusListMap.get(taskFlowId);
                 List<TaskStatus> newTaskStatusList = new ArrayList<>();
                 for (TaskStatus taskStatus : oldTaskStatusList) {
@@ -94,6 +96,9 @@ public class DefaultTaskStatusRecorder implements ITaskStatusRecorder {
                 if (oldTaskStatusList.size() != newTaskStatusList.size()) {
                     taskStatusListMap.get(taskFlowId).clear();
                     taskStatusListMap.get(taskFlowId).addAll(newTaskStatusList);
+                }
+                if (newTaskStatusList.size() == 0) {
+                    taskStatusListMap.remove(taskFlowId);
                 }
             }
         }

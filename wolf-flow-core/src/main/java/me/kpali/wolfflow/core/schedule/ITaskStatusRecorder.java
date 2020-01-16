@@ -21,10 +21,11 @@ public interface ITaskStatusRecorder {
     /**
      * 根据任务ID获取任务状态
      *
+     * @param taskFlowId
      * @param taskId
      * @return
      */
-    TaskStatus get(Long taskId);
+    TaskStatus get(Long taskFlowId, Long taskId);
 
     /**
      * 新增或更新任务状态
@@ -35,7 +36,9 @@ public interface ITaskStatusRecorder {
 
     /**
      * 删除任务状态
+     *
+     * @param taskFlowId
      * @param taskId
      */
-    void remove(Long taskId);
+    void remove(Long taskFlowId, Long taskId);
 }

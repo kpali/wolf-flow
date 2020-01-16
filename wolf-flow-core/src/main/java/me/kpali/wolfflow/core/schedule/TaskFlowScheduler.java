@@ -7,6 +7,7 @@ import me.kpali.wolfflow.core.exception.InvalidTaskFlowException;
 import me.kpali.wolfflow.core.exception.SchedulerNotStartedException;
 import me.kpali.wolfflow.core.model.*;
 import me.kpali.wolfflow.core.quartz.MyDynamicScheduler;
+import me.kpali.wolfflow.core.util.SystemTime;
 import me.kpali.wolfflow.core.util.TaskFlowUtils;
 import org.quartz.JobKey;
 import org.slf4j.Logger;
@@ -59,6 +60,8 @@ public class TaskFlowScheduler {
     private Integer taskFlowExecutorCorePoolSize;
     private Integer taskFlowExecutorMaximumPoolSize;
 
+    @Autowired
+    private ITaskFlowStatusRecorder taskFlowStatusRecorder;
     @Autowired
     private ITaskStatusRecorder taskStatusRecorder;
 
@@ -249,11 +252,24 @@ public class TaskFlowScheduler {
 
         TaskFlow finalTaskFlow = (unsuccessTaskFlow == null ? prunedTaskFlow : unsuccessTaskFlow);
 
+        Long taskFlowExecId = null;
+        boolean isPartialExecute = (fromTaskId != null || toTaskId != null);
+        if (isPartialExecute && !this.taskStatusRecorder.listByTaskFlowId(finalTaskFlow.getId()).isEmpty()) {
+            // 任务流存在执行记录或任务流部分继续执行，则使用之前的任务流执行ID
+            TaskFlowContext taskFlowContext = this.taskFlowStatusRecorder.get(finalTaskFlow.getId()).getContext();
+            taskFlowExecId = Long.parseLong(taskFlowContext.get(ContextKey.TASK_FLOW_EXEC_ID));
+        } else {
+            // 任务流从未执行过或任务流全部重新执行，则生成新的任务流执行ID
+            taskFlowExecId = SystemTime.getUniqueTime();
+        }
+        String taskFlowExecIdString = String.valueOf(taskFlowExecId);
+
         // 任务流执行
         this.triggerThreadPool.execute(() -> {
             TaskFlowContext taskFlowContext = new TaskFlowContext();
             taskFlowContext.put(ContextKey.FROM_TASK_ID, String.valueOf(fromTaskId));
             taskFlowContext.put(ContextKey.TO_TASK_ID, String.valueOf(toTaskId));
+            taskFlowContext.put(ContextKey.TASK_FLOW_EXEC_ID, taskFlowExecIdString);
             try {
                 // 任务流等待执行
                 this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode(), null);
@@ -325,6 +341,16 @@ public class TaskFlowScheduler {
         taskFlowStatus.setMessage(message);
         TaskFlowStatusChangeEvent taskFlowStatusChangeEvent = new TaskFlowStatusChangeEvent(this, taskFlowStatus);
         this.eventPublisher.publishEvent(taskFlowStatusChangeEvent);
+    }
+
+    /**
+     * 停止任务流
+     *
+     * @param taskFlowId
+     * @throws Exception
+     */
+    public void stop(Long taskFlowId) throws Exception {
+        this.taskFlowExecutor.stop(taskFlowId);
     }
 
 }

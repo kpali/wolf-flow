@@ -36,7 +36,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     public void beforeExecute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws Exception {
         // 清理任务状态
         for (Task task : taskFlow.getTaskList()) {
-            this.taskStatusRecorder.remove(task.getId());
+            this.taskStatusRecorder.remove(taskFlow.getId(), task.getId());
         }
     }
 
@@ -153,6 +153,10 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     @Override
     public void afterExecute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws Exception {
         // 不做任何操作
+    }
+
+    @Override
+    public void stop(Long taskFlowId) throws Exception {
     }
 
     /**
