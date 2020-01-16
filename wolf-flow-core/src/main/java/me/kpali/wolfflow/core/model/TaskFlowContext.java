@@ -1,5 +1,6 @@
 package me.kpali.wolfflow.core.model;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -9,8 +10,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author kpali
  */
 public class TaskFlowContext extends ConcurrentHashMap<String, String> {
-    private Map<String, String> params = new ConcurrentHashMap<>();
-    private Map<Long, TaskContext> taskContexts = new ConcurrentHashMap<>();
+    private Map<String, String> params = new HashMap<>();
+    private ConcurrentHashMap<Long, TaskContext> taskContexts = new ConcurrentHashMap<>();
 
     public Map<String, String> getParams() {
         return params;
@@ -20,11 +21,11 @@ public class TaskFlowContext extends ConcurrentHashMap<String, String> {
         this.params = params;
     }
 
-    public Map<Long, TaskContext> getTaskContexts() {
+    public ConcurrentHashMap<Long, TaskContext> getTaskContexts() {
         return taskContexts;
     }
 
-    public void setTaskContexts(Map<Long, TaskContext> taskContexts) {
+    public void setTaskContexts(ConcurrentHashMap<Long, TaskContext> taskContexts) {
         this.taskContexts = taskContexts;
     }
 }
