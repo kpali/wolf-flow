@@ -43,6 +43,7 @@ public class TaskFlowScheduler {
     private ApplicationEventPublisher eventPublisher;
 
     private boolean started = false;
+    private final Object lock = new Object();
 
     @Autowired
     private ITaskFlowQuerier taskFlowQuerier;
@@ -51,7 +52,6 @@ public class TaskFlowScheduler {
     private ITaskFlowScaner taskFlowScaner;
     private Integer scanInterval;
 
-    private final Object triggerLock = new Object();
     private ExecutorService triggerThreadPool;
     private Integer triggerCorePoolSize;
     private Integer triggerMaximumPoolSize;
@@ -67,7 +67,9 @@ public class TaskFlowScheduler {
     private ITaskStatusRecorder taskStatusRecorder;
 
     private Boolean taskFlowAllowParallel;
-    private HashSet<Long> taskFlowInProgress = new HashSet<>();
+
+    private HashMap<Long, TaskFlow> taskFlowInProgress = new HashMap<>();
+    private HashMap<Long, TaskFlowContext> taskFlowContexts = new HashMap<>();
 
     /**
      * 启动任务流调度器
@@ -227,7 +229,7 @@ public class TaskFlowScheduler {
             throw new SchedulerNotStartedException("请先启动调度器！");
         }
         if (this.triggerThreadPool == null) {
-            synchronized (this.triggerLock) {
+            synchronized (this.lock) {
                 if (this.triggerThreadPool == null) {
                     // 初始化线程池
                     ThreadFactory triggerThreadFactory = new ThreadFactoryBuilder().setNameFormat("triggerExecutor-pool-%d").build();
@@ -273,17 +275,16 @@ public class TaskFlowScheduler {
         String taskFlowExecIdString = String.valueOf(taskFlowExecId);
 
         // 任务流执行
-        if (!taskFlowAllowParallel) {
-            synchronized (triggerLock) {
-                if (taskFlowInProgress.contains(finalTaskFlow.getId())) {
-                    throw new TaskFlowNotAllowParallelException("不允许同时多次执行！");
-                } else {
-                    taskFlowInProgress.add(finalTaskFlow.getId());
-                }
+        TaskFlowContext taskFlowContext = new TaskFlowContext();
+        synchronized (lock) {
+            if (!taskFlowAllowParallel && taskFlowInProgress.containsKey(finalTaskFlow.getId())) {
+                throw new TaskFlowNotAllowParallelException("不允许同时多次执行！");
+            } else {
+                taskFlowContexts.put(finalTaskFlow.getId(), taskFlowContext);
+                taskFlowInProgress.put(finalTaskFlow.getId(), finalTaskFlow);
             }
         }
         this.triggerThreadPool.execute(() -> {
-            TaskFlowContext taskFlowContext = new TaskFlowContext();
             try {
                 if (params != null) {
                     taskFlowContext.setParams(params);
@@ -306,13 +307,33 @@ public class TaskFlowScheduler {
                 // 任务流执行失败
                 this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage());
             } finally {
-                if (!taskFlowAllowParallel) {
-                    synchronized (triggerLock) {
-                        taskFlowInProgress.remove(finalTaskFlow.getId());
-                    }
+                synchronized (lock) {
+                    taskFlowContexts.remove(finalTaskFlow.getId());
+                    taskFlowInProgress.remove(finalTaskFlow.getId());
                 }
             }
         });
+    }
+
+    /**
+     * 停止任务流
+     *
+     * @param taskFlowId
+     * @throws Exception
+     */
+    public void stop(Long taskFlowId) throws Exception {
+        TaskFlow taskFlow = null;
+        TaskFlowContext taskFlowContext = null;
+        synchronized (lock) {
+            if (taskFlowInProgress.containsKey(taskFlowId)) {
+                taskFlow = taskFlowInProgress.get(taskFlowId);
+                taskFlowContext = taskFlowContexts.get(taskFlowId);
+            }
+        }
+        if (taskFlow != null && taskFlowContexts != null) {
+            this.publishTaskFlowStatusChangeEvent(taskFlow, taskFlowContext, TaskFlowStatusEnum.STOPPING.getCode(), null);
+            this.taskFlowExecutor.stop(taskFlowId);
+        }
     }
 
     /**
@@ -368,15 +389,4 @@ public class TaskFlowScheduler {
         TaskFlowStatusChangeEvent taskFlowStatusChangeEvent = new TaskFlowStatusChangeEvent(this, taskFlowStatus);
         this.eventPublisher.publishEvent(taskFlowStatusChangeEvent);
     }
-
-    /**
-     * 停止任务流
-     *
-     * @param taskFlowId
-     * @throws Exception
-     */
-    public void stop(Long taskFlowId) throws Exception {
-        this.taskFlowExecutor.stop(taskFlowId);
-    }
-
 }
