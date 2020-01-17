@@ -5,6 +5,7 @@ import me.kpali.wolfflow.core.event.*;
 import me.kpali.wolfflow.core.exception.InvalidCronExpressionException;
 import me.kpali.wolfflow.core.exception.InvalidTaskFlowException;
 import me.kpali.wolfflow.core.exception.SchedulerNotStartedException;
+import me.kpali.wolfflow.core.exception.TaskFlowNotAllowParallelException;
 import me.kpali.wolfflow.core.model.*;
 import me.kpali.wolfflow.core.quartz.MyDynamicScheduler;
 import me.kpali.wolfflow.core.util.SystemTime;
@@ -15,10 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 
 /**
@@ -29,12 +27,14 @@ import java.util.concurrent.*;
 public class TaskFlowScheduler {
     public TaskFlowScheduler(Integer scanInterval,
                              Integer triggerCorePoolSize, Integer triggerMaximumPoolSize,
-                             Integer taskFlowExecutorCorePoolSize, Integer taskFlowExecutorMaximumPoolSize) {
+                             Integer taskFlowExecutorCorePoolSize, Integer taskFlowExecutorMaximumPoolSize,
+                             Boolean taskFlowAllowParallel) {
         this.scanInterval = scanInterval;
         this.triggerCorePoolSize = triggerCorePoolSize;
         this.triggerMaximumPoolSize = triggerMaximumPoolSize;
         this.taskFlowExecutorCorePoolSize = taskFlowExecutorCorePoolSize;
         this.taskFlowExecutorMaximumPoolSize = taskFlowExecutorMaximumPoolSize;
+        this.taskFlowAllowParallel = taskFlowAllowParallel;
     }
 
     private static final Logger log = LoggerFactory.getLogger(TaskFlowScheduler.class);
@@ -65,6 +65,9 @@ public class TaskFlowScheduler {
     private ITaskFlowStatusRecorder taskFlowStatusRecorder;
     @Autowired
     private ITaskStatusRecorder taskStatusRecorder;
+
+    private Boolean taskFlowAllowParallel;
+    private HashSet<Long> taskFlowInProgress = new HashSet<>();
 
     /**
      * 启动任务流调度器
@@ -270,15 +273,24 @@ public class TaskFlowScheduler {
         String taskFlowExecIdString = String.valueOf(taskFlowExecId);
 
         // 任务流执行
+        if (!taskFlowAllowParallel) {
+            synchronized (triggerLock) {
+                if (taskFlowInProgress.contains(finalTaskFlow.getId())) {
+                    throw new TaskFlowNotAllowParallelException("不允许同时多次执行！");
+                } else {
+                    taskFlowInProgress.add(finalTaskFlow.getId());
+                }
+            }
+        }
         this.triggerThreadPool.execute(() -> {
             TaskFlowContext taskFlowContext = new TaskFlowContext();
-            if (params != null) {
-                taskFlowContext.setParams(params);
-            }
-            taskFlowContext.put(ContextKey.FROM_TASK_ID, String.valueOf(fromTaskId));
-            taskFlowContext.put(ContextKey.TO_TASK_ID, String.valueOf(toTaskId));
-            taskFlowContext.put(ContextKey.TASK_FLOW_EXEC_ID, taskFlowExecIdString);
             try {
+                if (params != null) {
+                    taskFlowContext.setParams(params);
+                }
+                taskFlowContext.put(ContextKey.FROM_TASK_ID, String.valueOf(fromTaskId));
+                taskFlowContext.put(ContextKey.TO_TASK_ID, String.valueOf(toTaskId));
+                taskFlowContext.put(ContextKey.TASK_FLOW_EXEC_ID, taskFlowExecIdString);
                 // 任务流等待执行
                 this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode(), null);
                 this.taskFlowExecutor.beforeExecute(finalTaskFlow, taskFlowContext);
@@ -293,6 +305,12 @@ public class TaskFlowScheduler {
                 log.error("任务流执行失败！任务流ID：" + finalTaskFlow.getId() + " 异常信息：" + e.getMessage(), e);
                 // 任务流执行失败
                 this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage());
+            } finally {
+                if (!taskFlowAllowParallel) {
+                    synchronized (triggerLock) {
+                        taskFlowInProgress.remove(finalTaskFlow.getId());
+                    }
+                }
             }
         });
     }

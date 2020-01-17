@@ -9,6 +9,7 @@ public class ScheduleProperties {
     private Integer triggerMaximumPoolSize = 10;
     private Integer taskFlowExecutorCorePoolSize = 3;
     private Integer taskFlowExecutorMaximumPoolSize = 3;
+    private Boolean taskFlowAllowParallel = false;
 
     public Integer getScanInterval() {
         return scanInterval;
@@ -48,5 +49,13 @@ public class ScheduleProperties {
 
     public void setTaskFlowExecutorMaximumPoolSize(Integer taskFlowExecutorMaximumPoolSize) {
         this.taskFlowExecutorMaximumPoolSize = taskFlowExecutorMaximumPoolSize;
+    }
+
+    public Boolean getTaskFlowAllowParallel() {
+        return taskFlowAllowParallel;
+    }
+
+    public void setTaskFlowAllowParallel(Boolean taskFlowAllowParallel) {
+        this.taskFlowAllowParallel = taskFlowAllowParallel;
     }
 }
