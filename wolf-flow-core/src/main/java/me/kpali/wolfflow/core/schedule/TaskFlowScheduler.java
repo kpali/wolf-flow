@@ -8,7 +8,6 @@ import me.kpali.wolfflow.core.exception.SchedulerNotStartedException;
 import me.kpali.wolfflow.core.exception.TaskFlowNotAllowParallelException;
 import me.kpali.wolfflow.core.model.*;
 import me.kpali.wolfflow.core.quartz.MyDynamicScheduler;
-import me.kpali.wolfflow.core.util.SystemTime;
 import me.kpali.wolfflow.core.util.TaskFlowUtils;
 import org.quartz.JobKey;
 import org.slf4j.Logger;
@@ -191,7 +190,7 @@ public class TaskFlowScheduler {
      * @param params
      * @return taskFlowExecId
      */
-    public Long trigger(Long taskFlowId, Map<String, String> params) {
+    public String trigger(Long taskFlowId, Map<String, String> params) {
         return this.trigger(taskFlowId, null, null, params);
     }
 
@@ -203,7 +202,7 @@ public class TaskFlowScheduler {
      * @param params
      * @return taskFlowExecId
      */
-    public Long triggerFrom(Long taskFlowId, Long fromTaskId, Map<String, String> params) {
+    public String triggerFrom(Long taskFlowId, Long fromTaskId, Map<String, String> params) {
         return this.trigger(taskFlowId, fromTaskId, null, params);
     }
 
@@ -215,7 +214,7 @@ public class TaskFlowScheduler {
      * @param params
      * @return taskFlowExecId
      */
-    public Long triggerTo(Long taskFlowId, Long toTaskId, Map<String, String> params) {
+    public String triggerTo(Long taskFlowId, Long toTaskId, Map<String, String> params) {
         return this.trigger(taskFlowId, null, toTaskId, params);
     }
 
@@ -228,7 +227,7 @@ public class TaskFlowScheduler {
      * @param params
      * @return taskFlowExecId
      */
-    private Long trigger(Long taskFlowId, Long fromTaskId, Long toTaskId, Map<String, String> params) {
+    private String trigger(Long taskFlowId, Long fromTaskId, Long toTaskId, Map<String, String> params) {
         if (!this.started) {
             throw new SchedulerNotStartedException("请先启动调度器！");
         }
@@ -266,17 +265,17 @@ public class TaskFlowScheduler {
             throw new InvalidTaskFlowException("没有需要执行的任务！");
         }
 
-        Long taskFlowExecId = null;
+        String taskFlowExecId;
         boolean isPartialExecute = (fromTaskId != null || toTaskId != null);
         if (isPartialExecute && !this.taskStatusRecorder.listByTaskFlowId(finalTaskFlow.getId()).isEmpty()) {
             // 任务流存在执行记录或任务流部分继续执行，则使用之前的任务流执行ID
             TaskFlowContext taskFlowContext = this.taskFlowStatusRecorder.get(finalTaskFlow.getId()).getTaskFlowContext();
-            taskFlowExecId = Long.parseLong(taskFlowContext.get(ContextKey.TASK_FLOW_EXEC_ID));
+            taskFlowExecId = taskFlowContext.get(ContextKey.TASK_FLOW_EXEC_ID);
         } else {
             // 任务流从未执行过或任务流全部重新执行，则生成新的任务流执行ID
-            taskFlowExecId = SystemTime.getUniqueTime();
+            taskFlowExecId = UUID.randomUUID().toString();
         }
-        String taskFlowExecIdString = String.valueOf(taskFlowExecId);
+        String taskFlowExecIdString = taskFlowExecId;
 
         // 任务流执行
         TaskFlowContext taskFlowContext = new TaskFlowContext();

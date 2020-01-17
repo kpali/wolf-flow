@@ -18,7 +18,7 @@ public class MyTask extends Task {
     @Override
     public void execute(TaskFlowContext taskFlowContext) throws Exception {
         int totalTime = 0;
-        int timeout = 10 * 1000;
+        int timeout = 3 * 1000;
         while (totalTime < timeout) {
             try {
                 if (requiredToStop) {
