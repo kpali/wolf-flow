@@ -189,9 +189,10 @@ public class TaskFlowScheduler {
      *
      * @param taskFlowId
      * @param params
+     * @return taskFlowExecId
      */
-    public void trigger(Long taskFlowId, Map<String, String> params) {
-        this.trigger(taskFlowId, null, null, params);
+    public Long trigger(Long taskFlowId, Map<String, String> params) {
+        return this.trigger(taskFlowId, null, null, params);
     }
 
     /**
@@ -200,9 +201,10 @@ public class TaskFlowScheduler {
      * @param taskFlowId
      * @param fromTaskId
      * @param params
+     * @return taskFlowExecId
      */
-    public void triggerFrom(Long taskFlowId, Long fromTaskId, Map<String, String> params) {
-        this.trigger(taskFlowId, fromTaskId, null, params);
+    public Long triggerFrom(Long taskFlowId, Long fromTaskId, Map<String, String> params) {
+        return this.trigger(taskFlowId, fromTaskId, null, params);
     }
 
     /**
@@ -211,9 +213,10 @@ public class TaskFlowScheduler {
      * @param taskFlowId
      * @param toTaskId
      * @param params
+     * @return taskFlowExecId
      */
-    public void triggerTo(Long taskFlowId, Long toTaskId, Map<String, String> params) {
-        this.trigger(taskFlowId, null, toTaskId, params);
+    public Long triggerTo(Long taskFlowId, Long toTaskId, Map<String, String> params) {
+        return this.trigger(taskFlowId, null, toTaskId, params);
     }
 
     /**
@@ -223,8 +226,9 @@ public class TaskFlowScheduler {
      * @param fromTaskId
      * @param toTaskId
      * @param params
+     * @return taskFlowExecId
      */
-    private void trigger(Long taskFlowId, Long fromTaskId, Long toTaskId, Map<String, String> params) {
+    private Long trigger(Long taskFlowId, Long fromTaskId, Long toTaskId, Map<String, String> params) {
         if (!this.started) {
             throw new SchedulerNotStartedException("请先启动调度器！");
         }
@@ -250,17 +254,17 @@ public class TaskFlowScheduler {
 
         // 根据从指定任务开始或到指定任务结束，对任务流进行剪裁
         TaskFlow prunedTaskFlow = TaskFlowUtils.prune(taskFlow, fromTaskId, toTaskId);
-        if (prunedTaskFlow.getTaskList().size() == 0) {
-            return;
-        }
 
-        // 在到指定任务结束的情况下，已经执行成功的任务无需再执行，因此移除掉
-        TaskFlow unsuccessTaskFlow = null;
+        // 在到指定任务结束的情况下，已经执行成功的任务无需再执行，因此只保留未执行成功的任务
+        TaskFlow unsuccessfulTaskFlow = null;
         if (fromTaskId == null && toTaskId != null) {
-            unsuccessTaskFlow = this.removeSuccessTask(prunedTaskFlow);
+            unsuccessfulTaskFlow = this.pickOutUnsuccessfulTasks(prunedTaskFlow);
         }
 
-        TaskFlow finalTaskFlow = (unsuccessTaskFlow == null ? prunedTaskFlow : unsuccessTaskFlow);
+        TaskFlow finalTaskFlow = (unsuccessfulTaskFlow == null ? prunedTaskFlow : unsuccessfulTaskFlow);
+        if (finalTaskFlow.getTaskList().size() == 0) {
+            throw new InvalidTaskFlowException("没有需要执行的任务！");
+        }
 
         Long taskFlowExecId = null;
         boolean isPartialExecute = (fromTaskId != null || toTaskId != null);
@@ -313,6 +317,8 @@ public class TaskFlowScheduler {
                 }
             }
         });
+
+        return taskFlowExecId;
     }
 
     /**
@@ -337,12 +343,12 @@ public class TaskFlowScheduler {
     }
 
     /**
-     * 移除已经执行成功的任务
+     * 挑出未执行成功的任务
      *
      * @param taskFlow
      * @return
      */
-    private TaskFlow removeSuccessTask(TaskFlow taskFlow) {
+    private TaskFlow pickOutUnsuccessfulTasks(TaskFlow taskFlow) {
         List<Long> successTaskIdList = new ArrayList<>();
         List<TaskStatus> taskStatusList = taskStatusRecorder.listByTaskFlowId(taskFlow.getId());
         if (taskStatusList == null || taskStatusList.isEmpty()) {

@@ -17,7 +17,7 @@ public class ApplicationReadyListener implements ApplicationListener<Application
         try {
             taskFlowScheduler.triggerTo(100L, 5L, null);
             Thread.sleep(5 * 1000);
-            taskFlowScheduler.stop(100L);
+            //taskFlowScheduler.stop(100L);
             Thread.sleep(15 * 1000);
             taskFlowScheduler.triggerTo(100L, 6L, null);
         } catch (Exception e) {
