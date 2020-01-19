@@ -310,11 +310,12 @@ public class TaskFlowScheduler {
                 this.taskFlowExecutor.afterExecute(finalTaskFlow, taskFlowContext);
                 // 任务流执行成功
                 this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode(), null);
-            } catch (TaskFlowExecuteException e) {
+            } catch (TaskFlowExecuteException | TaskInterruptedException e) {
                 log.error("任务流执行失败！任务流ID：" + finalTaskFlow.getId() + " 异常信息：" + e.getMessage(), e);
                 // 任务流执行失败
                 this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage());
-            } finally {
+            }
+            finally {
                 synchronized (lock) {
                     taskFlowContexts.remove(finalTaskFlow.getId());
                     taskFlowInProgress.remove(finalTaskFlow.getId());

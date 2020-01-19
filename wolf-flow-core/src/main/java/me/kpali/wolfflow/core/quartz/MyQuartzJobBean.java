@@ -1,5 +1,6 @@
 package me.kpali.wolfflow.core.quartz;
 
+import me.kpali.wolfflow.core.exception.InvalidTaskFlowException;
 import me.kpali.wolfflow.core.exception.TaskFlowTriggerException;
 import me.kpali.wolfflow.core.schedule.TaskFlowScheduler;
 import org.quartz.JobExecutionContext;
@@ -14,7 +15,6 @@ import org.springframework.scheduling.quartz.QuartzJobBean;
  * @author kpali
  */
 public class MyQuartzJobBean extends QuartzJobBean {
-
     public MyQuartzJobBean() {
     }
 
@@ -27,9 +27,8 @@ public class MyQuartzJobBean extends QuartzJobBean {
         Long taskFlowId = Long.valueOf(jobKey.getName());
         try {
             taskFlowScheduler.trigger(taskFlowId, null);
-        } catch (TaskFlowTriggerException e) {
+        } catch (InvalidTaskFlowException | TaskFlowTriggerException e) {
             throw new JobExecutionException(e);
         }
     }
-
 }

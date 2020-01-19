@@ -2,10 +2,7 @@ package me.kpali.wolfflow.core.schedule;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import me.kpali.wolfflow.core.event.TaskStatusChangeEvent;
-import me.kpali.wolfflow.core.exception.InvalidTaskFlowException;
-import me.kpali.wolfflow.core.exception.TaskFlowExecuteException;
-import me.kpali.wolfflow.core.exception.TaskFlowInterruptedException;
-import me.kpali.wolfflow.core.exception.TaskFlowStopException;
+import me.kpali.wolfflow.core.exception.*;
 import me.kpali.wolfflow.core.model.*;
 import me.kpali.wolfflow.core.util.TaskFlowUtils;
 import org.slf4j.Logger;
@@ -118,7 +115,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                                 task.afterExecute(taskFlowContext);
                                 taskIdToStatusMap.put(task.getId(), TaskStatusEnum.EXECUTE_SUCCESS.getCode());
                                 this.publishTaskStatusChangeEvent(task, taskFlow.getId(), taskFlowContext, TaskStatusEnum.EXECUTE_SUCCESS.getCode(), null);
-                            } catch (TaskFlowExecuteException e) {
+                            } catch (TaskExecuteException | TaskInterruptedException e) {
                                 log.error("任务执行失败！任务ID：" + task.getId() + " 异常信息：" + e.getMessage(), e);
                                 taskIdToStatusMap.put(task.getId(), TaskStatusEnum.EXECUTE_FAILURE.getCode());
                                 this.publishTaskStatusChangeEvent(task, taskFlow.getId(), taskFlowContext, TaskStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage());
@@ -130,7 +127,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                         try {
                             this.publishTaskStatusChangeEvent(task, taskFlow.getId(), taskFlowContext, TaskStatusEnum.STOPPING.getCode(), null);
                             task.stop(taskFlowContext);
-                        } catch (TaskFlowStopException e) {
+                        } catch (TaskStopException e) {
                             log.error("任务终止失败！任务ID：" + task.getId() + " 异常信息：" + e.getMessage(), e);
                         }
                     } else if (TaskStatusEnum.EXECUTE_SUCCESS.getCode().equals(taskStatus)) {
