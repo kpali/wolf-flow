@@ -12,6 +12,7 @@
     <name>wolf-flow-core</name>
 
     <properties>
+        <jackson.version>2.10.1</jackson.version>
         <quartz.version>2.3.0</quartz.version>
         <guava.version>20.0</guava.version>
     </properties>
@@ -29,9 +30,11 @@
             <groupId>org.springframework</groupId>
             <artifactId>spring-jdbc</artifactId>
         </dependency>
+
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-json</artifactId>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
         </dependency>
 
         <dependency>
