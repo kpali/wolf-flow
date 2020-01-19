@@ -1,12 +1,15 @@
 package me.kpali.wolfflow.sample.listener;
 
-import com.alibaba.fastjson.JSON;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import me.kpali.wolfflow.core.event.*;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 @Component
 public class TaskFlowListener {
+    private ObjectMapper objectMapper = new ObjectMapper();
+
     @EventListener
     public void beforeScaning(BeforeScaningEvent event) {
     }
@@ -29,11 +32,19 @@ public class TaskFlowListener {
 
     @EventListener
     public void taskFlowStatusChange(TaskFlowStatusChangeEvent event) {
-        System.out.println(">>>>>>>>>> 任务流状态变更：\r\n" + JSON.toJSON(event.getTaskFlowStatus()));
+        try {
+            System.out.println(">>>>>>>>>> 任务流状态变更：\r\n" + objectMapper.writeValueAsString(event.getTaskFlowStatus()));
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
     }
 
     @EventListener
     public void taskStatusChange(TaskStatusChangeEvent event) {
-        System.out.println(">>>>>>>>>> 任务状态变更：\r\n" + JSON.toJSON(event.getTaskStatus()));
+        try {
+            System.out.println(">>>>>>>>>> 任务状态变更：\r\n" + objectMapper.writeValueAsString(event.getTaskStatus()));
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
     }
 }

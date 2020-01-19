@@ -1,6 +1,8 @@
 package me.kpali.wolfflow.sample.taskflow;
 
+import me.kpali.wolfflow.core.exception.TaskExecuteException;
 import me.kpali.wolfflow.core.exception.TaskInterruptedException;
+import me.kpali.wolfflow.core.exception.TaskStopException;
 import me.kpali.wolfflow.core.model.Task;
 import me.kpali.wolfflow.core.model.TaskFlowContext;
 
@@ -16,7 +18,7 @@ public class MyTask extends Task {
     private boolean requiredToStop = false;
 
     @Override
-    public void execute(TaskFlowContext taskFlowContext) throws Exception {
+    public void execute(TaskFlowContext taskFlowContext) throws TaskExecuteException {
         int totalTime = 0;
         int timeout = 3 * 1000;
         while (totalTime < timeout) {
@@ -33,7 +35,7 @@ public class MyTask extends Task {
     }
 
     @Override
-    public void stop(TaskFlowContext taskFlowContext) throws Exception {
+    public void stop(TaskFlowContext taskFlowContext) throws TaskStopException {
         this.requiredToStop = true;
     }
 }

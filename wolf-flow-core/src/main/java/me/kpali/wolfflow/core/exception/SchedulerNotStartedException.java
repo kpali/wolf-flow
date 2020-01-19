@@ -6,7 +6,15 @@ package me.kpali.wolfflow.core.exception;
  * @author kpali
  */
 public class SchedulerNotStartedException extends RuntimeException {
+    public SchedulerNotStartedException() {
+        super();
+    }
+
     public SchedulerNotStartedException(String message) {
         super(message);
+    }
+
+    public SchedulerNotStartedException(Throwable cause) {
+        super(cause);
     }
 }

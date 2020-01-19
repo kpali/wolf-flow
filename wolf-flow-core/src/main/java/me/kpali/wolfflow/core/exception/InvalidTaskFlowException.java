@@ -6,9 +6,15 @@ package me.kpali.wolfflow.core.exception;
  * @author kpali
  */
 public class InvalidTaskFlowException extends RuntimeException {
+    public InvalidTaskFlowException() {
+        super();
+    }
 
     public InvalidTaskFlowException(String message) {
         super(message);
     }
 
+    public InvalidTaskFlowException(Throwable cause) {
+        super(cause);
+    }
 }

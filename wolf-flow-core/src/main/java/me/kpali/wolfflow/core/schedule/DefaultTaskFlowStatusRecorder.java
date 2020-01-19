@@ -1,11 +1,12 @@
 package me.kpali.wolfflow.core.schedule;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.TypeReference;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import me.kpali.wolfflow.core.exception.TaskFlowStatusRecordException;
 import me.kpali.wolfflow.core.model.TaskFlowStatus;
 import org.springframework.stereotype.Component;
 
-import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -20,47 +21,55 @@ import java.util.Map;
 public class DefaultTaskFlowStatusRecorder implements ITaskFlowStatusRecorder {
     private Map<Long, TaskFlowStatus> taskFlowStatusMap = new HashMap<>();
     private final Object lock = new Object();
+    private ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
-    public List<TaskFlowStatus> list() {
+    public List<TaskFlowStatus> list() throws TaskFlowStatusRecordException {
         synchronized (lock) {
-            List<TaskFlowStatus> taskFlowStatusList = new ArrayList<>(taskFlowStatusMap.values());
-            String json = JSON.toJSONString(taskFlowStatusList);
-            Type type = new TypeReference<List<TaskFlowStatus>>() {
-            }.getType();
-            List<TaskFlowStatus> taskFlowStatusListCloned = JSON.parseObject(json, type);
-            return taskFlowStatusListCloned;
+            try {
+                List<TaskFlowStatus> taskFlowStatusList = new ArrayList<>(taskFlowStatusMap.values());
+                String json = objectMapper.writeValueAsString(taskFlowStatusList);
+                JavaType javaType = objectMapper.getTypeFactory().constructParametricType(ArrayList.class, TaskFlowStatus.class);
+                List<TaskFlowStatus> taskFlowStatusListCloned = objectMapper.readValue(json, javaType);
+                return taskFlowStatusListCloned;
+            } catch (JsonProcessingException e) {
+                throw new TaskFlowStatusRecordException(e);
+            }
         }
     }
 
     @Override
-    public TaskFlowStatus get(Long taskFlowId) {
+    public TaskFlowStatus get(Long taskFlowId) throws TaskFlowStatusRecordException {
         synchronized (lock) {
             TaskFlowStatus taskFlowStatusCloned = null;
             if (taskFlowStatusMap.containsKey(taskFlowId)) {
                 TaskFlowStatus taskFlowStatus = taskFlowStatusMap.get(taskFlowId);
-                String json = JSON.toJSONString(taskFlowStatus);
-                Type type = new TypeReference<TaskFlowStatus>() {
-                }.getType();
-                taskFlowStatusCloned = JSON.parseObject(json, type);
+                try {
+                    String json = objectMapper.writeValueAsString(taskFlowStatus);
+                    taskFlowStatusCloned = objectMapper.readValue(json, TaskFlowStatus.class);
+                } catch (JsonProcessingException e) {
+                    throw new TaskFlowStatusRecordException(e);
+                }
             }
             return taskFlowStatusCloned;
         }
     }
 
     @Override
-    public void put(TaskFlowStatus taskFlowStatus) {
+    public void put(TaskFlowStatus taskFlowStatus) throws TaskFlowStatusRecordException {
         synchronized (lock) {
-            String json = JSON.toJSONString(taskFlowStatus);
-            Type type = new TypeReference<TaskFlowStatus>() {
-            }.getType();
-            TaskFlowStatus taskFlowStatusCloned = JSON.parseObject(json, type);
-            taskFlowStatusMap.put(taskFlowStatusCloned.getTaskFlow().getId(), taskFlowStatusCloned);
+            try {
+                String json = objectMapper.writeValueAsString(taskFlowStatus);
+                TaskFlowStatus taskFlowStatusCloned = objectMapper.readValue(json, TaskFlowStatus.class);
+                taskFlowStatusMap.put(taskFlowStatusCloned.getTaskFlow().getId(), taskFlowStatusCloned);
+            } catch (JsonProcessingException e) {
+                throw new TaskFlowStatusRecordException(e);
+            }
         }
     }
 
     @Override
-    public void remove(Long taskFlowId) {
+    public void remove(Long taskFlowId) throws TaskFlowStatusRecordException {
         synchronized (lock) {
             taskFlowStatusMap.remove(taskFlowId);
         }

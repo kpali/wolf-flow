@@ -1,5 +1,6 @@
 package me.kpali.wolfflow.core.schedule;
 
+import me.kpali.wolfflow.core.exception.TaskFlowExecuteException;
 import me.kpali.wolfflow.core.model.TaskFlow;
 import me.kpali.wolfflow.core.model.TaskFlowContext;
 
@@ -15,9 +16,9 @@ public interface ITaskFlowExecutor {
      *
      * @param taskFlow
      * @param taskFlowContext
-     * @throws Exception
+     * @throws TaskFlowExecuteException
      */
-    void beforeExecute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws Exception;
+    void beforeExecute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws TaskFlowExecuteException;
 
     /**
      * 任务流执行
@@ -26,26 +27,26 @@ public interface ITaskFlowExecutor {
      * @param taskFlowContext
      * @param taskFlowExecutorCorePoolSize
      * @param taskFlowExecutorMaximumPoolSize
-     * @throws Exception
+     * @throws TaskFlowExecuteException
      */
     void execute(TaskFlow taskFlow, TaskFlowContext taskFlowContext,
-                 Integer taskFlowExecutorCorePoolSize, Integer taskFlowExecutorMaximumPoolSize) throws Exception;
+                 Integer taskFlowExecutorCorePoolSize, Integer taskFlowExecutorMaximumPoolSize) throws TaskFlowExecuteException;
 
     /**
      * 任务流后置处理
      *
      * @param taskFlow
      * @param taskFlowContext
-     * @throws Exception
+     * @throws TaskFlowExecuteException
      */
-    void afterExecute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws Exception;
+    void afterExecute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws TaskFlowExecuteException;
 
     /**
      * 停止任务流
      *
      * @param taskFlowId
-     * @throws Exception
+     * @throws TaskFlowExecuteException
      */
-    void stop(Long taskFlowId) throws Exception;
+    void stop(Long taskFlowId) throws TaskFlowExecuteException;
 
 }

@@ -2,9 +2,7 @@ package me.kpali.wolfflow.core.schedule;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import me.kpali.wolfflow.core.event.TaskStatusChangeEvent;
-import me.kpali.wolfflow.core.exception.InvalidTaskFlowException;
-import me.kpali.wolfflow.core.exception.TaskFlowExecuteFailException;
-import me.kpali.wolfflow.core.exception.TaskFlowInterruptedException;
+import me.kpali.wolfflow.core.exception.*;
 import me.kpali.wolfflow.core.model.*;
 import me.kpali.wolfflow.core.util.TaskFlowUtils;
 import org.slf4j.Logger;
@@ -37,7 +35,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     private final Object lock = new Object();
 
     @Override
-    public void beforeExecute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws Exception {
+    public void beforeExecute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws TaskFlowExecuteException {
         // 清理任务状态
         for (Task task : taskFlow.getTaskList()) {
             this.taskStatusRecorder.remove(taskFlow.getId(), task.getId());
@@ -46,7 +44,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
 
     @Override
     public void execute(TaskFlow taskFlow, TaskFlowContext taskFlowContext,
-                        Integer taskFlowExecutorCorePoolSize, Integer taskFlowExecutorMaximumPoolSize) throws Exception {
+                        Integer taskFlowExecutorCorePoolSize, Integer taskFlowExecutorMaximumPoolSize) throws TaskFlowExecuteException {
         synchronized (lock) {
             this.taskFlowRequireToStop.put(taskFlow.getId(), false);
         }
@@ -95,7 +93,11 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
             boolean isSuccess = true;
             boolean requireToStop = false;
             while (!taskIdToStatusMap.isEmpty()) {
-                Thread.sleep(1000);
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    log.warn(e.getMessage(), e);
+                }
                 synchronized (lock) {
                     requireToStop = this.taskFlowRequireToStop.get(taskFlow.getId());
                 }
@@ -113,7 +115,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                                 task.afterExecute(taskFlowContext);
                                 taskIdToStatusMap.put(task.getId(), TaskStatusEnum.EXECUTE_SUCCESS.getCode());
                                 this.publishTaskStatusChangeEvent(task, taskFlow.getId(), taskFlowContext, TaskStatusEnum.EXECUTE_SUCCESS.getCode(), null);
-                            } catch (Exception e) {
+                            } catch (TaskFlowExecuteException e) {
                                 log.error("任务执行失败！任务ID：" + task.getId() + " 异常信息：" + e.getMessage(), e);
                                 taskIdToStatusMap.put(task.getId(), TaskStatusEnum.EXECUTE_FAILURE.getCode());
                                 this.publishTaskStatusChangeEvent(task, taskFlow.getId(), taskFlowContext, TaskStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage());
@@ -125,7 +127,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                         try {
                             this.publishTaskStatusChangeEvent(task, taskFlow.getId(), taskFlowContext, TaskStatusEnum.STOPPING.getCode(), null);
                             task.stop(taskFlowContext);
-                        } catch (Exception e) {
+                        } catch (TaskFlowStopException e) {
                             log.error("任务终止失败！任务ID：" + task.getId() + " 异常信息：" + e.getMessage(), e);
                         }
                     } else if (TaskStatusEnum.EXECUTE_SUCCESS.getCode().equals(taskStatus)) {
@@ -174,12 +176,12 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     }
 
     @Override
-    public void afterExecute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws Exception {
+    public void afterExecute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws TaskFlowExecuteException {
         // 不做任何操作
     }
 
     @Override
-    public void stop(Long taskFlowId) throws Exception {
+    public void stop(Long taskFlowId) throws TaskFlowStopException {
         synchronized (lock) {
             if (this.taskFlowRequireToStop.containsKey(taskFlowId)) {
                 this.taskFlowRequireToStop.put(taskFlowId, true);

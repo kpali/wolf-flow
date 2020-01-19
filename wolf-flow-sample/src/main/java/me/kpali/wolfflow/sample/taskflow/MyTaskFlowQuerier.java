@@ -1,9 +1,9 @@
 package me.kpali.wolfflow.sample.taskflow;
 
+import me.kpali.wolfflow.core.exception.TaskFlowQueryException;
 import me.kpali.wolfflow.core.model.Link;
 import me.kpali.wolfflow.core.model.TaskFlow;
 import me.kpali.wolfflow.core.schedule.DefaultTaskFlowQuerier;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
@@ -66,16 +66,16 @@ public class MyTaskFlowQuerier extends DefaultTaskFlowQuerier {
     private List<TaskFlow> taskFlowList = new ArrayList<>();
 
     @Override
-    public TaskFlow getTaskFlow(Long taskFlowId) {
+    public TaskFlow getTaskFlow(Long taskFlowId) throws TaskFlowQueryException {
         return this.taskFlowList.stream().filter(taskFlow -> {
            return taskFlow.getId().equals(taskFlowId);
         }).findFirst().get();
     }
 
     @Override
-    public List<TaskFlow> listCronTaskFlow() {
+    public List<TaskFlow> listCronTaskFlow() throws TaskFlowQueryException {
         return this.taskFlowList.stream().filter(taskFlow -> {
-            return !StringUtils.isBlank(taskFlow.getCron());
+            return (taskFlow.getCron() != null && !taskFlow.getCron().trim().isEmpty());
         }).collect(Collectors.toList());
     }
 }

@@ -6,9 +6,15 @@ package me.kpali.wolfflow.core.exception;
  * @author kpali
  */
 public class TaskFlowExecuteFailException extends RuntimeException {
+    public TaskFlowExecuteFailException() {
+        super();
+    }
 
     public TaskFlowExecuteFailException(String message) {
         super(message);
     }
 
+    public TaskFlowExecuteFailException(Throwable cause) {
+        super(cause);
+    }
 }

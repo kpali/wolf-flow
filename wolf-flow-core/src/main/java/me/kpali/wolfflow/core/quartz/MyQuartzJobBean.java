@@ -1,5 +1,6 @@
 package me.kpali.wolfflow.core.quartz;
 
+import me.kpali.wolfflow.core.exception.TaskFlowTriggerException;
 import me.kpali.wolfflow.core.schedule.TaskFlowScheduler;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -24,7 +25,11 @@ public class MyQuartzJobBean extends QuartzJobBean {
     protected void executeInternal(JobExecutionContext context) throws JobExecutionException {
         JobKey jobKey = context.getTrigger().getJobKey();
         Long taskFlowId = Long.valueOf(jobKey.getName());
-        taskFlowScheduler.trigger(taskFlowId, null);
+        try {
+            taskFlowScheduler.trigger(taskFlowId, null);
+        } catch (TaskFlowTriggerException e) {
+            throw new JobExecutionException(e);
+        }
     }
 
 }

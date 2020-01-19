@@ -2,10 +2,7 @@ package me.kpali.wolfflow.core.schedule;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import me.kpali.wolfflow.core.event.*;
-import me.kpali.wolfflow.core.exception.InvalidCronExpressionException;
-import me.kpali.wolfflow.core.exception.InvalidTaskFlowException;
-import me.kpali.wolfflow.core.exception.SchedulerNotStartedException;
-import me.kpali.wolfflow.core.exception.TaskFlowNotAllowParallelException;
+import me.kpali.wolfflow.core.exception.*;
 import me.kpali.wolfflow.core.model.*;
 import me.kpali.wolfflow.core.quartz.MyDynamicScheduler;
 import me.kpali.wolfflow.core.util.TaskFlowUtils;
@@ -189,8 +186,10 @@ public class TaskFlowScheduler {
      * @param taskFlowId
      * @param params
      * @return taskFlowExecId
+     * @throws InvalidTaskFlowException
+     * @throws TaskFlowTriggerException
      */
-    public String trigger(Long taskFlowId, Map<String, String> params) {
+    public String trigger(Long taskFlowId, Map<String, String> params) throws InvalidTaskFlowException,  TaskFlowTriggerException {
         return this.trigger(taskFlowId, null, null, params);
     }
 
@@ -201,8 +200,10 @@ public class TaskFlowScheduler {
      * @param fromTaskId
      * @param params
      * @return taskFlowExecId
+     * @throws InvalidTaskFlowException
+     * @throws TaskFlowTriggerException
      */
-    public String triggerFrom(Long taskFlowId, Long fromTaskId, Map<String, String> params) {
+    public String triggerFrom(Long taskFlowId, Long fromTaskId, Map<String, String> params) throws InvalidTaskFlowException,  TaskFlowTriggerException {
         return this.trigger(taskFlowId, fromTaskId, null, params);
     }
 
@@ -213,8 +214,10 @@ public class TaskFlowScheduler {
      * @param toTaskId
      * @param params
      * @return taskFlowExecId
+     * @throws InvalidTaskFlowException
+     * @throws TaskFlowTriggerException
      */
-    public String triggerTo(Long taskFlowId, Long toTaskId, Map<String, String> params) {
+    public String triggerTo(Long taskFlowId, Long toTaskId, Map<String, String> params) throws InvalidTaskFlowException,  TaskFlowTriggerException {
         return this.trigger(taskFlowId, null, toTaskId, params);
     }
 
@@ -225,9 +228,11 @@ public class TaskFlowScheduler {
      * @param fromTaskId
      * @param toTaskId
      * @param params
-     * @return taskFlowExecId
+     * @return
+     * @throws InvalidTaskFlowException
+     * @throws TaskFlowTriggerException
      */
-    private String trigger(Long taskFlowId, Long fromTaskId, Long toTaskId, Map<String, String> params) {
+    private String trigger(Long taskFlowId, Long fromTaskId, Long toTaskId, Map<String, String> params) throws InvalidTaskFlowException, TaskFlowTriggerException {
         if (!this.started) {
             throw new SchedulerNotStartedException("请先启动调度器！");
         }
@@ -281,7 +286,7 @@ public class TaskFlowScheduler {
         TaskFlowContext taskFlowContext = new TaskFlowContext();
         synchronized (lock) {
             if (!taskFlowAllowParallel && taskFlowInProgress.containsKey(finalTaskFlow.getId())) {
-                throw new TaskFlowNotAllowParallelException("不允许同时多次执行！");
+                throw new TaskFlowTriggerException("不允许同时多次执行！");
             } else {
                 taskFlowContexts.put(finalTaskFlow.getId(), taskFlowContext);
                 taskFlowInProgress.put(finalTaskFlow.getId(), finalTaskFlow);
@@ -305,7 +310,7 @@ public class TaskFlowScheduler {
                 this.taskFlowExecutor.afterExecute(finalTaskFlow, taskFlowContext);
                 // 任务流执行成功
                 this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode(), null);
-            } catch (Exception e) {
+            } catch (TaskFlowExecuteException e) {
                 log.error("任务流执行失败！任务流ID：" + finalTaskFlow.getId() + " 异常信息：" + e.getMessage(), e);
                 // 任务流执行失败
                 this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage());
@@ -324,9 +329,9 @@ public class TaskFlowScheduler {
      * 停止任务流
      *
      * @param taskFlowId
-     * @throws Exception
+     * @throws TaskFlowStopException
      */
-    public void stop(Long taskFlowId) throws Exception {
+    public void stop(Long taskFlowId) throws TaskFlowStopException {
         TaskFlow taskFlow = null;
         TaskFlowContext taskFlowContext = null;
         synchronized (lock) {

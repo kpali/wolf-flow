@@ -1,5 +1,8 @@
 package me.kpali.wolfflow.core.model;
 
+import me.kpali.wolfflow.core.exception.TaskExecuteException;
+import me.kpali.wolfflow.core.exception.TaskStopException;
+
 import java.io.Serializable;
 
 /**
@@ -27,19 +30,19 @@ public class Task implements Serializable {
         this.id = id;
     }
 
-    public void beforeExecute(TaskFlowContext taskFlowContext) throws Exception {
+    public void beforeExecute(TaskFlowContext taskFlowContext) throws TaskExecuteException {
         // 不做任何操作
     }
 
-    public void execute(TaskFlowContext taskFlowContext) throws Exception {
+    public void execute(TaskFlowContext taskFlowContext) throws TaskExecuteException {
         // 不做任何操作
     }
 
-    public void afterExecute(TaskFlowContext taskFlowContext) throws Exception {
+    public void afterExecute(TaskFlowContext taskFlowContext) throws TaskExecuteException {
         // 不做任何操作
     }
 
-    public void stop(TaskFlowContext taskFlowContext) throws Exception {
+    public void stop(TaskFlowContext taskFlowContext) throws TaskStopException {
         // 不做任何操作
     }
 }
