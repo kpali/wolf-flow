@@ -17,7 +17,7 @@ public class TaskFlowStatusListener {
     ITaskFlowStatusRecorder taskFlowStatusRecorder;
 
     @EventListener
-    public void taskFlowStatusChange(TaskFlowStatusChangeEvent event) throws Exception {
+    public void taskFlowStatusChange(TaskFlowStatusChangeEvent event) {
         taskFlowStatusRecorder.put(event.getTaskFlowStatus());
     }
 }
