@@ -234,7 +234,7 @@ public class TaskFlowScheduler {
      */
     private String trigger(Long taskFlowId, Long fromTaskId, Long toTaskId, Map<String, String> params) throws InvalidTaskFlowException, TaskFlowTriggerException {
         if (!this.started) {
-            throw new SchedulerNotStartedException("请先启动调度器！");
+            throw new TaskFlowTriggerException("请先启动调度器！");
         }
         if (this.triggerThreadPool == null) {
             synchronized (this.lock) {
