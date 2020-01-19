@@ -1,6 +1,7 @@
 package me.kpali.wolfflow.core.model;
 
 import me.kpali.wolfflow.core.exception.TaskExecuteException;
+import me.kpali.wolfflow.core.exception.TaskInterruptedException;
 import me.kpali.wolfflow.core.exception.TaskStopException;
 
 import java.io.Serializable;
@@ -34,7 +35,7 @@ public class Task implements Serializable {
         // 不做任何操作
     }
 
-    public void execute(TaskFlowContext taskFlowContext) throws TaskExecuteException {
+    public void execute(TaskFlowContext taskFlowContext) throws TaskExecuteException, TaskInterruptedException {
         // 不做任何操作
     }
 

@@ -1,6 +1,7 @@
 package me.kpali.wolfflow.core.schedule;
 
 import me.kpali.wolfflow.core.exception.TaskFlowExecuteException;
+import me.kpali.wolfflow.core.exception.TaskFlowInterruptedException;
 import me.kpali.wolfflow.core.exception.TaskFlowStopException;
 import me.kpali.wolfflow.core.model.TaskFlow;
 import me.kpali.wolfflow.core.model.TaskFlowContext;
@@ -29,9 +30,10 @@ public interface ITaskFlowExecutor {
      * @param taskFlowExecutorCorePoolSize
      * @param taskFlowExecutorMaximumPoolSize
      * @throws TaskFlowExecuteException
+     * @throws TaskFlowInterruptedException
      */
     void execute(TaskFlow taskFlow, TaskFlowContext taskFlowContext,
-                 Integer taskFlowExecutorCorePoolSize, Integer taskFlowExecutorMaximumPoolSize) throws TaskFlowExecuteException;
+                 Integer taskFlowExecutorCorePoolSize, Integer taskFlowExecutorMaximumPoolSize) throws TaskFlowExecuteException, TaskFlowInterruptedException;
 
     /**
      * 任务流后置处理

@@ -18,7 +18,7 @@ public class MyTask extends Task {
     private boolean requiredToStop = false;
 
     @Override
-    public void execute(TaskFlowContext taskFlowContext) throws TaskExecuteException {
+    public void execute(TaskFlowContext taskFlowContext) throws TaskExecuteException, TaskInterruptedException {
         int totalTime = 0;
         int timeout = 3 * 1000;
         while (totalTime < timeout) {

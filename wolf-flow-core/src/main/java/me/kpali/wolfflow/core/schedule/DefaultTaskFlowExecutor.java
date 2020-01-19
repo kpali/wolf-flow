@@ -2,7 +2,10 @@ package me.kpali.wolfflow.core.schedule;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import me.kpali.wolfflow.core.event.TaskStatusChangeEvent;
-import me.kpali.wolfflow.core.exception.*;
+import me.kpali.wolfflow.core.exception.InvalidTaskFlowException;
+import me.kpali.wolfflow.core.exception.TaskFlowExecuteException;
+import me.kpali.wolfflow.core.exception.TaskFlowInterruptedException;
+import me.kpali.wolfflow.core.exception.TaskFlowStopException;
 import me.kpali.wolfflow.core.model.*;
 import me.kpali.wolfflow.core.util.TaskFlowUtils;
 import org.slf4j.Logger;
@@ -44,7 +47,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
 
     @Override
     public void execute(TaskFlow taskFlow, TaskFlowContext taskFlowContext,
-                        Integer taskFlowExecutorCorePoolSize, Integer taskFlowExecutorMaximumPoolSize) throws TaskFlowExecuteException {
+                        Integer taskFlowExecutorCorePoolSize, Integer taskFlowExecutorMaximumPoolSize) throws TaskFlowExecuteException, TaskFlowInterruptedException {
         synchronized (lock) {
             this.taskFlowRequireToStop.put(taskFlow.getId(), false);
         }
@@ -166,7 +169,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
             if (requireToStop) {
                 throw new TaskFlowInterruptedException("任务流被终止执行");
             } else if (!isSuccess) {
-                throw new TaskFlowExecuteFailException("至少有一个任务执行失败");
+                throw new TaskFlowExecuteException("至少有一个任务执行失败");
             }
         } finally {
             synchronized (lock) {
