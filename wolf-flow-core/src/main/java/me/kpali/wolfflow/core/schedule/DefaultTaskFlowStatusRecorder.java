@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import me.kpali.wolfflow.core.exception.TaskFlowStatusRecordException;
 import me.kpali.wolfflow.core.model.TaskFlowStatus;
+import me.kpali.wolfflow.core.model.TaskFlowStatusEnum;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -72,6 +73,16 @@ public class DefaultTaskFlowStatusRecorder implements ITaskFlowStatusRecorder {
     public void remove(Long taskFlowId) throws TaskFlowStatusRecordException {
         synchronized (lock) {
             taskFlowStatusMap.remove(taskFlowId);
+        }
+    }
+
+    @Override
+    public boolean isInProgress(Long taskFlowId) throws TaskFlowStatusRecordException {
+        synchronized (lock) {
+            TaskFlowStatus taskFlowStatus = this.get(taskFlowId);
+            return taskFlowStatus != null &&
+                    (!TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode().equals(taskFlowStatus.getStatus())
+                            || !TaskFlowStatusEnum.EXECUTE_FAILURE.getCode().equals(taskFlowStatus.getStatus()));
         }
     }
 }

@@ -64,9 +64,6 @@ public class TaskFlowScheduler {
 
     private Boolean taskFlowAllowParallel;
 
-    private HashMap<Long, TaskFlow> taskFlowInProgress = new HashMap<>();
-    private HashMap<Long, TaskFlowContext> taskFlowContexts = new HashMap<>();
-
     /**
      * 启动任务流调度器
      */
@@ -283,16 +280,12 @@ public class TaskFlowScheduler {
         String taskFlowExecIdString = taskFlowExecId;
 
         // 任务流执行
-        TaskFlowContext taskFlowContext = new TaskFlowContext();
-        synchronized (lock) {
-            if (!taskFlowAllowParallel && taskFlowInProgress.containsKey(finalTaskFlow.getId())) {
-                throw new TaskFlowTriggerException("不允许同时多次执行！");
-            } else {
-                taskFlowContexts.put(finalTaskFlow.getId(), taskFlowContext);
-                taskFlowInProgress.put(finalTaskFlow.getId(), finalTaskFlow);
-            }
+        // TODO: 存在低概率的并发问题，从检查到任务流执行更新状态之前，如果同时有两个触发请求，会导致任务流同时多次执行
+        if (!taskFlowAllowParallel && this.taskFlowStatusRecorder.isInProgress(finalTaskFlow.getId())) {
+            throw new TaskFlowTriggerException("不允许同时多次执行！");
         }
         this.triggerThreadPool.execute(() -> {
+            TaskFlowContext taskFlowContext = new TaskFlowContext();
             try {
                 if (params != null) {
                     taskFlowContext.setParams(params);
@@ -315,12 +308,6 @@ public class TaskFlowScheduler {
                 // 任务流执行失败
                 this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage());
             }
-            finally {
-                synchronized (lock) {
-                    taskFlowContexts.remove(finalTaskFlow.getId());
-                    taskFlowInProgress.remove(finalTaskFlow.getId());
-                }
-            }
         });
 
         return taskFlowExecId;
@@ -333,16 +320,9 @@ public class TaskFlowScheduler {
      * @throws TaskFlowStopException
      */
     public void stop(Long taskFlowId) throws TaskFlowStopException {
-        TaskFlow taskFlow = null;
-        TaskFlowContext taskFlowContext = null;
-        synchronized (lock) {
-            if (taskFlowInProgress.containsKey(taskFlowId)) {
-                taskFlow = taskFlowInProgress.get(taskFlowId);
-                taskFlowContext = taskFlowContexts.get(taskFlowId);
-            }
-        }
-        if (taskFlow != null && taskFlowContexts != null) {
-            this.publishTaskFlowStatusChangeEvent(taskFlow, taskFlowContext, TaskFlowStatusEnum.STOPPING.getCode(), null);
+        if (this.taskFlowStatusRecorder.isInProgress(taskFlowId)) {
+            TaskFlowStatus taskFlowStatus = this.taskFlowStatusRecorder.get(taskFlowId);
+            this.publishTaskFlowStatusChangeEvent(taskFlowStatus.getTaskFlow(), taskFlowStatus.getTaskFlowContext(), TaskFlowStatusEnum.STOPPING.getCode(), null);
             this.taskFlowExecutor.stop(taskFlowId);
         }
     }

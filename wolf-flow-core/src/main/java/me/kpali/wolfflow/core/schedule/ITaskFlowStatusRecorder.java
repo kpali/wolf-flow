@@ -38,8 +38,18 @@ public interface ITaskFlowStatusRecorder {
 
     /**
      * 删除任务流状态
+     *
      * @param taskFlowId
      * @throws TaskFlowStatusRecordException
      */
     void remove(Long taskFlowId) throws TaskFlowStatusRecordException;
+
+    /**
+     * 查询任务流是否正在处理中
+     *
+     * @param taskFlowId
+     * @return
+     * @throws TaskFlowStatusRecordException
+     */
+    boolean isInProgress(Long taskFlowId) throws TaskFlowStatusRecordException;
 }
