@@ -1,8 +1,8 @@
-package me.kpali.wolfflow.core.quartz;
+package me.kpali.wolfflow.core.scheduler.quartz;
 
 import me.kpali.wolfflow.core.exception.InvalidTaskFlowException;
 import me.kpali.wolfflow.core.exception.TaskFlowTriggerException;
-import me.kpali.wolfflow.core.schedule.TaskFlowScheduler;
+import me.kpali.wolfflow.core.scheduler.TaskFlowScheduler;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.JobKey;

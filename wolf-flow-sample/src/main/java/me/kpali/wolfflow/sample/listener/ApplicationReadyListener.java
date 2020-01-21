@@ -1,6 +1,6 @@
 package me.kpali.wolfflow.sample.listener;
 
-import me.kpali.wolfflow.core.schedule.TaskFlowScheduler;
+import me.kpali.wolfflow.core.scheduler.TaskFlowScheduler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;

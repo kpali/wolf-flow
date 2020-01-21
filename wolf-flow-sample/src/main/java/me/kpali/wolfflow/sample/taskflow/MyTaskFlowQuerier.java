@@ -3,7 +3,7 @@ package me.kpali.wolfflow.sample.taskflow;
 import me.kpali.wolfflow.core.exception.TaskFlowQueryException;
 import me.kpali.wolfflow.core.model.Link;
 import me.kpali.wolfflow.core.model.TaskFlow;
-import me.kpali.wolfflow.core.schedule.DefaultTaskFlowQuerier;
+import me.kpali.wolfflow.core.querier.impl.DefaultTaskFlowQuerier;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 

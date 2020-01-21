@@ -1,8 +1,9 @@
-package me.kpali.wolfflow.core.schedule;
+package me.kpali.wolfflow.core.recorder.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import me.kpali.wolfflow.core.recorder.ITaskStatusRecorder;
 import me.kpali.wolfflow.core.exception.TaskFlowStatusRecordException;
 import me.kpali.wolfflow.core.exception.TaskStatusRecordException;
 import me.kpali.wolfflow.core.model.TaskStatus;

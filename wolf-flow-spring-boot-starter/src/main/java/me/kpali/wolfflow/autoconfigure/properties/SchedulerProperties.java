@@ -2,21 +2,21 @@ package me.kpali.wolfflow.autoconfigure.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@ConfigurationProperties(prefix = "wolf-flow.schedule")
-public class ScheduleProperties {
-    private Integer scanInterval = 10;
+@ConfigurationProperties(prefix = "wolf-flow.scheduler")
+public class SchedulerProperties {
+    private Integer cronTaskFlowScanInterval = 10;
     private Integer triggerCorePoolSize = 10;
     private Integer triggerMaximumPoolSize = 10;
     private Integer taskFlowExecutorCorePoolSize = 3;
     private Integer taskFlowExecutorMaximumPoolSize = 3;
     private Boolean taskFlowAllowParallel = false;
 
-    public Integer getScanInterval() {
-        return scanInterval;
+    public Integer getCronTaskFlowScanInterval() {
+        return cronTaskFlowScanInterval;
     }
 
-    public void setScanInterval(Integer scanInterval) {
-        this.scanInterval = scanInterval;
+    public void setCronTaskFlowScanInterval(Integer cronTaskFlowScanInterval) {
+        this.cronTaskFlowScanInterval = cronTaskFlowScanInterval;
     }
 
     public Integer getTriggerCorePoolSize() {

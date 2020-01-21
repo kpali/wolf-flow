@@ -1,7 +1,7 @@
 package me.kpali.wolfflow.core.listener;
 
 import me.kpali.wolfflow.core.event.TaskFlowStatusChangeEvent;
-import me.kpali.wolfflow.core.schedule.ITaskFlowStatusRecorder;
+import me.kpali.wolfflow.core.recorder.ITaskFlowStatusRecorder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;

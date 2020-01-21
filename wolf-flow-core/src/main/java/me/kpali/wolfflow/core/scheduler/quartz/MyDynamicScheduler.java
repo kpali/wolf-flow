@@ -1,4 +1,4 @@
-package me.kpali.wolfflow.core.quartz;
+package me.kpali.wolfflow.core.scheduler.quartz;
 
 import org.quartz.*;
 import org.quartz.impl.matchers.GroupMatcher;

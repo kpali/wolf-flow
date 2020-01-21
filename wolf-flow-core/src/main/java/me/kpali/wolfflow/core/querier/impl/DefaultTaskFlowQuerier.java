@@ -1,5 +1,6 @@
-package me.kpali.wolfflow.core.schedule;
+package me.kpali.wolfflow.core.querier.impl;
 
+import me.kpali.wolfflow.core.querier.ITaskFlowQuerier;
 import me.kpali.wolfflow.core.exception.TaskFlowQueryException;
 import me.kpali.wolfflow.core.model.TaskFlow;
 import org.springframework.stereotype.Component;

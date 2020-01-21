@@ -1,4 +1,4 @@
-package me.kpali.wolfflow.core.schedule;
+package me.kpali.wolfflow.core.recorder;
 
 import me.kpali.wolfflow.core.exception.TaskFlowStatusRecordException;
 import me.kpali.wolfflow.core.model.TaskFlowStatus;

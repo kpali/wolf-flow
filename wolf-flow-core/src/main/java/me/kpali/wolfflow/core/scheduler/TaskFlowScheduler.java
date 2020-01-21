@@ -1,10 +1,17 @@
-package me.kpali.wolfflow.core.schedule;
+package me.kpali.wolfflow.core.scheduler;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import me.kpali.wolfflow.core.cluster.IClusterController;
+import me.kpali.wolfflow.core.enums.TaskFlowStatusEnum;
+import me.kpali.wolfflow.core.enums.TaskStatusEnum;
+import me.kpali.wolfflow.core.executor.ITaskFlowExecutor;
+import me.kpali.wolfflow.core.querier.ITaskFlowQuerier;
+import me.kpali.wolfflow.core.recorder.ITaskFlowStatusRecorder;
+import me.kpali.wolfflow.core.recorder.ITaskStatusRecorder;
 import me.kpali.wolfflow.core.event.*;
 import me.kpali.wolfflow.core.exception.*;
 import me.kpali.wolfflow.core.model.*;
-import me.kpali.wolfflow.core.quartz.MyDynamicScheduler;
+import me.kpali.wolfflow.core.scheduler.quartz.MyDynamicScheduler;
 import me.kpali.wolfflow.core.util.TaskFlowUtils;
 import org.quartz.JobKey;
 import org.slf4j.Logger;
@@ -21,11 +28,11 @@ import java.util.concurrent.*;
  * @author kpali
  */
 public class TaskFlowScheduler {
-    public TaskFlowScheduler(Integer scanInterval,
+    public TaskFlowScheduler(Integer cronTaskFlowScanInterval,
                              Integer triggerCorePoolSize, Integer triggerMaximumPoolSize,
                              Integer taskFlowExecutorCorePoolSize, Integer taskFlowExecutorMaximumPoolSize,
                              Boolean taskFlowAllowParallel) {
-        this.scanInterval = scanInterval;
+        this.cronTaskFlowScanInterval = cronTaskFlowScanInterval;
         this.triggerCorePoolSize = triggerCorePoolSize;
         this.triggerMaximumPoolSize = triggerMaximumPoolSize;
         this.taskFlowExecutorCorePoolSize = taskFlowExecutorCorePoolSize;
@@ -44,9 +51,7 @@ public class TaskFlowScheduler {
     @Autowired
     private ITaskFlowQuerier taskFlowQuerier;
 
-    @Autowired
-    private ITaskFlowScaner taskFlowScaner;
-    private Integer scanInterval;
+    private Integer cronTaskFlowScanInterval;
 
     private ExecutorService triggerThreadPool;
     private Integer triggerCorePoolSize;
@@ -62,6 +67,9 @@ public class TaskFlowScheduler {
     @Autowired
     private ITaskStatusRecorder taskStatusRecorder;
 
+    @Autowired
+    private IClusterController clusterController;
+
     private Boolean taskFlowAllowParallel;
 
     /**
@@ -71,40 +79,40 @@ public class TaskFlowScheduler {
         if (this.started) {
             return;
         }
-        log.info("任务流调度器启动，扫描间隔：{}秒，触发器核心线程数：{}，触发器最大线程数：{}，执行器核心线程数：{}，执行器最大线程数：{}",
-                this.scanInterval,
+        log.info("任务流调度器启动，定时任务流扫描间隔：{}秒，触发器核心线程数：{}，触发器最大线程数：{}，执行器核心线程数：{}，执行器最大线程数：{}",
+                this.cronTaskFlowScanInterval,
                 this.triggerCorePoolSize, this.triggerMaximumPoolSize,
                 this.taskFlowExecutorCorePoolSize, this.taskFlowExecutorMaximumPoolSize);
         this.started = true;
-        this.startScaner();
+        this.startCronTaskFlowScaner();
     }
 
     /**
-     * 启动任务流扫描器
+     * 启动定时任务流扫描器
      */
-    private void startScaner() {
+    private void startCronTaskFlowScaner() {
         ThreadFactory scanerThreadFactory = new ThreadFactoryBuilder()
-                .setNameFormat("taskFlowScaner-pool-%d").build();
+                .setNameFormat("cronTaskFlowScaner-pool-%d").build();
         ExecutorService scanerThreadPool = new ThreadPoolExecutor(1, 1,
                 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<Runnable>(1024), scanerThreadFactory, new ThreadPoolExecutor.AbortPolicy());
-        log.info("任务流扫描线程启动");
+        log.info("定时任务流扫描线程启动");
         scanerThreadPool.execute(() -> {
             while (true) {
                 try {
-                    Thread.sleep(this.scanInterval * 1000);
+                    Thread.sleep(this.cronTaskFlowScanInterval * 1000);
 
-                    // 任务流扫描前尝试获取锁
-                    boolean res = this.taskFlowScaner.tryLock();
+                    // 定时任务流扫描前尝试获取锁
+                    boolean res = this.clusterController.tryLock("CronTaskFlowScanerLock");
                     if (res) {
-                        log.info("任务流扫描线程获取锁成功");
+                        log.info("定时任务流扫描线程获取锁成功");
                         // 获取锁成功
                         TryLockSuccessEvent tryLockSuccessEvent = new TryLockSuccessEvent(this);
                         this.eventPublisher.publishEvent(tryLockSuccessEvent);
 
                         String jobGroup = "DefaultJobGroup";
 
-                        // 任务流扫描前
+                        // 定时任务流扫描前
                         BeforeScaningEvent beforeScaningEvent = new BeforeScaningEvent(this);
                         this.eventPublisher.publishEvent(beforeScaningEvent);
 
@@ -153,25 +161,25 @@ public class TaskFlowScheduler {
                                     this.eventPublisher.publishEvent(taskFlowUpdateScheduleEvent);
                                 }
                             } catch (Exception e) {
-                                log.error("任务流调度失败，任务流ID：" + taskFlow.getId() + "，失败原因：" + e.getMessage());
+                                log.error("定时任务流调度失败，任务流ID：" + taskFlow.getId() + "，失败原因：" + e.getMessage());
                                 // 任务流调度失败
                                 TaskFlowScheduleFailEvent taskFlowScheduleFailEvent = new TaskFlowScheduleFailEvent(this, taskFlow);
                                 this.eventPublisher.publishEvent(taskFlowScheduleFailEvent);
                             }
                         }
 
-                        // 任务流扫描后
+                        // 定时任务流扫描后
                         AfterScaningEvent afterScaningEvent = new AfterScaningEvent(this);
                         this.eventPublisher.publishEvent(afterScaningEvent);
                     } else {
-                        log.info("任务流调度线程获取锁失败");
+                        log.info("定时任务流扫描线程获取锁失败");
                         MyDynamicScheduler.clear();
                         // 获取锁失败
                         TryLockFailEvent tryLockFailEvent = new TryLockFailEvent(this);
                         this.eventPublisher.publishEvent(tryLockFailEvent);
                     }
                 } catch (Exception e) {
-                    log.error("任务流调度异常！" + e.getMessage(), e);
+                    log.error("定时任务流调度异常！" + e.getMessage(), e);
                 }
             }
         });
