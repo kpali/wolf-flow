@@ -1,8 +1,6 @@
 package me.kpali.wolfflow.core.cluster;
 
-import me.kpali.wolfflow.core.model.ServiceNode;
-
-import java.util.List;
+import me.kpali.wolfflow.core.model.TaskFlowExecRequest;
 
 /**
  * 集群控制器
@@ -11,24 +9,25 @@ import java.util.List;
  */
 public interface IClusterController {
     /**
-     * 服务注册
-     *
-     * @return 已注册的服务节点列表
-     */
-    List<ServiceNode> register();
-
-    /**
-     * 竞争master节点
-     *
-     * @return 成功则返回true
-     */
-    boolean competeForMaster();
-
-    /**
      * 尝试获得分布式锁
      *
      * @param name 分布式锁名称
      * @return 成功则返回true
      */
     boolean tryLock(String name);
+
+    /**
+     * 插入任务流执行请求到队列中
+     *
+     * @param request
+     * @return 成功返回true
+     */
+    boolean offer(TaskFlowExecRequest request);
+
+    /**
+     * 移除并返回任务流执行队列的首个元素
+     *
+     * @return 若队列为空则返回null
+     */
+    TaskFlowExecRequest poll();
 }

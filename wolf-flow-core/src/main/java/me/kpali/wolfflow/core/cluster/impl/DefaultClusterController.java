@@ -1,10 +1,11 @@
 package me.kpali.wolfflow.core.cluster.impl;
 
 import me.kpali.wolfflow.core.cluster.IClusterController;
-import me.kpali.wolfflow.core.model.ServiceNode;
+import me.kpali.wolfflow.core.model.TaskFlowExecRequest;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
+import java.util.LinkedList;
+import java.util.Queue;
 
 /**
  * 集群控制器的默认实现
@@ -13,18 +14,20 @@ import java.util.List;
  */
 @Component
 public class DefaultClusterController implements IClusterController {
-    @Override
-    public List<ServiceNode> register() {
-        return null;
-    }
-
-    @Override
-    public boolean competeForMaster() {
-        return true;
-    }
+    private Queue<TaskFlowExecRequest> taskFlowExecRequestQueue = new LinkedList<>();
 
     @Override
     public boolean tryLock(String name) {
         return true;
+    }
+
+    @Override
+    public boolean offer(TaskFlowExecRequest request) {
+        return taskFlowExecRequestQueue.offer(request);
+    }
+
+    @Override
+    public TaskFlowExecRequest poll() {
+        return taskFlowExecRequestQueue.poll();
     }
 }
