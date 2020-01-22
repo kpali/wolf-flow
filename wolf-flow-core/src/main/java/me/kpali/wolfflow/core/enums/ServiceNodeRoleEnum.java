@@ -10,8 +10,8 @@ public enum ServiceNodeRoleEnum {
     MASTER("MASTER", "Master"),
     WORKER("WORKER", "Worker");
 
-    public final String code;
-    public final String name;
+    private String code;
+    private String name;
 
     ServiceNodeRoleEnum(String code, String name) {
         this.code = code;

@@ -208,6 +208,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
         taskStatus.setTaskFlowContext(taskFlowContext);
         taskStatus.setStatus(status);
         taskStatus.setMessage(message);
+        taskStatusRecorder.put(taskStatus);
         TaskStatusChangeEvent taskStatusChangeEvent = new TaskStatusChangeEvent(this, taskStatus);
         this.eventPublisher.publishEvent(taskStatusChangeEvent);
     }

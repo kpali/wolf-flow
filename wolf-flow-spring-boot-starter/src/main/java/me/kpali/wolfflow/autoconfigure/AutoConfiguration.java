@@ -11,8 +11,7 @@ import org.springframework.context.annotation.Import;
         ExecutorConfiguration.class,
         QuerierConfiguration.class,
         RecorderConfiguration.class,
-        ClusterConfiguration.class,
-        ListenerConfiguration.class})
+        ClusterConfiguration.class})
 @Configuration
 public class AutoConfiguration {
 }

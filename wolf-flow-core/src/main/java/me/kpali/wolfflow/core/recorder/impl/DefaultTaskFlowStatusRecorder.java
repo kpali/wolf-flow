@@ -3,10 +3,10 @@ package me.kpali.wolfflow.core.recorder.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import me.kpali.wolfflow.core.recorder.ITaskFlowStatusRecorder;
+import me.kpali.wolfflow.core.enums.TaskFlowStatusEnum;
 import me.kpali.wolfflow.core.exception.TaskFlowStatusRecordException;
 import me.kpali.wolfflow.core.model.TaskFlowStatus;
-import me.kpali.wolfflow.core.enums.TaskFlowStatusEnum;
+import me.kpali.wolfflow.core.recorder.ITaskFlowStatusRecorder;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -71,19 +71,42 @@ public class DefaultTaskFlowStatusRecorder implements ITaskFlowStatusRecorder {
     }
 
     @Override
-    public void remove(Long taskFlowId) throws TaskFlowStatusRecordException {
+    public TaskFlowStatus putIfNotInProgress(TaskFlowStatus taskFlowStatus) throws TaskFlowStatusRecordException {
         synchronized (lock) {
-            taskFlowStatusMap.remove(taskFlowId);
+            TaskFlowStatus oldTaskFlowStatus = this.get(taskFlowStatus.getTaskFlow().getId());
+            boolean isInProgress = oldTaskFlowStatus != null && this.isInProgress(oldTaskFlowStatus);
+            if (isInProgress) {
+                return null;
+            }
+            this.put(taskFlowStatus);
+            return taskFlowStatus;
         }
     }
 
     @Override
-    public boolean isInProgress(Long taskFlowId) throws TaskFlowStatusRecordException {
+    public TaskFlowStatus toStoppingIfInProgress(Long taskFlowId) throws TaskFlowStatusRecordException {
         synchronized (lock) {
             TaskFlowStatus taskFlowStatus = this.get(taskFlowId);
-            return taskFlowStatus != null &&
-                    (!TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode().equals(taskFlowStatus.getStatus())
-                            || !TaskFlowStatusEnum.EXECUTE_FAILURE.getCode().equals(taskFlowStatus.getStatus()));
+            if (taskFlowStatus != null) {
+                if (this.isInProgress(taskFlowStatus)) {
+                    taskFlowStatus.setStatus(TaskFlowStatusEnum.STOPPING.getCode());
+                    this.put(taskFlowStatus);
+                    return taskFlowStatus;
+                }
+            }
+            return null;
+        }
+    }
+
+    private boolean isInProgress(TaskFlowStatus taskFlowStatus) {
+        return !TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode().equals(taskFlowStatus.getStatus())
+                || !TaskFlowStatusEnum.EXECUTE_FAILURE.getCode().equals(taskFlowStatus.getStatus());
+    }
+
+    @Override
+    public void remove(Long taskFlowId) throws TaskFlowStatusRecordException {
+        synchronized (lock) {
+            taskFlowStatusMap.remove(taskFlowId);
         }
     }
 }

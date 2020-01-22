@@ -13,8 +13,8 @@ public enum TaskFlowStatusEnum {
     EXECUTE_FAILURE("EXECUTE_FAILURE", "执行失败"),
     STOPPING("STOPPING", "停止中");
 
-    public final String code;
-    public final String name;
+    private String code;
+    private String name;
 
     TaskFlowStatusEnum(String code, String name) {
         this.code = code;

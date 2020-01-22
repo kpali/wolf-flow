@@ -14,8 +14,8 @@ public enum TaskStatusEnum {
     STOPPING("STOPPING", "停止中"),
     SKIPPED("SKIPPED", "跳过");
 
-    public final String code;
-    public final String name;
+    private String code;
+    private String name;
 
     TaskStatusEnum(String code, String name) {
         this.code = code;

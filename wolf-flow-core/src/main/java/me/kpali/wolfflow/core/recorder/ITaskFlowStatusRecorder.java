@@ -37,19 +37,28 @@ public interface ITaskFlowStatusRecorder {
     void put(TaskFlowStatus taskFlowStatus) throws TaskFlowStatusRecordException;
 
     /**
+     * 如果任务流不在处理中，新增或更新任务流状态
+     *
+     * @param taskFlowStatus
+     * @return 成功后返回任务流状态，不成功则返回null
+     * @throws TaskFlowStatusRecordException
+     */
+    TaskFlowStatus putIfNotInProgress(TaskFlowStatus taskFlowStatus) throws TaskFlowStatusRecordException;
+
+    /**
+     * 如果任务流正在处理中，则更新任务流状态为停止中
+     *
+     * @param taskFlowId
+     * @return 成功后返回任务流状态，不成功则返回null
+     * @throws TaskFlowStatusRecordException
+     */
+    TaskFlowStatus toStoppingIfInProgress(Long taskFlowId) throws TaskFlowStatusRecordException;
+
+    /**
      * 删除任务流状态
      *
      * @param taskFlowId
      * @throws TaskFlowStatusRecordException
      */
     void remove(Long taskFlowId) throws TaskFlowStatusRecordException;
-
-    /**
-     * 查询任务流是否正在处理中
-     *
-     * @param taskFlowId
-     * @return
-     * @throws TaskFlowStatusRecordException
-     */
-    boolean isInProgress(Long taskFlowId) throws TaskFlowStatusRecordException;
 }

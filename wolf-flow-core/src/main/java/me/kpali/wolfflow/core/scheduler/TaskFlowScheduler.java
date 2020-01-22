@@ -277,34 +277,44 @@ public class TaskFlowScheduler {
         }
         String taskFlowExecIdString = taskFlowExecId;
 
-        // 任务流执行
-        // TODO: 存在低概率的并发问题，从检查到任务流执行更新状态之前，如果同时有两个触发请求，会导致任务流同时多次执行
-        if (!taskFlowAllowParallel && this.taskFlowStatusRecorder.isInProgress(finalTaskFlow.getId())) {
-            throw new TaskFlowTriggerException("不允许同时多次执行！");
+        // 准备执行
+        TaskFlowContext taskFlowContext = new TaskFlowContext();
+        if (params != null) {
+            taskFlowContext.setParams(params);
         }
+        taskFlowContext.put(ContextKey.FROM_TASK_ID, String.valueOf(fromTaskId));
+        taskFlowContext.put(ContextKey.TO_TASK_ID, String.valueOf(toTaskId));
+        taskFlowContext.put(ContextKey.TASK_FLOW_EXEC_ID, taskFlowExecIdString);
+
+        TaskFlowStatus taskFlowWaitForExecute = new TaskFlowStatus();
+        taskFlowWaitForExecute.setTaskFlow(finalTaskFlow);
+        taskFlowWaitForExecute.setTaskFlowContext(taskFlowContext);
+        taskFlowWaitForExecute.setStatus(TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode());
+        taskFlowWaitForExecute.setMessage(null);
+        if (!taskFlowAllowParallel) {
+            if (this.taskFlowStatusRecorder.putIfNotInProgress(taskFlowWaitForExecute) == null) {
+                throw new TaskFlowTriggerException("不允许同时多次执行！");
+            }
+        } else {
+            this.taskFlowStatusRecorder.put(taskFlowWaitForExecute);
+        }
+        // 任务流执行
         this.triggerThreadPool.execute(() -> {
-            TaskFlowContext taskFlowContext = new TaskFlowContext();
             try {
-                if (params != null) {
-                    taskFlowContext.setParams(params);
-                }
-                taskFlowContext.put(ContextKey.FROM_TASK_ID, String.valueOf(fromTaskId));
-                taskFlowContext.put(ContextKey.TO_TASK_ID, String.valueOf(toTaskId));
-                taskFlowContext.put(ContextKey.TASK_FLOW_EXEC_ID, taskFlowExecIdString);
                 // 任务流等待执行
-                this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode(), null);
+                this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode(), null, false);
                 this.taskFlowExecutor.beforeExecute(finalTaskFlow, taskFlowContext);
                 // 任务流执行中
-                this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTING.getCode(), null);
+                this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTING.getCode(), null, true);
                 // 开始执行
                 this.taskFlowExecutor.execute(finalTaskFlow, taskFlowContext, this.taskFlowExecutorCorePoolSize, this.taskFlowExecutorMaximumPoolSize);
                 this.taskFlowExecutor.afterExecute(finalTaskFlow, taskFlowContext);
                 // 任务流执行成功
-                this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode(), null);
+                this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode(), null, true);
             } catch (TaskFlowExecuteException | TaskInterruptedException e) {
                 log.error("任务流执行失败！任务流ID：" + finalTaskFlow.getId() + " 异常信息：" + e.getMessage(), e);
                 // 任务流执行失败
-                this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage());
+                this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage(), true);
             }
         });
 
@@ -318,9 +328,9 @@ public class TaskFlowScheduler {
      * @throws TaskFlowStopException
      */
     public void stop(Long taskFlowId) throws TaskFlowStopException {
-        if (this.taskFlowStatusRecorder.isInProgress(taskFlowId)) {
-            TaskFlowStatus taskFlowStatus = this.taskFlowStatusRecorder.get(taskFlowId);
-            this.publishTaskFlowStatusChangeEvent(taskFlowStatus.getTaskFlow(), taskFlowStatus.getTaskFlowContext(), TaskFlowStatusEnum.STOPPING.getCode(), null);
+        TaskFlowStatus taskFlowStatus = this.taskFlowStatusRecorder.toStoppingIfInProgress(taskFlowId);
+        if (taskFlowStatus != null) {
+            this.publishTaskFlowStatusChangeEvent(taskFlowStatus.getTaskFlow(), taskFlowStatus.getTaskFlowContext(), TaskFlowStatusEnum.STOPPING.getCode(), null, false);
             this.taskFlowExecutor.stop(taskFlowId);
         }
     }
@@ -368,13 +378,17 @@ public class TaskFlowScheduler {
      * @param taskFlowContext
      * @param status
      * @param message
+     * @param record
      */
-    private void publishTaskFlowStatusChangeEvent(TaskFlow taskFlow, TaskFlowContext taskFlowContext, String status, String message) {
+    private void publishTaskFlowStatusChangeEvent(TaskFlow taskFlow, TaskFlowContext taskFlowContext, String status, String message, boolean record) {
         TaskFlowStatus taskFlowStatus = new TaskFlowStatus();
         taskFlowStatus.setTaskFlow(taskFlow);
         taskFlowStatus.setTaskFlowContext(taskFlowContext);
         taskFlowStatus.setStatus(status);
         taskFlowStatus.setMessage(message);
+        if (record) {
+            taskFlowStatusRecorder.put(taskFlowStatus);
+        }
         TaskFlowStatusChangeEvent taskFlowStatusChangeEvent = new TaskFlowStatusChangeEvent(this, taskFlowStatus);
         this.eventPublisher.publishEvent(taskFlowStatusChangeEvent);
     }
