@@ -2,15 +2,17 @@ package me.kpali.wolfflow.core.scheduler;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import me.kpali.wolfflow.core.cluster.IClusterController;
+import me.kpali.wolfflow.core.enums.TaskFlowScheduleStatusEnum;
 import me.kpali.wolfflow.core.enums.TaskFlowStatusEnum;
 import me.kpali.wolfflow.core.enums.TaskStatusEnum;
+import me.kpali.wolfflow.core.event.TaskFlowScheduleStatusChangeEvent;
+import me.kpali.wolfflow.core.event.TaskFlowStatusChangeEvent;
+import me.kpali.wolfflow.core.exception.*;
 import me.kpali.wolfflow.core.executor.ITaskFlowExecutor;
+import me.kpali.wolfflow.core.model.*;
 import me.kpali.wolfflow.core.querier.ITaskFlowQuerier;
 import me.kpali.wolfflow.core.recorder.ITaskFlowStatusRecorder;
 import me.kpali.wolfflow.core.recorder.ITaskStatusRecorder;
-import me.kpali.wolfflow.core.event.*;
-import me.kpali.wolfflow.core.exception.*;
-import me.kpali.wolfflow.core.model.*;
 import me.kpali.wolfflow.core.scheduler.quartz.MyDynamicScheduler;
 import me.kpali.wolfflow.core.util.TaskFlowUtils;
 import org.quartz.JobKey;
@@ -105,16 +107,10 @@ public class TaskFlowScheduler {
                     // 定时任务流扫描前尝试获取锁
                     boolean res = this.clusterController.tryLock("CronTaskFlowScanerLock");
                     if (res) {
-                        log.info("定时任务流扫描线程获取锁成功");
                         // 获取锁成功
-                        TryLockSuccessEvent tryLockSuccessEvent = new TryLockSuccessEvent(this);
-                        this.eventPublisher.publishEvent(tryLockSuccessEvent);
+                        log.info("定时任务流扫描线程获取锁成功");
 
                         String jobGroup = "DefaultJobGroup";
-
-                        // 定时任务流扫描前
-                        BeforeScaningEvent beforeScaningEvent = new BeforeScaningEvent(this);
-                        this.eventPublisher.publishEvent(beforeScaningEvent);
 
                         // 定时任务流扫描
                         List<TaskFlow> scannedCronTaskFlowList = this.taskFlowQuerier.listCronTaskFlow();
@@ -152,31 +148,25 @@ public class TaskFlowScheduler {
                                 if (!MyDynamicScheduler.checkExists(name, jobGroup)) {
                                     MyDynamicScheduler.addJob(name, jobGroup, cronExpression);
                                     // 任务流加入调度
-                                    TaskFlowJoinScheduleEvent taskFlowJoinScheduleEvent = new TaskFlowJoinScheduleEvent(this, taskFlow);
+                                    TaskFlowScheduleStatusChangeEvent taskFlowJoinScheduleEvent = new TaskFlowScheduleStatusChangeEvent(this, TaskFlowScheduleStatusEnum.JOIN.getCode());
                                     this.eventPublisher.publishEvent(taskFlowJoinScheduleEvent);
                                 } else {
                                     MyDynamicScheduler.updateJobCron(name, jobGroup, cronExpression);
                                     // 任务流更新调度
-                                    TaskFlowUpdateScheduleEvent taskFlowUpdateScheduleEvent = new TaskFlowUpdateScheduleEvent(this, taskFlow);
+                                    TaskFlowScheduleStatusChangeEvent taskFlowUpdateScheduleEvent = new TaskFlowScheduleStatusChangeEvent(this, TaskFlowScheduleStatusEnum.UPDATE.getCode());
                                     this.eventPublisher.publishEvent(taskFlowUpdateScheduleEvent);
                                 }
                             } catch (Exception e) {
                                 log.error("定时任务流调度失败，任务流ID：" + taskFlow.getId() + "，失败原因：" + e.getMessage());
                                 // 任务流调度失败
-                                TaskFlowScheduleFailEvent taskFlowScheduleFailEvent = new TaskFlowScheduleFailEvent(this, taskFlow);
+                                TaskFlowScheduleStatusChangeEvent taskFlowScheduleFailEvent = new TaskFlowScheduleStatusChangeEvent(this, TaskFlowScheduleStatusEnum.FAIL.getCode());
                                 this.eventPublisher.publishEvent(taskFlowScheduleFailEvent);
                             }
                         }
-
-                        // 定时任务流扫描后
-                        AfterScaningEvent afterScaningEvent = new AfterScaningEvent(this);
-                        this.eventPublisher.publishEvent(afterScaningEvent);
                     } else {
+                        // 获取锁失败
                         log.info("定时任务流扫描线程获取锁失败");
                         MyDynamicScheduler.clear();
-                        // 获取锁失败
-                        TryLockFailEvent tryLockFailEvent = new TryLockFailEvent(this);
-                        this.eventPublisher.publishEvent(tryLockFailEvent);
                     }
                 } catch (Exception e) {
                     log.error("定时任务流调度异常！" + e.getMessage(), e);

@@ -2,7 +2,9 @@ package me.kpali.wolfflow.sample.listener;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import me.kpali.wolfflow.core.event.*;
+import me.kpali.wolfflow.core.event.TaskFlowScheduleStatusChangeEvent;
+import me.kpali.wolfflow.core.event.TaskFlowStatusChangeEvent;
+import me.kpali.wolfflow.core.event.TaskStatusChangeEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
@@ -11,23 +13,7 @@ public class TaskFlowListener {
     private ObjectMapper objectMapper = new ObjectMapper();
 
     @EventListener
-    public void beforeScaning(BeforeScaningEvent event) {
-    }
-
-    @EventListener
-    public void afterScaning(AfterScaningEvent event) {
-    }
-
-    @EventListener
-    public void taskFlowJoinSchedule(TaskFlowJoinScheduleEvent event) {
-    }
-
-    @EventListener
-    public void taskFlowUpdateSchedule(TaskFlowUpdateScheduleEvent event) {
-    }
-
-    @EventListener
-    public void taskFlowScheduleFail(TaskFlowScheduleFailEvent event) {
+    public void taskFlowScheduleStatusChange(TaskFlowScheduleStatusChangeEvent event) {
     }
 
     @EventListener

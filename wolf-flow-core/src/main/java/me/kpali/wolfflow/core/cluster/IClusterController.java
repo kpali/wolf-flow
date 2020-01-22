@@ -18,7 +18,7 @@ public interface IClusterController {
     List<ServiceNode> register();
 
     /**
-     * 竞争成为master节点
+     * 竞争master节点
      *
      * @return 成功则返回true
      */
@@ -27,7 +27,7 @@ public interface IClusterController {
     /**
      * 尝试获得分布式锁
      *
-     * @param name
+     * @param name 分布式锁名称
      * @return 成功则返回true
      */
     boolean tryLock(String name);
