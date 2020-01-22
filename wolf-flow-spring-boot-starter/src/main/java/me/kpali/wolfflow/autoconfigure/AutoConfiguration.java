@@ -14,5 +14,5 @@ import org.springframework.context.annotation.Import;
         ClusterConfiguration.class,
         ListenerConfiguration.class})
 @Configuration
-public class WolfFlowAutoConfiguration {
+public class AutoConfiguration {
 }

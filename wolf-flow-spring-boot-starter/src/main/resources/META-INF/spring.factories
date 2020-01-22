@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-me.kpali.wolfflow.autoconfigure.WolfFlowAutoConfiguration
+me.kpali.wolfflow.autoconfigure.AutoConfiguration
