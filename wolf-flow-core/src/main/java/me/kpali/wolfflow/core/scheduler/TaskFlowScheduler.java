@@ -2,6 +2,7 @@ package me.kpali.wolfflow.core.scheduler;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import me.kpali.wolfflow.core.cluster.IClusterController;
+import me.kpali.wolfflow.core.config.SchedulerConfig;
 import me.kpali.wolfflow.core.enums.TaskFlowScheduleStatusEnum;
 import me.kpali.wolfflow.core.enums.TaskFlowStatusEnum;
 import me.kpali.wolfflow.core.enums.TaskStatusEnum;
@@ -30,19 +31,17 @@ import java.util.concurrent.*;
  * @author kpali
  */
 public class TaskFlowScheduler {
-    public TaskFlowScheduler(Integer taskFlowScanInterval,
-                             Integer triggerCorePoolSize, Integer triggerMaximumPoolSize,
-                             Integer taskFlowExecutorCorePoolSize, Integer taskFlowExecutorMaximumPoolSize,
-                             Boolean taskFlowAllowParallel) {
-        this.taskFlowScanInterval = taskFlowScanInterval;
-        this.triggerCorePoolSize = triggerCorePoolSize;
-        this.triggerMaximumPoolSize = triggerMaximumPoolSize;
-        this.taskFlowExecutorCorePoolSize = taskFlowExecutorCorePoolSize;
-        this.taskFlowExecutorMaximumPoolSize = taskFlowExecutorMaximumPoolSize;
-        this.taskFlowAllowParallel = taskFlowAllowParallel;
+    public TaskFlowScheduler() {
+    }
+
+    public TaskFlowScheduler(SchedulerConfig schedulerConfig) {
+        this.schedulerConfig = schedulerConfig;
     }
 
     private static final Logger log = LoggerFactory.getLogger(TaskFlowScheduler.class);
+
+    @Autowired
+    SchedulerConfig schedulerConfig;
 
     @Autowired
     private ApplicationEventPublisher eventPublisher;
@@ -53,16 +52,10 @@ public class TaskFlowScheduler {
     @Autowired
     private ITaskFlowQuerier taskFlowQuerier;
 
-    private Integer taskFlowScanInterval;
-
-    private ExecutorService triggerThreadPool;
-    private Integer triggerCorePoolSize;
-    private Integer triggerMaximumPoolSize;
+    private ExecutorService threadPool;
 
     @Autowired
     private ITaskFlowExecutor taskFlowExecutor;
-    private Integer taskFlowExecutorCorePoolSize;
-    private Integer taskFlowExecutorMaximumPoolSize;
 
     @Autowired
     private ITaskFlowStatusRecorder taskFlowStatusRecorder;
@@ -72,8 +65,6 @@ public class TaskFlowScheduler {
     @Autowired
     private IClusterController clusterController;
 
-    private Boolean taskFlowAllowParallel;
-
     /**
      * 启动任务流调度器
      */
@@ -81,10 +72,9 @@ public class TaskFlowScheduler {
         if (this.started) {
             return;
         }
-        log.info("任务流调度器启动，任务流扫描间隔：{}秒，触发器核心线程数：{}，触发器最大线程数：{}，执行器核心线程数：{}，执行器最大线程数：{}",
-                this.taskFlowScanInterval,
-                this.triggerCorePoolSize, this.triggerMaximumPoolSize,
-                this.taskFlowExecutorCorePoolSize, this.taskFlowExecutorMaximumPoolSize);
+        log.info("任务流调度器启动，任务流执行请求扫描间隔：{}秒，定时任务流扫描间隔：{}秒，核心线程数：{}，最大线程数：{}",
+                this.schedulerConfig.getCronTaskFlowScanInterval(), this.schedulerConfig.getExecRequestScanInterval(),
+                this.schedulerConfig.getCorePoolSize(), this.schedulerConfig.getMaximumPoolSize());
         this.started = true;
         this.startTaskFlowScaner();
     }
@@ -103,8 +93,7 @@ public class TaskFlowScheduler {
         scanerThreadPool.execute(() -> {
             while (true) {
                 try {
-                    // TODO: 扫描间隔配置化
-                    Thread.sleep(1000);
+                    Thread.sleep(this.schedulerConfig.getExecRequestScanInterval() * 1000);
                     TaskFlowExecRequest request = this.clusterController.poll();
                     if (request != null) {
                         log.info("扫描到新的任务流执行请求，任务流ID：{}", request.getTaskFlow().getId());
@@ -120,7 +109,7 @@ public class TaskFlowScheduler {
         scanerThreadPool.execute(() -> {
             while (true) {
                 try {
-                    Thread.sleep(this.taskFlowScanInterval * 1000);
+                    Thread.sleep(this.schedulerConfig.getCronTaskFlowScanInterval() * 1000);
 
                     // 定时任务流扫描前尝试获取锁，只有拥有锁的节点才能调度并触发定时任务流，避免重复触发
                     boolean res = this.clusterController.tryLock("CronTaskFlowScanLock");
@@ -291,7 +280,7 @@ public class TaskFlowScheduler {
         taskFlowWaitForExecute.setTaskFlowContext(taskFlowContext);
         taskFlowWaitForExecute.setStatus(TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode());
         taskFlowWaitForExecute.setMessage(null);
-        if (!taskFlowAllowParallel) {
+        if (!this.schedulerConfig.getAllowParallel()) {
             if (this.taskFlowStatusRecorder.putIfNotInProgress(taskFlowWaitForExecute) == null) {
                 throw new TaskFlowTriggerException("不允许同时多次执行！");
             }
@@ -321,23 +310,23 @@ public class TaskFlowScheduler {
         TaskFlow finalTaskFlow = request.getTaskFlow();
         TaskFlowContext taskFlowContext = request.getTaskFlowContext();
         // 任务流执行
-        if (this.triggerThreadPool == null) {
+        if (this.threadPool == null) {
             synchronized (this.lock) {
-                if (this.triggerThreadPool == null) {
+                if (this.threadPool == null) {
                     // 初始化线程池
                     ThreadFactory triggerThreadFactory = new ThreadFactoryBuilder().setNameFormat("triggerExecutor-pool-%d").build();
-                    this.triggerThreadPool = new ThreadPoolExecutor(this.triggerCorePoolSize, this.triggerMaximumPoolSize, 60, TimeUnit.SECONDS,
+                    this.threadPool = new ThreadPoolExecutor(this.schedulerConfig.getCorePoolSize(), this.schedulerConfig.getMaximumPoolSize(), 60, TimeUnit.SECONDS,
                             new LinkedBlockingQueue<Runnable>(1024), triggerThreadFactory, new ThreadPoolExecutor.AbortPolicy());
                 }
             }
         }
-        this.triggerThreadPool.execute(() -> {
+        this.threadPool.execute(() -> {
             try {
                 this.taskFlowExecutor.beforeExecute(finalTaskFlow, taskFlowContext);
                 // 任务流执行中
                 this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTING.getCode(), null, true);
                 // 开始执行
-                this.taskFlowExecutor.execute(finalTaskFlow, taskFlowContext, this.taskFlowExecutorCorePoolSize, this.taskFlowExecutorMaximumPoolSize);
+                this.taskFlowExecutor.execute(finalTaskFlow, taskFlowContext);
                 this.taskFlowExecutor.afterExecute(finalTaskFlow, taskFlowContext);
                 // 任务流执行成功
                 this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode(), null, true);

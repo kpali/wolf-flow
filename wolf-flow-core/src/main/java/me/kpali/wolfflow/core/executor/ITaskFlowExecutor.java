@@ -27,13 +27,10 @@ public interface ITaskFlowExecutor {
      *
      * @param taskFlow
      * @param taskFlowContext
-     * @param taskFlowExecutorCorePoolSize
-     * @param taskFlowExecutorMaximumPoolSize
      * @throws TaskFlowExecuteException
      * @throws TaskFlowInterruptedException
      */
-    void execute(TaskFlow taskFlow, TaskFlowContext taskFlowContext,
-                 Integer taskFlowExecutorCorePoolSize, Integer taskFlowExecutorMaximumPoolSize) throws TaskFlowExecuteException, TaskFlowInterruptedException;
+    void execute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws TaskFlowExecuteException, TaskFlowInterruptedException;
 
     /**
      * 任务流后置处理

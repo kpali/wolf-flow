@@ -1,12 +1,13 @@
 package me.kpali.wolfflow.core.executor.impl;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import me.kpali.wolfflow.core.config.ExecutorConfig;
 import me.kpali.wolfflow.core.enums.TaskStatusEnum;
-import me.kpali.wolfflow.core.executor.ITaskFlowExecutor;
-import me.kpali.wolfflow.core.recorder.ITaskStatusRecorder;
 import me.kpali.wolfflow.core.event.TaskStatusChangeEvent;
 import me.kpali.wolfflow.core.exception.*;
+import me.kpali.wolfflow.core.executor.ITaskFlowExecutor;
 import me.kpali.wolfflow.core.model.*;
+import me.kpali.wolfflow.core.recorder.ITaskStatusRecorder;
 import me.kpali.wolfflow.core.util.TaskFlowUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +30,9 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     private static final Logger log = LoggerFactory.getLogger(DefaultTaskFlowExecutor.class);
 
     @Autowired
+    ExecutorConfig executorConfig;
+
+    @Autowired
     private ApplicationEventPublisher eventPublisher;
 
     @Autowired
@@ -46,8 +50,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     }
 
     @Override
-    public void execute(TaskFlow taskFlow, TaskFlowContext taskFlowContext,
-                        Integer taskFlowExecutorCorePoolSize, Integer taskFlowExecutorMaximumPoolSize) throws TaskFlowExecuteException, TaskFlowInterruptedException {
+    public void execute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws TaskFlowExecuteException, TaskFlowInterruptedException {
         synchronized (lock) {
             this.taskFlowRequireToStop.put(taskFlow.getId(), false);
         }
@@ -63,7 +66,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
             // 初始化线程池
             ThreadFactory executorThreadFactory = new ThreadFactoryBuilder()
                     .setNameFormat("taskFlowExecutor-pool-%d").build();
-            ExecutorService executorThreadPool = new ThreadPoolExecutor(taskFlowExecutorCorePoolSize, taskFlowExecutorMaximumPoolSize,
+            ExecutorService executorThreadPool = new ThreadPoolExecutor(this.executorConfig.getCorePoolSize(), this.executorConfig.getMaximumPoolSize(),
                     0L, TimeUnit.MILLISECONDS,
                     new LinkedBlockingQueue<Runnable>(1024), executorThreadFactory, new ThreadPoolExecutor.AbortPolicy());
 

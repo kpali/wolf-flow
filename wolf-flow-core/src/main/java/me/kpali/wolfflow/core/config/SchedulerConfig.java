@@ -1,14 +1,19 @@
-package me.kpali.wolfflow.autoconfigure.properties;
+package me.kpali.wolfflow.core.config;
 
-import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.stereotype.Component;
 
-@ConfigurationProperties(prefix = "wolf-flow.scheduler")
-public class SchedulerProperties {
-    private Integer execRequestScanInterval = 1;
-    private Integer cronTaskFlowScanInterval = 10;
-    private Integer corePoolSize = 10;
-    private Integer maximumPoolSize = 10;
-    private Boolean allowParallel = false;
+/**
+ * 任务流调度器配置
+ *
+ * @author kpali
+ */
+@Component
+public class SchedulerConfig {
+    private Integer execRequestScanInterval;
+    private Integer cronTaskFlowScanInterval;
+    private Integer corePoolSize;
+    private Integer maximumPoolSize;
+    private Boolean allowParallel;
 
     public Integer getExecRequestScanInterval() {
         return execRequestScanInterval;
