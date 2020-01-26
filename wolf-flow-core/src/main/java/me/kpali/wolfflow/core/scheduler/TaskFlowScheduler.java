@@ -41,7 +41,7 @@ public class TaskFlowScheduler {
     private static final Logger log = LoggerFactory.getLogger(TaskFlowScheduler.class);
 
     @Autowired
-    SchedulerConfig schedulerConfig;
+    private SchedulerConfig schedulerConfig;
 
     @Autowired
     private ApplicationEventPublisher eventPublisher;
@@ -314,7 +314,7 @@ public class TaskFlowScheduler {
             synchronized (this.lock) {
                 if (this.threadPool == null) {
                     // 初始化线程池
-                    ThreadFactory triggerThreadFactory = new ThreadFactoryBuilder().setNameFormat("triggerExecutor-pool-%d").build();
+                    ThreadFactory triggerThreadFactory = new ThreadFactoryBuilder().setNameFormat("schedulerExecutor-pool-%d").build();
                     this.threadPool = new ThreadPoolExecutor(this.schedulerConfig.getCorePoolSize(), this.schedulerConfig.getMaximumPoolSize(), 60, TimeUnit.SECONDS,
                             new LinkedBlockingQueue<Runnable>(1024), triggerThreadFactory, new ThreadPoolExecutor.AbortPolicy());
                 }
