@@ -1,8 +1,8 @@
-package me.kpali.wolfflow.core.scheduler.quartz;
+package me.kpali.wolfflow.core.scheduler.impl.quartz;
 
 import me.kpali.wolfflow.core.exception.InvalidTaskFlowException;
 import me.kpali.wolfflow.core.exception.TaskFlowTriggerException;
-import me.kpali.wolfflow.core.scheduler.TaskFlowScheduler;
+import me.kpali.wolfflow.core.scheduler.ITaskFlowScheduler;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.quartz.JobKey;
@@ -19,7 +19,7 @@ public class MyQuartzJobBean extends QuartzJobBean {
     }
 
     @Autowired
-    TaskFlowScheduler taskFlowScheduler;
+    ITaskFlowScheduler taskFlowScheduler;
 
     @Override
     protected void executeInternal(JobExecutionContext context) throws JobExecutionException {

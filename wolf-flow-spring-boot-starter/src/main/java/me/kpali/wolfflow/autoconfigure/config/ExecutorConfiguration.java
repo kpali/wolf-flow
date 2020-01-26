@@ -5,6 +5,11 @@ import me.kpali.wolfflow.core.config.ExecutorConfig;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 
+/**
+ * 执行器配置
+ *
+ * @author kpali
+ */
 @ComponentScan(basePackages = {"me.kpali.wolfflow.core.executor"})
 public class ExecutorConfiguration {
     @Bean

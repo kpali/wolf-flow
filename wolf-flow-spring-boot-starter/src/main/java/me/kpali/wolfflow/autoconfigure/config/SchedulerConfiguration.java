@@ -2,10 +2,14 @@ package me.kpali.wolfflow.autoconfigure.config;
 
 import me.kpali.wolfflow.autoconfigure.properties.SchedulerProperties;
 import me.kpali.wolfflow.core.config.SchedulerConfig;
-import me.kpali.wolfflow.core.scheduler.TaskFlowScheduler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 
+/**
+ * 调度器配置
+ *
+ * @author kpali
+ */
 @ComponentScan(basePackages = {"me.kpali.wolfflow.core.scheduler"})
 public class SchedulerConfiguration {
     @Bean
@@ -22,10 +26,5 @@ public class SchedulerConfiguration {
         schedulerConfig.setMaximumPoolSize(maximumPoolSize);
         schedulerConfig.setAllowParallel(allowParallel);
         return schedulerConfig;
-    }
-
-    @Bean(initMethod = "startup")
-    public TaskFlowScheduler getTaskFlowScheduler(SchedulerConfig schedulerConfig) {
-        return new TaskFlowScheduler(schedulerConfig);
     }
 }

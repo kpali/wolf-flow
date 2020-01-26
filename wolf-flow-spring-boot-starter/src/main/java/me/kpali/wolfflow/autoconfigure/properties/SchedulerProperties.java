@@ -2,6 +2,11 @@ package me.kpali.wolfflow.autoconfigure.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+/**
+ * 调度器配置
+ *
+ * @author kpali
+ */
 @ConfigurationProperties(prefix = "wolf-flow.scheduler")
 public class SchedulerProperties {
     private Integer execRequestScanInterval = 1;

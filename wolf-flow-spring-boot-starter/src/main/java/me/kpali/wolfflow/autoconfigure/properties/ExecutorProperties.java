@@ -2,6 +2,11 @@ package me.kpali.wolfflow.autoconfigure.properties;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+/**
+ * 执行器配置
+ *
+ * @author kpali
+ */
 @ConfigurationProperties(prefix = "wolf-flow.executor")
 public class ExecutorProperties {
     private Integer corePoolSize = 3;

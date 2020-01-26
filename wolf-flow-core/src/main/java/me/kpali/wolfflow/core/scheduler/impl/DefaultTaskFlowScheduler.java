@@ -1,4 +1,4 @@
-package me.kpali.wolfflow.core.scheduler;
+package me.kpali.wolfflow.core.scheduler.impl;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import me.kpali.wolfflow.core.cluster.IClusterController;
@@ -14,31 +14,27 @@ import me.kpali.wolfflow.core.model.*;
 import me.kpali.wolfflow.core.querier.ITaskFlowQuerier;
 import me.kpali.wolfflow.core.recorder.ITaskFlowStatusRecorder;
 import me.kpali.wolfflow.core.recorder.ITaskStatusRecorder;
-import me.kpali.wolfflow.core.scheduler.quartz.MyDynamicScheduler;
+import me.kpali.wolfflow.core.scheduler.ITaskFlowScheduler;
+import me.kpali.wolfflow.core.scheduler.impl.quartz.MyDynamicScheduler;
 import me.kpali.wolfflow.core.util.TaskFlowUtils;
 import org.quartz.JobKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.concurrent.*;
 
 /**
- * 任务流调度器
+ * 任务流调度器的默认实现
  *
  * @author kpali
  */
-public class TaskFlowScheduler {
-    public TaskFlowScheduler() {
-    }
-
-    public TaskFlowScheduler(SchedulerConfig schedulerConfig) {
-        this.schedulerConfig = schedulerConfig;
-    }
-
-    private static final Logger log = LoggerFactory.getLogger(TaskFlowScheduler.class);
+@Component
+public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
+    private static final Logger log = LoggerFactory.getLogger(DefaultTaskFlowScheduler.class);
 
     @Autowired
     private SchedulerConfig schedulerConfig;
@@ -65,9 +61,7 @@ public class TaskFlowScheduler {
     @Autowired
     private IClusterController clusterController;
 
-    /**
-     * 启动任务流调度器
-     */
+    @Override
     public void startup() {
         if (this.started) {
             return;
@@ -97,7 +91,35 @@ public class TaskFlowScheduler {
                     TaskFlowExecRequest request = this.clusterController.poll();
                     if (request != null) {
                         log.info("扫描到新的任务流执行请求，任务流ID：{}", request.getTaskFlow().getId());
-                        this.consumeRequest(request);
+                        TaskFlow finalTaskFlow = request.getTaskFlow();
+                        TaskFlowContext taskFlowContext = request.getTaskFlowContext();
+                        // 任务流执行
+                        if (this.threadPool == null) {
+                            synchronized (this.lock) {
+                                if (this.threadPool == null) {
+                                    // 初始化线程池
+                                    ThreadFactory triggerThreadFactory = new ThreadFactoryBuilder().setNameFormat("schedulerExecutor-pool-%d").build();
+                                    this.threadPool = new ThreadPoolExecutor(this.schedulerConfig.getCorePoolSize(), this.schedulerConfig.getMaximumPoolSize(), 60, TimeUnit.SECONDS,
+                                            new LinkedBlockingQueue<Runnable>(1024), triggerThreadFactory, new ThreadPoolExecutor.AbortPolicy());
+                                }
+                            }
+                        }
+                        this.threadPool.execute(() -> {
+                            try {
+                                this.taskFlowExecutor.beforeExecute(finalTaskFlow, taskFlowContext);
+                                // 任务流执行中
+                                this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTING.getCode(), null, true);
+                                // 开始执行
+                                this.taskFlowExecutor.execute(finalTaskFlow, taskFlowContext);
+                                this.taskFlowExecutor.afterExecute(finalTaskFlow, taskFlowContext);
+                                // 任务流执行成功
+                                this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode(), null, true);
+                            } catch (TaskFlowExecuteException | TaskInterruptedException e) {
+                                log.error("任务流执行失败！任务流ID：" + finalTaskFlow.getId() + " 异常信息：" + e.getMessage(), e);
+                                // 任务流执行失败
+                                this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage(), true);
+                            }
+                        });
                     }
                 } catch (Exception e) {
                     log.error("任务流执行请求扫描异常！" + e.getMessage(), e);
@@ -178,43 +200,17 @@ public class TaskFlowScheduler {
         });
     }
 
-    /**
-     * 触发任务流
-     *
-     * @param taskFlowId
-     * @param params
-     * @return taskFlowExecId
-     * @throws InvalidTaskFlowException
-     * @throws TaskFlowTriggerException
-     */
+    @Override
     public String trigger(Long taskFlowId, Map<String, String> params) throws InvalidTaskFlowException,  TaskFlowTriggerException {
         return this.trigger(taskFlowId, null, null, params);
     }
 
-    /**
-     * 触发任务流，从指定任务开始
-     *
-     * @param taskFlowId
-     * @param fromTaskId
-     * @param params
-     * @return taskFlowExecId
-     * @throws InvalidTaskFlowException
-     * @throws TaskFlowTriggerException
-     */
+    @Override
     public String triggerFrom(Long taskFlowId, Long fromTaskId, Map<String, String> params) throws InvalidTaskFlowException,  TaskFlowTriggerException {
         return this.trigger(taskFlowId, fromTaskId, null, params);
     }
 
-    /**
-     * 触发任务流，到指定任务结束
-     *
-     * @param taskFlowId
-     * @param toTaskId
-     * @param params
-     * @return taskFlowExecId
-     * @throws InvalidTaskFlowException
-     * @throws TaskFlowTriggerException
-     */
+    @Override
     public String triggerTo(Long taskFlowId, Long toTaskId, Map<String, String> params) throws InvalidTaskFlowException,  TaskFlowTriggerException {
         return this.trigger(taskFlowId, null, toTaskId, params);
     }
@@ -299,51 +295,7 @@ public class TaskFlowScheduler {
         return taskFlowExecId;
     }
 
-    /**
-     * 消费任务流请求
-     *
-     * @return
-     * @throws InvalidTaskFlowException
-     * @throws TaskFlowTriggerException
-     */
-    private void consumeRequest(TaskFlowExecRequest request) throws InvalidTaskFlowException, TaskFlowTriggerException {
-        TaskFlow finalTaskFlow = request.getTaskFlow();
-        TaskFlowContext taskFlowContext = request.getTaskFlowContext();
-        // 任务流执行
-        if (this.threadPool == null) {
-            synchronized (this.lock) {
-                if (this.threadPool == null) {
-                    // 初始化线程池
-                    ThreadFactory triggerThreadFactory = new ThreadFactoryBuilder().setNameFormat("schedulerExecutor-pool-%d").build();
-                    this.threadPool = new ThreadPoolExecutor(this.schedulerConfig.getCorePoolSize(), this.schedulerConfig.getMaximumPoolSize(), 60, TimeUnit.SECONDS,
-                            new LinkedBlockingQueue<Runnable>(1024), triggerThreadFactory, new ThreadPoolExecutor.AbortPolicy());
-                }
-            }
-        }
-        this.threadPool.execute(() -> {
-            try {
-                this.taskFlowExecutor.beforeExecute(finalTaskFlow, taskFlowContext);
-                // 任务流执行中
-                this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTING.getCode(), null, true);
-                // 开始执行
-                this.taskFlowExecutor.execute(finalTaskFlow, taskFlowContext);
-                this.taskFlowExecutor.afterExecute(finalTaskFlow, taskFlowContext);
-                // 任务流执行成功
-                this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode(), null, true);
-            } catch (TaskFlowExecuteException | TaskInterruptedException e) {
-                log.error("任务流执行失败！任务流ID：" + finalTaskFlow.getId() + " 异常信息：" + e.getMessage(), e);
-                // 任务流执行失败
-                this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage(), true);
-            }
-        });
-    }
-
-    /**
-     * 停止任务流
-     *
-     * @param taskFlowId
-     * @throws TaskFlowStopException
-     */
+    @Override
     public void stop(Long taskFlowId) throws TaskFlowStopException {
         TaskFlowStatus taskFlowStatus = this.taskFlowStatusRecorder.toStoppingIfInProgress(taskFlowId);
         if (taskFlowStatus != null) {

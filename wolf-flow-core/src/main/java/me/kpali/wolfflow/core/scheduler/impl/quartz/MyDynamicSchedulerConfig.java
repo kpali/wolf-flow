@@ -1,4 +1,4 @@
-package me.kpali.wolfflow.core.scheduler.quartz;
+package me.kpali.wolfflow.core.scheduler.impl.quartz;
 
 import org.quartz.Scheduler;
 import org.springframework.beans.factory.annotation.Autowired;
