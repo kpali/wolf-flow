@@ -43,6 +43,17 @@
         </dependency>
 
         <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson-spring-data-22</artifactId>
+            <version>3.12.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.redisson</groupId>
+            <artifactId>redisson-spring-boot-starter</artifactId>
+            <version>3.12.0</version>
+        </dependency>
+
+        <dependency>
             <groupId>me.kpali</groupId>
             <artifactId>wolf-flow-spring-boot-starter</artifactId>
             <version>1.0.0-SNAPSHOT</version>
