@@ -73,6 +73,9 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
             Map<Long, Task> idToTaskMap = new HashMap<>();
             taskFlow.getTaskList().forEach(task -> {
                 idToTaskMap.put(task.getId(), task);
+                if (taskFlowContext.getTaskContexts() == null) {
+                    taskFlowContext.setTaskContexts(new ConcurrentHashMap<>());
+                }
                 taskFlowContext.getTaskContexts().put(task.getId(), new TaskContext());
             });
             // 计算节点入度
