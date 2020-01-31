@@ -213,17 +213,17 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
     }
 
     @Override
-    public String trigger(Long taskFlowId, Map<String, String> params) throws InvalidTaskFlowException,  TaskFlowTriggerException {
+    public String trigger(Long taskFlowId, Map<String, String> params) throws InvalidTaskFlowException, TaskFlowTriggerException {
         return this.trigger(taskFlowId, null, null, params);
     }
 
     @Override
-    public String triggerFrom(Long taskFlowId, Long fromTaskId, Map<String, String> params) throws InvalidTaskFlowException,  TaskFlowTriggerException {
+    public String triggerFrom(Long taskFlowId, Long fromTaskId, Map<String, String> params) throws InvalidTaskFlowException, TaskFlowTriggerException {
         return this.trigger(taskFlowId, fromTaskId, null, params);
     }
 
     @Override
-    public String triggerTo(Long taskFlowId, Long toTaskId, Map<String, String> params) throws InvalidTaskFlowException,  TaskFlowTriggerException {
+    public String triggerTo(Long taskFlowId, Long toTaskId, Map<String, String> params) throws InvalidTaskFlowException, TaskFlowTriggerException {
         return this.trigger(taskFlowId, null, toTaskId, params);
     }
 

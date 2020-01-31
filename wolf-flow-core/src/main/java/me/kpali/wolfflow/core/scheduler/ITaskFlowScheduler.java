@@ -26,7 +26,7 @@ public interface ITaskFlowScheduler {
      * @throws InvalidTaskFlowException
      * @throws TaskFlowTriggerException
      */
-    String trigger(Long taskFlowId, Map<String, String> params) throws InvalidTaskFlowException,  TaskFlowTriggerException;
+    String trigger(Long taskFlowId, Map<String, String> params) throws InvalidTaskFlowException, TaskFlowTriggerException;
 
     /**
      * 触发任务流，从指定任务开始
@@ -38,7 +38,7 @@ public interface ITaskFlowScheduler {
      * @throws InvalidTaskFlowException
      * @throws TaskFlowTriggerException
      */
-    String triggerFrom(Long taskFlowId, Long fromTaskId, Map<String, String> params) throws InvalidTaskFlowException,  TaskFlowTriggerException;
+    String triggerFrom(Long taskFlowId, Long fromTaskId, Map<String, String> params) throws InvalidTaskFlowException, TaskFlowTriggerException;
 
     /**
      * 触发任务流，到指定任务结束
@@ -50,7 +50,7 @@ public interface ITaskFlowScheduler {
      * @throws InvalidTaskFlowException
      * @throws TaskFlowTriggerException
      */
-    String triggerTo(Long taskFlowId, Long toTaskId, Map<String, String> params) throws InvalidTaskFlowException,  TaskFlowTriggerException;
+    String triggerTo(Long taskFlowId, Long toTaskId, Map<String, String> params) throws InvalidTaskFlowException, TaskFlowTriggerException;
 
     /**
      * 停止任务流
