@@ -8,14 +8,26 @@ import org.springframework.context.ApplicationEvent;
  * @author kpali
  */
 public class TaskFlowScheduleStatusChangeEvent extends ApplicationEvent {
-    public TaskFlowScheduleStatusChangeEvent(Object source, String taskFlowScheduleStatus) {
+    public TaskFlowScheduleStatusChangeEvent(Object source, Long taskFlowId, String cronExpression, String scheduleStatus) {
         super(source);
-        this.taskFlowScheduleStatus = taskFlowScheduleStatus;
+        this.taskFlowId = taskFlowId;
+        this.cronExpression = cronExpression;
+        this.scheduleStatus = scheduleStatus;
     }
 
-    private String taskFlowScheduleStatus;
+    private Long taskFlowId;
+    private String cronExpression;
+    private String scheduleStatus;
 
-    public String getTaskFlowScheduleStatus() {
-        return taskFlowScheduleStatus;
+    public Long getTaskFlowId() {
+        return taskFlowId;
+    }
+
+    public String getCronExpression() {
+        return cronExpression;
+    }
+
+    public String getScheduleStatus() {
+        return scheduleStatus;
     }
 }

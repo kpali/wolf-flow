@@ -173,18 +173,30 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                                 if (!MyDynamicScheduler.checkExists(name, jobGroup)) {
                                     MyDynamicScheduler.addJob(name, jobGroup, cronExpression);
                                     // 任务流加入调度
-                                    TaskFlowScheduleStatusChangeEvent taskFlowJoinScheduleEvent = new TaskFlowScheduleStatusChangeEvent(this, TaskFlowScheduleStatusEnum.JOIN.getCode());
+                                    TaskFlowScheduleStatusChangeEvent taskFlowJoinScheduleEvent = new TaskFlowScheduleStatusChangeEvent(
+                                            this,
+                                            taskFlow.getId(),
+                                            taskFlow.getCron(),
+                                            TaskFlowScheduleStatusEnum.JOIN.getCode());
                                     this.eventPublisher.publishEvent(taskFlowJoinScheduleEvent);
                                 } else {
                                     MyDynamicScheduler.updateJobCron(name, jobGroup, cronExpression);
                                     // 任务流更新调度
-                                    TaskFlowScheduleStatusChangeEvent taskFlowUpdateScheduleEvent = new TaskFlowScheduleStatusChangeEvent(this, TaskFlowScheduleStatusEnum.UPDATE.getCode());
+                                    TaskFlowScheduleStatusChangeEvent taskFlowUpdateScheduleEvent = new TaskFlowScheduleStatusChangeEvent(
+                                            this,
+                                            taskFlow.getId(),
+                                            taskFlow.getCron(),
+                                            TaskFlowScheduleStatusEnum.UPDATE.getCode());
                                     this.eventPublisher.publishEvent(taskFlowUpdateScheduleEvent);
                                 }
                             } catch (Exception e) {
                                 log.error("定时任务流调度失败，任务流ID：" + taskFlow.getId() + "，失败原因：" + e.getMessage());
                                 // 任务流调度失败
-                                TaskFlowScheduleStatusChangeEvent taskFlowScheduleFailEvent = new TaskFlowScheduleStatusChangeEvent(this, TaskFlowScheduleStatusEnum.FAIL.getCode());
+                                TaskFlowScheduleStatusChangeEvent taskFlowScheduleFailEvent = new TaskFlowScheduleStatusChangeEvent(
+                                        this,
+                                        taskFlow.getId(),
+                                        taskFlow.getCron(),
+                                        TaskFlowScheduleStatusEnum.FAIL.getCode());
                                 this.eventPublisher.publishEvent(taskFlowScheduleFailEvent);
                             }
                         }
