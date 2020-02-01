@@ -9,7 +9,13 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class ExecutorConfig {
+    /**
+     * 任务流执行器线程池核心线程数
+     */
     private Integer corePoolSize;
+    /**
+     * 任务流执行器线程池最大线程数
+     */
     private Integer maximumPoolSize;
 
     public Integer getCorePoolSize() {

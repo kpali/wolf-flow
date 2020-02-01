@@ -15,13 +15,17 @@ public class SchedulerConfiguration {
     @Bean
     public SchedulerConfig getSchedulerConfig(SchedulerProperties schedulerProperties) {
         Integer execRequestScanInterval = schedulerProperties.getExecRequestScanInterval();
-        Integer cronTaskFlowScanInterval = schedulerProperties.getCronTaskFlowScanInterval();
+        Integer cronScanInterval = schedulerProperties.getCronScanInterval();
+        Integer cronScanLockWaitTime = schedulerProperties.getCronScanWaitTime();
+        Integer cronScanLockLeaseTime = schedulerProperties.getCronScanLeaseTime();
         Integer corePoolSize = schedulerProperties.getCorePoolSize();
         Integer maximumPoolSize = schedulerProperties.getMaximumPoolSize();
         Boolean allowParallel = schedulerProperties.getAllowParallel();
         SchedulerConfig schedulerConfig = new SchedulerConfig();
         schedulerConfig.setExecRequestScanInterval(execRequestScanInterval);
-        schedulerConfig.setCronTaskFlowScanInterval(cronTaskFlowScanInterval);
+        schedulerConfig.setCronScanInterval(cronScanInterval);
+        schedulerConfig.setCronScanLockWaitTime(cronScanLockWaitTime);
+        schedulerConfig.setCronScanLockLeaseTime(cronScanLockLeaseTime);
         schedulerConfig.setCorePoolSize(corePoolSize);
         schedulerConfig.setMaximumPoolSize(maximumPoolSize);
         schedulerConfig.setAllowParallel(allowParallel);

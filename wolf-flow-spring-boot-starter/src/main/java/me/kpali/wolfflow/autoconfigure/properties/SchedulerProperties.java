@@ -10,7 +10,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "wolf-flow.scheduler")
 public class SchedulerProperties {
     private Integer execRequestScanInterval = 1;
-    private Integer cronTaskFlowScanInterval = 10;
+    private Integer cronScanInterval = 10;
+    private Integer cronScanWaitTime = 10;
+    private Integer cronScanLeaseTime = 60;
     private Integer corePoolSize = 10;
     private Integer maximumPoolSize = 10;
     private Boolean allowParallel = false;
@@ -23,12 +25,28 @@ public class SchedulerProperties {
         this.execRequestScanInterval = execRequestScanInterval;
     }
 
-    public Integer getCronTaskFlowScanInterval() {
-        return cronTaskFlowScanInterval;
+    public Integer getCronScanInterval() {
+        return cronScanInterval;
     }
 
-    public void setCronTaskFlowScanInterval(Integer cronTaskFlowScanInterval) {
-        this.cronTaskFlowScanInterval = cronTaskFlowScanInterval;
+    public void setCronScanInterval(Integer cronScanInterval) {
+        this.cronScanInterval = cronScanInterval;
+    }
+
+    public Integer getCronScanWaitTime() {
+        return cronScanWaitTime;
+    }
+
+    public void setCronScanWaitTime(Integer cronScanWaitTime) {
+        this.cronScanWaitTime = cronScanWaitTime;
+    }
+
+    public Integer getCronScanLeaseTime() {
+        return cronScanLeaseTime;
+    }
+
+    public void setCronScanLeaseTime(Integer cronScanLeaseTime) {
+        this.cronScanLeaseTime = cronScanLeaseTime;
     }
 
     public Integer getCorePoolSize() {

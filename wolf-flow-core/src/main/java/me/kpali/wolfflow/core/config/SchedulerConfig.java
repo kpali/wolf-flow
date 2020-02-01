@@ -9,10 +9,33 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class SchedulerConfig {
+    /**
+     * 任务流执行请求扫描间隔
+     */
     private Integer execRequestScanInterval;
-    private Integer cronTaskFlowScanInterval;
+    /**
+     * 定时任务流扫描间隔
+     */
+    private Integer cronScanInterval;
+    /**
+     * 定时任务流扫描尝试加锁最大等待时间
+     */
+    private Integer cronScanLockWaitTime;
+    /**
+     * 定时任务流扫描加锁后自动解锁时间
+     */
+    private Integer cronScanLockLeaseTime;
+    /**
+     * 任务流调度器线程池核心线程数
+     */
     private Integer corePoolSize;
+    /**
+     * 任务流调度器线程池最大线程数
+     */
     private Integer maximumPoolSize;
+    /**
+     * 是否允许同一个任务流同时执行多次
+     */
     private Boolean allowParallel;
 
     public Integer getExecRequestScanInterval() {
@@ -23,12 +46,28 @@ public class SchedulerConfig {
         this.execRequestScanInterval = execRequestScanInterval;
     }
 
-    public Integer getCronTaskFlowScanInterval() {
-        return cronTaskFlowScanInterval;
+    public Integer getCronScanInterval() {
+        return cronScanInterval;
     }
 
-    public void setCronTaskFlowScanInterval(Integer cronTaskFlowScanInterval) {
-        this.cronTaskFlowScanInterval = cronTaskFlowScanInterval;
+    public void setCronScanInterval(Integer cronScanInterval) {
+        this.cronScanInterval = cronScanInterval;
+    }
+
+    public Integer getCronScanLockWaitTime() {
+        return cronScanLockWaitTime;
+    }
+
+    public void setCronScanLockWaitTime(Integer cronScanLockWaitTime) {
+        this.cronScanLockWaitTime = cronScanLockWaitTime;
+    }
+
+    public Integer getCronScanLockLeaseTime() {
+        return cronScanLockLeaseTime;
+    }
+
+    public void setCronScanLockLeaseTime(Integer cronScanLockLeaseTime) {
+        this.cronScanLockLeaseTime = cronScanLockLeaseTime;
     }
 
     public Integer getCorePoolSize() {

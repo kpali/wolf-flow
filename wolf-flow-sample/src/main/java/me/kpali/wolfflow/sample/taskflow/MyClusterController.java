@@ -22,17 +22,33 @@ public class MyClusterController extends DefaultClusterController {
     private RedissonClient redisson;
 
     @Override
-    public boolean tryLock(String name) {
-        int lockLeaseTime = 60;
-        int lockWaitTime = 10;
+    public void lock(String name) {
+        RLock lock = redisson.getLock(name);
+        lock.lock();
+    }
+
+    @Override
+    public void lock(String name, long leaseTime, TimeUnit unit) {
+        RLock lock = redisson.getLock(name);
+        lock.lock(leaseTime, unit);
+    }
+
+    @Override
+    public boolean tryLock(String name, long waitTime, long leaseTime, TimeUnit unit) {
         RLock lock = redisson.getLock(name);
         boolean res = false;
         try {
-            res = lock.tryLock(lockWaitTime, lockLeaseTime, TimeUnit.SECONDS);
+            res = lock.tryLock(waitTime, leaseTime, unit);
         } catch (Exception e) {
-            log.error("尝试获取分布式锁异常：" + e.getMessage(), e);
+            log.error("尝试获取锁异常：" + e.getMessage(), e);
         }
         return res;
+    }
+
+    @Override
+    public void unlock(String name) {
+        RLock lock = redisson.getLock(name);
+        lock.unlock();
     }
 
     @Override
