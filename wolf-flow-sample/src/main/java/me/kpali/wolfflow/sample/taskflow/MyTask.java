@@ -18,10 +18,11 @@ public class MyTask extends Task {
         myTaskLogger.log(logId, this.getId(), "任务开始执行", false);
         myTaskLogger.log(logId, this.getId(), "日志第二行\r日志第三行\n日志第四行\r\n日志第五行", false);
         int totalTime = 0;
-        int timeout = 1000;
+        int timeout = 2000;
         while (totalTime < timeout) {
             try {
                 if (requiredToStop) {
+                    myTaskLogger.log(logId, this.getId(), "任务被终止执行", true);
                     throw new TaskInterruptedException("任务被终止执行");
                 }
                 Thread.sleep(1000);

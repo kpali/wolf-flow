@@ -2,7 +2,6 @@ package me.kpali.wolfflow.core.executor;
 
 import me.kpali.wolfflow.core.exception.TaskFlowExecuteException;
 import me.kpali.wolfflow.core.exception.TaskFlowInterruptedException;
-import me.kpali.wolfflow.core.exception.TaskFlowStopException;
 import me.kpali.wolfflow.core.model.TaskFlow;
 import me.kpali.wolfflow.core.model.TaskFlowContext;
 
@@ -40,13 +39,4 @@ public interface ITaskFlowExecutor {
      * @throws TaskFlowExecuteException
      */
     void afterExecute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws TaskFlowExecuteException;
-
-    /**
-     * 停止任务流
-     *
-     * @param taskFlowId
-     * @throws TaskFlowStopException
-     */
-    void stop(Long taskFlowId) throws TaskFlowStopException;
-
 }

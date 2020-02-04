@@ -6,10 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.Queue;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -26,6 +23,7 @@ public class DefaultClusterController implements IClusterController {
     private final Object lock = new Object();
     private Map<String, Lock> lockMap = new HashMap<>();
     private Queue<TaskFlowExecRequest> taskFlowExecQueue = new LinkedList<>();
+    private Set<Long> taskFlowStopSet = new HashSet<>();
 
     private Lock getLock(String name) {
         Lock rLock = null;
@@ -71,16 +69,37 @@ public class DefaultClusterController implements IClusterController {
     }
 
     @Override
-    public boolean offer(TaskFlowExecRequest request) {
+    public boolean execRequestOffer(TaskFlowExecRequest request) {
         synchronized (lock) {
             return taskFlowExecQueue.offer(request);
         }
     }
 
     @Override
-    public TaskFlowExecRequest poll() {
+    public TaskFlowExecRequest execRequestPoll() {
         synchronized (lock) {
             return taskFlowExecQueue.poll();
+        }
+    }
+
+    @Override
+    public void stopRequestAdd(Long logId) {
+        synchronized (lock) {
+            taskFlowStopSet.add(logId);
+        }
+    }
+
+    @Override
+    public Boolean stopRequestContains(Long logId) {
+        synchronized (lock) {
+            return taskFlowStopSet.contains(logId);
+        }
+    }
+
+    @Override
+    public void stopRequestRemove(Long logId) {
+        synchronized (lock) {
+            taskFlowStopSet.remove(logId);
         }
     }
 }

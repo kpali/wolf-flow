@@ -98,7 +98,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
             while (true) {
                 try {
                     Thread.sleep(this.schedulerConfig.getExecRequestScanInterval() * 1000);
-                    TaskFlowExecRequest request = this.clusterController.poll();
+                    TaskFlowExecRequest request = this.clusterController.execRequestPoll();
                     if (request != null) {
                         log.info("扫描到新的任务流执行请求，任务流ID：{}", request.getTaskFlow().getId());
                         TaskFlow finalTaskFlow = request.getTaskFlow();
@@ -124,7 +124,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                                 this.taskFlowExecutor.afterExecute(finalTaskFlow, taskFlowContext);
                                 // 任务流执行成功
                                 this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode(), null, true);
-                            } catch (TaskFlowExecuteException | TaskInterruptedException e) {
+                            } catch (TaskFlowExecuteException | TaskFlowInterruptedException e) {
                                 log.error("任务流执行失败！任务流ID：" + finalTaskFlow.getId() + " 异常信息：" + e.getMessage(), e);
                                 // 任务流执行失败
                                 this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage(), true);
@@ -282,9 +282,9 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
         boolean locked = false;
         try {
             locked = this.clusterController.tryLock(
-                    ClusterConstants.TASK_STATUS_RECORD_LOCK,
-                    ClusterConstants.STATUS_RECORD_LOCK_WAIT_TIME,
-                    ClusterConstants.STATUS_RECORD_LOCK_LEASE_TIME,
+                    ClusterConstants.TASK_LOG_LOCK,
+                    ClusterConstants.LOG_LOCK_WAIT_TIME,
+                    ClusterConstants.LOG_LOCK_LEASE_TIME,
                     TimeUnit.SECONDS);
             if (!locked) {
                 throw new TryLockException("获取任务状态记录锁失败！");
@@ -292,7 +292,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
             taskLogList = this.taskLogger.lastByTaskFlowId(finalTaskFlow.getId());
         } finally {
             if (locked) {
-                this.clusterController.unlock(ClusterConstants.TASK_STATUS_RECORD_LOCK);
+                this.clusterController.unlock(ClusterConstants.TASK_LOG_LOCK);
             }
         }
         if (isPartialExecute && taskLogList != null && !taskLogList.isEmpty()) {
@@ -301,9 +301,9 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
             locked = false;
             try {
                 locked = this.clusterController.tryLock(
-                        ClusterConstants.TASK_FLOW_STATUS_RECORD_LOCK,
-                        ClusterConstants.STATUS_RECORD_LOCK_WAIT_TIME,
-                        ClusterConstants.STATUS_RECORD_LOCK_LEASE_TIME,
+                        ClusterConstants.TASK_FLOW_LOG_LOCK,
+                        ClusterConstants.LOG_LOCK_WAIT_TIME,
+                        ClusterConstants.LOG_LOCK_LEASE_TIME,
                         TimeUnit.SECONDS);
                 if (!locked) {
                     throw new TryLockException("获取任务流状态记录锁失败！");
@@ -311,7 +311,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                 taskFlowContext = this.taskFlowLogger.last(finalTaskFlow.getId()).getTaskFlowContext();
             } finally {
                 if (locked) {
-                    this.clusterController.unlock(ClusterConstants.TASK_FLOW_STATUS_RECORD_LOCK);
+                    this.clusterController.unlock(ClusterConstants.TASK_FLOW_LOG_LOCK);
                 }
             }
             logId = Long.parseLong(taskFlowContext.get(ContextKey.LOG_ID));
@@ -338,9 +338,9 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
         locked = false;
         try {
             locked = this.clusterController.tryLock(
-                    ClusterConstants.TASK_FLOW_STATUS_RECORD_LOCK,
-                    ClusterConstants.STATUS_RECORD_LOCK_WAIT_TIME,
-                    ClusterConstants.STATUS_RECORD_LOCK_LEASE_TIME,
+                    ClusterConstants.TASK_FLOW_LOG_LOCK,
+                    ClusterConstants.LOG_LOCK_WAIT_TIME,
+                    ClusterConstants.LOG_LOCK_LEASE_TIME,
                     TimeUnit.SECONDS);
             if (!locked) {
                 throw new TryLockException("获取任务流状态记录锁失败！");
@@ -364,14 +364,14 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
             this.taskFlowLogger.put(taskFlowLog);
         } finally {
             if (locked) {
-                this.clusterController.unlock(ClusterConstants.TASK_FLOW_STATUS_RECORD_LOCK);
+                this.clusterController.unlock(ClusterConstants.TASK_FLOW_LOG_LOCK);
             }
         }
         // 任务流等待执行
         this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode(), null, false);
 
         // 插入执行请求队列
-        boolean success = this.clusterController.offer(new TaskFlowExecRequest(finalTaskFlow, taskFlowContext));
+        boolean success = this.clusterController.execRequestOffer(new TaskFlowExecRequest(finalTaskFlow, taskFlowContext));
         if (!success) {
             this.publishTaskFlowStatusChangeEvent(finalTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), "插入执行请求队列失败", true);
         }
@@ -380,37 +380,41 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
     }
 
     @Override
-    public void stop(Long taskFlowId) throws TaskFlowStopException {
+    public void stop(Long logId) throws TaskFlowStopException {
         TaskFlowLog taskFlowLog = null;
+        boolean stopping = false;
         boolean locked = false;
         try {
             locked = this.clusterController.tryLock(
-                    ClusterConstants.TASK_FLOW_STATUS_RECORD_LOCK,
-                    ClusterConstants.STATUS_RECORD_LOCK_WAIT_TIME,
-                    ClusterConstants.STATUS_RECORD_LOCK_LEASE_TIME,
+                    ClusterConstants.TASK_FLOW_LOG_LOCK,
+                    ClusterConstants.LOG_LOCK_WAIT_TIME,
+                    ClusterConstants.LOG_LOCK_LEASE_TIME,
                     TimeUnit.SECONDS);
             if (!locked) {
                 throw new TryLockException("获取任务流状态记录锁失败！");
             }
-            taskFlowLog = this.taskFlowLogger.last(taskFlowId);
+            taskFlowLog = this.taskFlowLogger.get(logId);
             // 如果任务流正在处理中，则更新任务流状态为停止中
             if (taskFlowLog != null && this.taskFlowLogger.isInProgress(taskFlowLog)) {
+                stopping = true;
+                if (!this.clusterController.stopRequestContains(logId)) {
+                    this.clusterController.stopRequestAdd(logId);
+                }
                 taskFlowLog.setStatus(TaskFlowStatusEnum.STOPPING.getCode());
                 this.taskFlowLogger.put(taskFlowLog);
             }
         } finally {
             if (locked) {
-                this.clusterController.unlock(ClusterConstants.TASK_FLOW_STATUS_RECORD_LOCK);
+                this.clusterController.unlock(ClusterConstants.TASK_FLOW_LOG_LOCK);
             }
         }
-        if (taskFlowLog != null) {
+        if (stopping) {
             TaskFlowStatus taskFlowStatus = new TaskFlowStatus();
             taskFlowStatus.setTaskFlow(taskFlowLog.getCompleteTaskFlow());
             taskFlowStatus.setTaskFlowContext(taskFlowLog.getTaskFlowContext());
             taskFlowStatus.setStatus(taskFlowLog.getStatus());
             taskFlowStatus.setMessage(taskFlowLog.getMessage());
             this.publishTaskFlowStatusChangeEvent(taskFlowStatus.getTaskFlow(), taskFlowStatus.getTaskFlowContext(), TaskFlowStatusEnum.STOPPING.getCode(), null, false);
-            this.taskFlowExecutor.stop(taskFlowId);
         }
     }
 
@@ -426,9 +430,9 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
         boolean locked = false;
         try {
             locked = this.clusterController.tryLock(
-                    ClusterConstants.TASK_STATUS_RECORD_LOCK,
-                    ClusterConstants.STATUS_RECORD_LOCK_WAIT_TIME,
-                    ClusterConstants.STATUS_RECORD_LOCK_LEASE_TIME,
+                    ClusterConstants.TASK_LOG_LOCK,
+                    ClusterConstants.LOG_LOCK_WAIT_TIME,
+                    ClusterConstants.LOG_LOCK_LEASE_TIME,
                     TimeUnit.SECONDS);
             if (!locked) {
                 throw new TryLockException("获取任务状态记录锁失败！");
@@ -436,7 +440,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
             taskLogList = this.taskLogger.lastByTaskFlowId(taskFlow.getId());
         } finally {
             if (locked) {
-                this.clusterController.unlock(ClusterConstants.TASK_STATUS_RECORD_LOCK);
+                this.clusterController.unlock(ClusterConstants.TASK_LOG_LOCK);
             }
         }
         if (taskLogList == null || taskLogList.isEmpty()) {
@@ -485,9 +489,9 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
             boolean locked = false;
             try {
                 locked = this.clusterController.tryLock(
-                        ClusterConstants.TASK_FLOW_STATUS_RECORD_LOCK,
-                        ClusterConstants.STATUS_RECORD_LOCK_WAIT_TIME,
-                        ClusterConstants.STATUS_RECORD_LOCK_LEASE_TIME,
+                        ClusterConstants.TASK_FLOW_LOG_LOCK,
+                        ClusterConstants.LOG_LOCK_WAIT_TIME,
+                        ClusterConstants.LOG_LOCK_LEASE_TIME,
                         TimeUnit.SECONDS);
                 if (!locked) {
                     throw new TryLockException("获取任务流状态记录锁失败！");
@@ -506,7 +510,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                 this.taskFlowLogger.put(taskFlowLog);
             } finally {
                 if (locked) {
-                    this.clusterController.unlock(ClusterConstants.TASK_FLOW_STATUS_RECORD_LOCK);
+                    this.clusterController.unlock(ClusterConstants.TASK_FLOW_LOG_LOCK);
                 }
             }
         }

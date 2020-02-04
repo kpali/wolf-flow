@@ -34,10 +34,9 @@ public class ApplicationReadyListener implements ApplicationListener<Application
         try {
             long logId1 = myTaskFlowScheduler.triggerTo(100L, 5L, null);
             System.out.println(">>>>>>>>>> 日志ID：" + logId1);
+            Thread.sleep(3 * 1000);
+            //myTaskFlowScheduler.stop(logId1);
             this.waitDoneAndPrintLog(logId1);
-            Thread.sleep(2 * 1000);
-            //myTaskFlowScheduler.stop(100L);
-            Thread.sleep(5 * 1000);
             long logId2 = myTaskFlowScheduler.triggerTo(100L, 6L, null);
             System.out.println(">>>>>>>>>> 日志ID：" + logId2);
             this.waitDoneAndPrintLog(logId2);
@@ -58,8 +57,10 @@ public class ApplicationReadyListener implements ApplicationListener<Application
                 List<TaskLog> taskLogList = myTaskLogger.list(logId);
                 for (TaskLog taskLog : taskLogList) {
                     TaskLogResult taskLogResult = myTaskLogger.query(logId, taskLog.getTaskId(), 1);
-                    System.out.println(">>>>>>>>>> 任务[" + taskLog.getTaskId() + "]日志内容：");
-                    System.out.println(taskLogResult.getLogContent());
+                    if (taskLogResult != null) {
+                        System.out.println(">>>>>>>>>> 任务[" + taskLog.getTaskId() + "]日志内容：");
+                        System.out.println(taskLogResult.getLogContent());
+                    }
                 }
                 break;
             }

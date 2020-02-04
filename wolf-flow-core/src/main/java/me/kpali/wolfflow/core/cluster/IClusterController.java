@@ -52,12 +52,34 @@ public interface IClusterController {
      * @param request
      * @return 成功返回true
      */
-    boolean offer(TaskFlowExecRequest request);
+    boolean execRequestOffer(TaskFlowExecRequest request);
 
     /**
      * 移除并返回任务流执行队列的首个元素
      *
      * @return 若队列为空则返回null
      */
-    TaskFlowExecRequest poll();
+    TaskFlowExecRequest execRequestPoll();
+
+    /**
+     * 新增任务流停止请求
+     *
+     * @param logId
+     */
+    void stopRequestAdd(Long logId);
+
+    /**
+     * 查询是否包含任务流停止请求
+     *
+     * @param logId
+     * @return
+     */
+    Boolean stopRequestContains(Long logId);
+
+    /**
+     * 删除任务流停止请求
+     *
+     * @param logId
+     */
+    void stopRequestRemove(Long logId);
 }

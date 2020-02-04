@@ -42,9 +42,6 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     @Autowired
     private ITaskLogger taskLogger;
 
-    private Map<Long, Boolean> taskFlowRequireToStop = new HashMap<>();
-    private final Object lock = new Object();
-
     @Override
     public void beforeExecute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws TaskFlowExecuteException {
         // 清理任务状态
@@ -52,9 +49,9 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
         boolean locked = false;
         try {
             locked = this.clusterController.tryLock(
-                    ClusterConstants.TASK_STATUS_RECORD_LOCK,
-                    ClusterConstants.STATUS_RECORD_LOCK_WAIT_TIME,
-                    ClusterConstants.STATUS_RECORD_LOCK_LEASE_TIME,
+                    ClusterConstants.TASK_LOG_LOCK,
+                    ClusterConstants.LOG_LOCK_WAIT_TIME,
+                    ClusterConstants.LOG_LOCK_LEASE_TIME,
                     TimeUnit.SECONDS);
             if (!locked) {
                 throw new TryLockException("获取任务状态记录锁失败！");
@@ -64,16 +61,14 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
             }
         } finally {
             if (locked) {
-                this.clusterController.unlock(ClusterConstants.TASK_STATUS_RECORD_LOCK);
+                this.clusterController.unlock(ClusterConstants.TASK_LOG_LOCK);
             }
         }
     }
 
     @Override
     public void execute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws TaskFlowExecuteException, TaskFlowInterruptedException {
-        synchronized (lock) {
-            this.taskFlowRequireToStop.put(taskFlow.getId(), false);
-        }
+        Long logId = Long.parseLong(taskFlowContext.get(ContextKey.LOG_ID));
         try {
             // 检查任务流是否是一个有向无环图
             List<Task> sortedTaskList = TaskFlowUtils.topologicalSort(taskFlow);
@@ -127,9 +122,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                 } catch (InterruptedException e) {
                     log.warn(e.getMessage(), e);
                 }
-                synchronized (lock) {
-                    requireToStop = this.taskFlowRequireToStop.get(taskFlow.getId());
-                }
+                requireToStop = this.clusterController.stopRequestContains(logId);
                 for (Long taskId : taskIdToStatusMap.keySet()) {
                     String taskStatus = taskIdToStatusMap.get(taskId);
                     if (TaskStatusEnum.WAIT_FOR_EXECUTE.getCode().equals(taskStatus)) {
@@ -198,24 +191,13 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                 throw new TaskFlowExecuteException("至少有一个任务执行失败");
             }
         } finally {
-            synchronized (lock) {
-                this.taskFlowRequireToStop.remove(taskFlow.getId());
-            }
+            this.clusterController.stopRequestRemove(logId);
         }
     }
 
     @Override
     public void afterExecute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws TaskFlowExecuteException {
         // 不做任何操作
-    }
-
-    @Override
-    public void stop(Long taskFlowId) throws TaskFlowStopException {
-        synchronized (lock) {
-            if (this.taskFlowRequireToStop.containsKey(taskFlowId)) {
-                this.taskFlowRequireToStop.put(taskFlowId, true);
-            }
-        }
     }
 
     /**
@@ -239,9 +221,9 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
             boolean locked = false;
             try {
                 locked = this.clusterController.tryLock(
-                        ClusterConstants.TASK_STATUS_RECORD_LOCK,
-                        ClusterConstants.STATUS_RECORD_LOCK_WAIT_TIME,
-                        ClusterConstants.STATUS_RECORD_LOCK_LEASE_TIME,
+                        ClusterConstants.TASK_LOG_LOCK,
+                        ClusterConstants.LOG_LOCK_WAIT_TIME,
+                        ClusterConstants.LOG_LOCK_LEASE_TIME,
                         TimeUnit.SECONDS);
                 if (!locked) {
                     throw new TryLockException("获取任务状态记录锁失败！");
@@ -261,7 +243,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                 this.taskLogger.put(taskLog);
             } finally {
                 if (locked) {
-                    this.clusterController.unlock(ClusterConstants.TASK_STATUS_RECORD_LOCK);
+                    this.clusterController.unlock(ClusterConstants.TASK_LOG_LOCK);
                 }
             }
         }

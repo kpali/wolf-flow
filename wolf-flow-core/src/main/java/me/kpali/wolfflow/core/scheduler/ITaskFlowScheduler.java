@@ -55,8 +55,8 @@ public interface ITaskFlowScheduler {
     /**
      * 停止任务流
      *
-     * @param taskFlowId
+     * @param logId
      * @throws TaskFlowStopException
      */
-    void stop(Long taskFlowId) throws TaskFlowStopException;
+    void stop(Long logId) throws TaskFlowStopException;
 }

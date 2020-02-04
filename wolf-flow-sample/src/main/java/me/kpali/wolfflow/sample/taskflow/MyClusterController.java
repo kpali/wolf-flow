@@ -4,6 +4,7 @@ import me.kpali.wolfflow.core.cluster.impl.DefaultClusterController;
 import me.kpali.wolfflow.core.model.TaskFlowExecRequest;
 import org.redisson.api.RLock;
 import org.redisson.api.RQueue;
+import org.redisson.api.RSet;
 import org.redisson.api.RedissonClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +21,9 @@ public class MyClusterController extends DefaultClusterController {
 
     @Autowired
     private RedissonClient redisson;
+
+    private static final String TASK_FLOW_EXEC_QUEUE = "taskFlowExecQueue";
+    private static final String TASK_FLOW_STOP_SET = "taskFlowStopSet";
 
     @Override
     public void lock(String name) {
@@ -52,14 +56,32 @@ public class MyClusterController extends DefaultClusterController {
     }
 
     @Override
-    public boolean offer(TaskFlowExecRequest request) {
-        RQueue<TaskFlowExecRequest> queue = redisson.getQueue("taskFlowExecQueue");
+    public boolean execRequestOffer(TaskFlowExecRequest request) {
+        RQueue<TaskFlowExecRequest> queue = redisson.getQueue(TASK_FLOW_EXEC_QUEUE);
         return queue.offer(request);
     }
 
     @Override
-    public TaskFlowExecRequest poll() {
-        RQueue<TaskFlowExecRequest> queue = redisson.getQueue("taskFlowExecQueue");
+    public TaskFlowExecRequest execRequestPoll() {
+        RQueue<TaskFlowExecRequest> queue = redisson.getQueue(TASK_FLOW_EXEC_QUEUE);
         return queue.poll();
+    }
+
+    @Override
+    public void stopRequestAdd(Long logId) {
+        RSet<Long> set = redisson.getSet(TASK_FLOW_STOP_SET);
+        set.add(logId);
+    }
+
+    @Override
+    public Boolean stopRequestContains(Long logId) {
+        RSet<Long> set = redisson.getSet(TASK_FLOW_STOP_SET);
+        return set.contains(logId);
+    }
+
+    @Override
+    public void stopRequestRemove(Long logId) {
+        RSet<Long> set = redisson.getSet(TASK_FLOW_STOP_SET);
+        set.remove(logId);
     }
 }
