@@ -8,5 +8,5 @@ package me.kpali.wolfflow.core.model;
 public class ContextKey {
     public static final String FROM_TASK_ID = "fromTaskId";
     public static final String TO_TASK_ID = "toTaskId";
-    public static final String TASK_FLOW_EXEC_ID = "taskFlowExecId";
+    public static final String LOG_ID = "logId";
 }

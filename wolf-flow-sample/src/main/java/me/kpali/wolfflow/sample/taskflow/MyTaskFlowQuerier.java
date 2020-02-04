@@ -14,7 +14,23 @@ import java.util.stream.Collectors;
 @Primary
 @Component
 public class MyTaskFlowQuerier extends DefaultTaskFlowQuerier {
-    public MyTaskFlowQuerier() {
+    @Override
+    public TaskFlow getTaskFlow(Long taskFlowId) throws TaskFlowQueryException {
+        List<TaskFlow> taskFlowList = this.listTaskFlow();
+        return taskFlowList.stream().filter(taskFlow -> {
+           return taskFlow.getId().equals(taskFlowId);
+        }).findFirst().get();
+    }
+
+    @Override
+    public List<TaskFlow> listCronTaskFlow() throws TaskFlowQueryException {
+        List<TaskFlow> taskFlowList = this.listTaskFlow();
+        return taskFlowList.stream().filter(taskFlow -> {
+            return (taskFlow.getCron() != null && !taskFlow.getCron().trim().isEmpty());
+        }).collect(Collectors.toList());
+    }
+
+    private List<TaskFlow> listTaskFlow() {
         /**
          * 示例拓扑图：
          *                    --> 9
@@ -28,23 +44,47 @@ public class MyTaskFlowQuerier extends DefaultTaskFlowQuerier {
          * 10 --> 11
          */
 
+        List<TaskFlow> taskFlowList = new ArrayList<>();
+
         TaskFlow taskFlow = new TaskFlow();
         taskFlow.setId(100L);
         //taskFlow.setCron("0 * * * * ?");
         taskFlow.setTaskList(new ArrayList<>());
         taskFlow.setLinkList(new ArrayList<>());
 
-        taskFlow.getTaskList().add(new MyTask(3L));
-        taskFlow.getTaskList().add(new MyTask(5L));
-        taskFlow.getTaskList().add(new MyTask(1L));
-        taskFlow.getTaskList().add(new MyTask(10L));
-        taskFlow.getTaskList().add(new MyTask(9L));
-        taskFlow.getTaskList().add(new MyTask(6L));
-        taskFlow.getTaskList().add(new MyTask(4L));
-        taskFlow.getTaskList().add(new MyTask(2L));
-        taskFlow.getTaskList().add(new MyTask(7L));
-        taskFlow.getTaskList().add(new MyTask(11L));
-        taskFlow.getTaskList().add(new MyTask(8L));
+        MyTask myTask1 = new MyTask();
+        myTask1.setId(1L);
+        MyTask myTask2 = new MyTask();
+        myTask2.setId(2L);
+        MyTask myTask3 = new MyTask();
+        myTask3.setId(3L);
+        MyTask myTask4 = new MyTask();
+        myTask4.setId(4L);
+        MyTask myTask5 = new MyTask();
+        myTask5.setId(5L);
+        MyTask myTask6 = new MyTask();
+        myTask6.setId(6L);
+        MyTask myTask7 = new MyTask();
+        myTask7.setId(7L);
+        MyTask myTask8 = new MyTask();
+        myTask8.setId(8L);
+        MyTask myTask9 = new MyTask();
+        myTask9.setId(9L);
+        MyTask myTask10 = new MyTask();
+        myTask10.setId(10L);
+        MyTask myTask11 = new MyTask();
+        myTask11.setId(11L);
+        taskFlow.getTaskList().add(myTask3);
+        taskFlow.getTaskList().add(myTask5);
+        taskFlow.getTaskList().add(myTask1);
+        taskFlow.getTaskList().add(myTask10);
+        taskFlow.getTaskList().add(myTask9);
+        taskFlow.getTaskList().add(myTask6);
+        taskFlow.getTaskList().add(myTask4);
+        taskFlow.getTaskList().add(myTask2);
+        taskFlow.getTaskList().add(myTask7);
+        taskFlow.getTaskList().add(myTask11);
+        taskFlow.getTaskList().add(myTask8);
 
         taskFlow.getLinkList().add(new Link(1L, 2L));
         taskFlow.getLinkList().add(new Link(1L, 3L));
@@ -61,21 +101,7 @@ public class MyTaskFlowQuerier extends DefaultTaskFlowQuerier {
         taskFlow.getLinkList().add(new Link(10L, 11L));
 
         taskFlowList.add(taskFlow);
-    }
 
-    private List<TaskFlow> taskFlowList = new ArrayList<>();
-
-    @Override
-    public TaskFlow getTaskFlow(Long taskFlowId) throws TaskFlowQueryException {
-        return this.taskFlowList.stream().filter(taskFlow -> {
-           return taskFlow.getId().equals(taskFlowId);
-        }).findFirst().get();
-    }
-
-    @Override
-    public List<TaskFlow> listCronTaskFlow() throws TaskFlowQueryException {
-        return this.taskFlowList.stream().filter(taskFlow -> {
-            return (taskFlow.getCron() != null && !taskFlow.getCron().trim().isEmpty());
-        }).collect(Collectors.toList());
+        return taskFlowList;
     }
 }

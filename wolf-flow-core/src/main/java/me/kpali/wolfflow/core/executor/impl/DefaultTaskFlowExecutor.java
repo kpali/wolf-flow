@@ -1,13 +1,14 @@
 package me.kpali.wolfflow.core.executor.impl;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import me.kpali.wolfflow.core.cluster.IClusterController;
 import me.kpali.wolfflow.core.config.ExecutorConfig;
 import me.kpali.wolfflow.core.enums.TaskStatusEnum;
 import me.kpali.wolfflow.core.event.TaskStatusChangeEvent;
 import me.kpali.wolfflow.core.exception.*;
 import me.kpali.wolfflow.core.executor.ITaskFlowExecutor;
+import me.kpali.wolfflow.core.logger.ITaskLogger;
 import me.kpali.wolfflow.core.model.*;
-import me.kpali.wolfflow.core.recorder.ITaskStatusRecorder;
 import me.kpali.wolfflow.core.util.TaskFlowUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +37,10 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     private ApplicationEventPublisher eventPublisher;
 
     @Autowired
-    private ITaskStatusRecorder taskStatusRecorder;
+    private IClusterController clusterController;
+
+    @Autowired
+    private ITaskLogger taskLogger;
 
     private Map<Long, Boolean> taskFlowRequireToStop = new HashMap<>();
     private final Object lock = new Object();
@@ -44,8 +48,24 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     @Override
     public void beforeExecute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws TaskFlowExecuteException {
         // 清理任务状态
-        for (Task task : taskFlow.getTaskList()) {
-            this.taskStatusRecorder.remove(taskFlow.getId(), task.getId());
+        Long logId = Long.parseLong(taskFlowContext.get(ContextKey.LOG_ID));
+        boolean locked = false;
+        try {
+            locked = this.clusterController.tryLock(
+                    ClusterConstants.TASK_STATUS_RECORD_LOCK,
+                    ClusterConstants.STATUS_RECORD_LOCK_WAIT_TIME,
+                    ClusterConstants.STATUS_RECORD_LOCK_LEASE_TIME,
+                    TimeUnit.SECONDS);
+            if (!locked) {
+                throw new TryLockException("获取任务状态记录锁失败！");
+            }
+            for (Task task : taskFlow.getTaskList()) {
+                this.taskLogger.delete(logId, task.getId());
+            }
+        } finally {
+            if (locked) {
+                this.clusterController.unlock(ClusterConstants.TASK_STATUS_RECORD_LOCK);
+            }
         }
     }
 
@@ -216,7 +236,34 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
         taskStatus.setStatus(status);
         taskStatus.setMessage(message);
         if (record) {
-            taskStatusRecorder.put(taskStatus);
+            boolean locked = false;
+            try {
+                locked = this.clusterController.tryLock(
+                        ClusterConstants.TASK_STATUS_RECORD_LOCK,
+                        ClusterConstants.STATUS_RECORD_LOCK_WAIT_TIME,
+                        ClusterConstants.STATUS_RECORD_LOCK_LEASE_TIME,
+                        TimeUnit.SECONDS);
+                if (!locked) {
+                    throw new TryLockException("获取任务状态记录锁失败！");
+                }
+                Long logId = Long.parseLong(taskFlowContext.get(ContextKey.LOG_ID));
+                TaskLog taskLog = this.taskLogger.get(logId, task.getId());
+                if (taskLog == null) {
+                    taskLog = new TaskLog();
+                    taskLog.setLogId(logId);
+                    taskLog.setTaskId(task.getId());
+                }
+                taskLog.setTask(task);
+                taskLog.setTaskFlowId(taskFlowId);
+                taskLog.setTaskFlowContext(taskFlowContext);
+                taskLog.setStatus(status);
+                taskLog.setMessage(message);
+                this.taskLogger.put(taskLog);
+            } finally {
+                if (locked) {
+                    this.clusterController.unlock(ClusterConstants.TASK_STATUS_RECORD_LOCK);
+                }
+            }
         }
         TaskStatusChangeEvent taskStatusChangeEvent = new TaskStatusChangeEvent(this, taskStatus);
         this.eventPublisher.publishEvent(taskStatusChangeEvent);

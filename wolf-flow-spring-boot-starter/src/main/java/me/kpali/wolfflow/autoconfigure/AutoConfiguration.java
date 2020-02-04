@@ -17,7 +17,7 @@ import org.springframework.context.annotation.Import;
 @Import({SchedulerConfiguration.class,
         ExecutorConfiguration.class,
         QuerierConfiguration.class,
-        RecorderConfiguration.class,
+        LoggerConfiguration.class,
         ClusterConfiguration.class})
 @Configuration
 public class AutoConfiguration {
