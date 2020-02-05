@@ -141,6 +141,7 @@ public class DefaultTaskLogger implements ITaskLogger {
     @Override
     public void delete(Long logId) throws TaskLogException {
         taskLogListMap.remove(logId);
+        taskLogLineMap.remove(logId);
     }
 
     @Override
@@ -154,6 +155,10 @@ public class DefaultTaskLogger implements ITaskLogger {
                 }
             }
             taskLogListMap.put(logId, newTaskLogList);
+        }
+        Map<Long, List<TaskLogLine>> taskLogLineListMap = taskLogLineMap.get(logId);
+        if (taskLogLineListMap != null) {
+            taskLogLineListMap.remove(taskId);
         }
     }
 
