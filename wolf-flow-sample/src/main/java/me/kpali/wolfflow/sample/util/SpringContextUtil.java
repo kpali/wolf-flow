@@ -1,20 +1,17 @@
 package me.kpali.wolfflow.sample.util;
 
+import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
 
 @Component
-public class SpringBeanUtil implements ApplicationContextAware {
-    private static ApplicationContext applicationContext;
+public class SpringContextUtil implements ApplicationContextAware {
+    private static ApplicationContext applicationContext = null;
 
     @Override
-    public void setApplicationContext(ApplicationContext applicationContext) {
-        setAppCtx(applicationContext);
-    }
-
-    private static synchronized void setAppCtx(ApplicationContext applicationContext) {
-        SpringBeanUtil.applicationContext = applicationContext;
+    public void setApplicationContext(ApplicationContext applicationContext) throws BeansException {
+        SpringContextUtil.applicationContext = applicationContext;
     }
 
     public static ApplicationContext getApplicationContext() {
