@@ -193,11 +193,17 @@ public class DefaultTaskLogger implements ITaskLogger {
                 String[] lines3 = line2.split("\n");
                 Collections.addAll(lineList3, lines3);
             }
-            for (String line3 : lineList3) {
+            for (int i = 0; i < lineList3.size(); i++) {
+                String line3 = lineList3.get(i);
                 TaskLogLine taskLogLine = new TaskLogLine();
                 taskLogLine.setLineNum(taskLogLineList.size() + 1);
                 taskLogLine.setLine(line3);
-                taskLogLine.setEnd(end);
+                if (i + 1 < lineList3.size()) {
+                    taskLogLine.setEnd(false);
+                } else {
+                    // 到达最后一行
+                    taskLogLine.setEnd(end);
+                }
                 taskLogLineList.add(taskLogLine);
             }
         }
