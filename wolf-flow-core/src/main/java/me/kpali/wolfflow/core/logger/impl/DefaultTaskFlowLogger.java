@@ -85,7 +85,16 @@ public class DefaultTaskFlowLogger implements ITaskFlowLogger {
     }
 
     @Override
-    public void put(TaskFlowLog taskFlowLog) throws TaskFlowLogException {
+    public void add(TaskFlowLog taskFlowLog) throws TaskFlowLogException {
+        this.put(taskFlowLog);
+    }
+
+    @Override
+    public void update(TaskFlowLog taskFlowLog) throws TaskFlowLogException {
+        this.put(taskFlowLog);
+    }
+
+    private void put(TaskFlowLog taskFlowLog) throws TaskFlowLogException {
         try {
             String json = objectMapper.writeValueAsString(taskFlowLog);
             TaskFlowLog taskFlowLogCloned = objectMapper.readValue(json, TaskFlowLog.class);

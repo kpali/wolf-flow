@@ -295,9 +295,12 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                 this.clusterController.unlock(ClusterConstants.TASK_LOG_LOCK);
             }
         }
-        if (isPartialExecute && taskLogList != null && !taskLogList.isEmpty()) {
+        boolean isNewLog= !(isPartialExecute && taskLogList != null && !taskLogList.isEmpty());
+        if (isNewLog) {
+            // 任务流从未执行过或任务流全部重新执行，则生成新的日志ID
+            logId = systemTimeUtils.getUniqueTimeStamp();
+        } else {
             // 任务流存在执行记录或任务流部分继续执行，则使用之前的日志ID
-            TaskFlowContext taskFlowContext = null;
             locked = false;
             try {
                 locked = this.clusterController.tryLock(
@@ -308,16 +311,13 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                 if (!locked) {
                     throw new TryLockException("获取任务流状态记录锁失败！");
                 }
-                taskFlowContext = this.taskFlowLogger.last(finalTaskFlow.getId()).getTaskFlowContext();
+                TaskFlowContext taskFlowContext = this.taskFlowLogger.last(finalTaskFlow.getId()).getTaskFlowContext();
+                logId = Long.parseLong(taskFlowContext.get(ContextKey.LOG_ID));
             } finally {
                 if (locked) {
                     this.clusterController.unlock(ClusterConstants.TASK_FLOW_LOG_LOCK);
                 }
             }
-            logId = Long.parseLong(taskFlowContext.get(ContextKey.LOG_ID));
-        } else {
-            // 任务流从未执行过或任务流全部重新执行，则生成新的日志ID
-            logId = systemTimeUtils.getUniqueTimeStamp();
         }
         String logIdStr = String.valueOf(logId);
 
@@ -346,7 +346,6 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                 throw new TryLockException("获取任务流状态记录锁失败！");
             }
             if (!this.schedulerConfig.getAllowParallel()) {
-                // 如果任务流不在处理中，则新增或更新任务流状态
                 TaskFlowLog taskFlowLog = this.taskFlowLogger.last(finalTaskFlow.getId());
                 boolean isInProgress = taskFlowLog != null && this.taskFlowLogger.isInProgress(taskFlowLog);
                 if (isInProgress) {
@@ -361,7 +360,11 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
             taskFlowLog.setTaskFlowContext(taskFlowWaitForExecute.getTaskFlowContext());
             taskFlowLog.setStatus(taskFlowWaitForExecute.getStatus());
             taskFlowLog.setMessage(taskFlowWaitForExecute.getMessage());
-            this.taskFlowLogger.put(taskFlowLog);
+            if (isNewLog) {
+                this.taskFlowLogger.add(taskFlowLog);
+            } else {
+                this.taskFlowLogger.update(taskFlowLog);
+            }
         } finally {
             if (locked) {
                 this.clusterController.unlock(ClusterConstants.TASK_FLOW_LOG_LOCK);
@@ -401,7 +404,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                     this.clusterController.stopRequestAdd(logId);
                 }
                 taskFlowLog.setStatus(TaskFlowStatusEnum.STOPPING.getCode());
-                this.taskFlowLogger.put(taskFlowLog);
+                this.taskFlowLogger.update(taskFlowLog);
             }
         } finally {
             if (locked) {
@@ -498,7 +501,9 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                 }
                 Long logId = Long.parseLong(taskFlowContext.get(ContextKey.LOG_ID));
                 TaskFlowLog taskFlowLog = this.taskFlowLogger.get(logId);
+                boolean isNewLog = false;
                 if (taskFlowLog == null) {
+                    isNewLog = true;
                     taskFlowLog = new TaskFlowLog();
                     taskFlowLog.setLogId(logId);
                     taskFlowLog.setTaskFlowId(taskFlow.getId());
@@ -507,7 +512,11 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                 taskFlowLog.setTaskFlowContext(taskFlowContext);
                 taskFlowLog.setStatus(status);
                 taskFlowLog.setMessage(message);
-                this.taskFlowLogger.put(taskFlowLog);
+                if (isNewLog) {
+                    this.taskFlowLogger.add(taskFlowLog);
+                } else {
+                    this.taskFlowLogger.update(taskFlowLog);
+                }
             } finally {
                 if (locked) {
                     this.clusterController.unlock(ClusterConstants.TASK_FLOW_LOG_LOCK);

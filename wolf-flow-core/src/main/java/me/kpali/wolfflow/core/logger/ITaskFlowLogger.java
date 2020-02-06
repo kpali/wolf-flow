@@ -39,12 +39,20 @@ public interface ITaskFlowLogger {
     TaskFlowLog get(Long logId) throws TaskFlowLogException;
 
     /**
-     * 新增或更新任务流日志
+     * 新增任务流日志
      *
      * @param taskFlowLog
      * @throws TaskFlowLogException
      */
-    void put(TaskFlowLog taskFlowLog) throws TaskFlowLogException;
+    void add(TaskFlowLog taskFlowLog) throws TaskFlowLogException;
+
+    /**
+     * 更新任务流日志
+     *
+     * @param taskFlowLog
+     * @throws TaskFlowLogException
+     */
+    void update(TaskFlowLog taskFlowLog) throws TaskFlowLogException;
 
     /**
      * 根据日志ID删除任务流日志

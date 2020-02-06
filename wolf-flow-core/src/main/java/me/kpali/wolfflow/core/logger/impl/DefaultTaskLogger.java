@@ -111,7 +111,16 @@ public class DefaultTaskLogger implements ITaskLogger {
     }
 
     @Override
-    public void put(TaskLog taskLog) throws TaskLogException {
+    public void add(TaskLog taskLog) throws TaskLogException {
+        this.put(taskLog);
+    }
+
+    @Override
+    public void update(TaskLog taskLog) throws TaskLogException {
+        this.put(taskLog);
+    }
+
+    private void put(TaskLog taskLog) throws TaskLogException {
         try {
             String json = objectMapper.writeValueAsString(taskLog);
             TaskLog taskLogCloned = objectMapper.readValue(json, TaskLog.class);

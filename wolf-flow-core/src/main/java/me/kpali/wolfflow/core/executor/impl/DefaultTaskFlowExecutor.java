@@ -230,7 +230,9 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                 }
                 Long logId = Long.parseLong(taskFlowContext.get(ContextKey.LOG_ID));
                 TaskLog taskLog = this.taskLogger.get(logId, task.getId());
+                boolean isNewLog = false;
                 if (taskLog == null) {
+                    isNewLog = true;
                     taskLog = new TaskLog();
                     taskLog.setLogId(logId);
                     taskLog.setTaskId(task.getId());
@@ -240,7 +242,11 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                 taskLog.setTaskFlowContext(taskFlowContext);
                 taskLog.setStatus(status);
                 taskLog.setMessage(message);
-                this.taskLogger.put(taskLog);
+                if (isNewLog) {
+                    this.taskLogger.add(taskLog);
+                } else {
+                    this.taskLogger.update(taskLog);
+                }
             } finally {
                 if (locked) {
                     this.clusterController.unlock(ClusterConstants.TASK_LOG_LOCK);

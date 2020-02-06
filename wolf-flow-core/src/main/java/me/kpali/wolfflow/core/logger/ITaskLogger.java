@@ -50,12 +50,20 @@ public interface ITaskLogger {
     TaskLog get(Long logId, Long taskId) throws TaskLogException;
 
     /**
-     * 新增或更新任务日志
+     * 新增任务日志
      *
      * @param taskLog
      * @throws TaskLogException
      */
-    void put(TaskLog taskLog) throws TaskLogException;
+    void add(TaskLog taskLog) throws TaskLogException;
+
+    /**
+     * 更新任务日志
+     *
+     * @param taskLog
+     * @throws TaskLogException
+     */
+    void update(TaskLog taskLog) throws TaskLogException;
 
     /**
      * 根据日志ID删除任务日志
