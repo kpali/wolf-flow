@@ -173,9 +173,6 @@ public class DefaultTaskLogger implements ITaskLogger {
 
     @Override
     public int log(Long logId, Long taskId, String logContent, Boolean end) throws TaskLogException {
-        if (logContent == null || logContent.length() == 0) {
-            return 0;
-        }
         if (!taskLogLineMap.containsKey(logId)) {
             taskLogLineMap.put(logId, new ConcurrentHashMap<>());
         }
@@ -184,23 +181,25 @@ public class DefaultTaskLogger implements ITaskLogger {
             taskLogLineListMap.put(taskId, new ArrayList<>());
         }
         List<TaskLogLine> taskLogLineList = taskLogLineListMap.get(taskId);
-        String[] lines1 = logContent.split("\r\n");
-        List<String> lineList2 = new ArrayList<>();
-        for (String line1 : lines1) {
-            String[] lines2 = line1.split("\r");
-            Collections.addAll(lineList2, lines2);
-        }
-        List<String> lineList3 = new ArrayList<>();
-        for (String line2 : lineList2) {
-            String[] lines3 = line2.split("\n");
-            Collections.addAll(lineList3, lines3);
-        }
-        for (String line3 : lineList3) {
-            TaskLogLine taskLogLine = new TaskLogLine();
-            taskLogLine.setLineNum(taskLogLineList.size() + 1);
-            taskLogLine.setLine(line3);
-            taskLogLine.setEnd(end);
-            taskLogLineList.add(taskLogLine);
+        if (logContent != null && logContent.length() > 0) {
+            String[] lines1 = logContent.split("\r\n");
+            List<String> lineList2 = new ArrayList<>();
+            for (String line1 : lines1) {
+                String[] lines2 = line1.split("\r");
+                Collections.addAll(lineList2, lines2);
+            }
+            List<String> lineList3 = new ArrayList<>();
+            for (String line2 : lineList2) {
+                String[] lines3 = line2.split("\n");
+                Collections.addAll(lineList3, lines3);
+            }
+            for (String line3 : lineList3) {
+                TaskLogLine taskLogLine = new TaskLogLine();
+                taskLogLine.setLineNum(taskLogLineList.size() + 1);
+                taskLogLine.setLine(line3);
+                taskLogLine.setEnd(end);
+                taskLogLineList.add(taskLogLine);
+            }
         }
         return taskLogLineList.size();
     }
