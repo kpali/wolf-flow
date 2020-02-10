@@ -1,4 +1,4 @@
-package me.kpali.wolfflow.sample;
+package me.kpali.wolfflow.sample.cluster;
 
 import me.kpali.wolfflow.core.logger.ITaskFlowLogger;
 import me.kpali.wolfflow.core.logger.ITaskLogger;
@@ -13,7 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import java.util.List;
 
 @SpringBootTest
-public class WolfFlowSampleApplicationTests {
+public class WolfFlowSampleClusterApplicationTests {
     @Autowired
     ITaskFlowScheduler taskFlowScheduler;
     @Autowired
