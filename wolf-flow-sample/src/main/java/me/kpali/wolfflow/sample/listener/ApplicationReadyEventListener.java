@@ -19,7 +19,6 @@ public class ApplicationReadyEventListener implements ApplicationListener<Applic
 
     @Override
     public void onApplicationEvent(ApplicationReadyEvent applicationReadyEvent) {
-
         taskFlowScheduler.startup();
     }
 }
