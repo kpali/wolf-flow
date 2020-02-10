@@ -1,4 +1,4 @@
-package me.kpali.wolfflow.sample.taskflow;
+package me.kpali.wolfflow.sample.cluster.taskflow;
 
 import me.kpali.wolfflow.core.cluster.impl.DefaultClusterController;
 import me.kpali.wolfflow.core.model.TaskFlowExecRequest;
@@ -22,8 +22,8 @@ public class MyClusterController extends DefaultClusterController {
     @Autowired
     private RedissonClient redisson;
 
-    private static final String TASK_FLOW_EXEC_QUEUE = "taskFlowExecQueue";
-    private static final String TASK_FLOW_STOP_SET = "taskFlowStopSet";
+    private static final String TASK_FLOW_EXEC_REQUEST = "taskFlowExecRequest";
+    private static final String TASK_FLOW_STOP_REQUEST = "taskFlowStopRequest";
 
     @Override
     public void lock(String name) {
@@ -57,31 +57,31 @@ public class MyClusterController extends DefaultClusterController {
 
     @Override
     public boolean execRequestOffer(TaskFlowExecRequest request) {
-        RQueue<TaskFlowExecRequest> queue = redisson.getQueue(TASK_FLOW_EXEC_QUEUE);
+        RQueue<TaskFlowExecRequest> queue = redisson.getQueue(TASK_FLOW_EXEC_REQUEST);
         return queue.offer(request);
     }
 
     @Override
     public TaskFlowExecRequest execRequestPoll() {
-        RQueue<TaskFlowExecRequest> queue = redisson.getQueue(TASK_FLOW_EXEC_QUEUE);
+        RQueue<TaskFlowExecRequest> queue = redisson.getQueue(TASK_FLOW_EXEC_REQUEST);
         return queue.poll();
     }
 
     @Override
     public void stopRequestAdd(Long logId) {
-        RSet<Long> set = redisson.getSet(TASK_FLOW_STOP_SET);
+        RSet<Long> set = redisson.getSet(TASK_FLOW_STOP_REQUEST);
         set.add(logId);
     }
 
     @Override
     public Boolean stopRequestContains(Long logId) {
-        RSet<Long> set = redisson.getSet(TASK_FLOW_STOP_SET);
+        RSet<Long> set = redisson.getSet(TASK_FLOW_STOP_REQUEST);
         return set.contains(logId);
     }
 
     @Override
     public void stopRequestRemove(Long logId) {
-        RSet<Long> set = redisson.getSet(TASK_FLOW_STOP_SET);
+        RSet<Long> set = redisson.getSet(TASK_FLOW_STOP_REQUEST);
         set.remove(logId);
     }
 }

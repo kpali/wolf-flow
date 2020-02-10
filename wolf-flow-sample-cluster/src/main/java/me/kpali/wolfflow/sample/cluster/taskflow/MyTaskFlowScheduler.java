@@ -1,4 +1,4 @@
-package me.kpali.wolfflow.sample.taskflow;
+package me.kpali.wolfflow.sample.cluster.taskflow;
 
 import me.kpali.wolfflow.core.scheduler.impl.DefaultTaskFlowScheduler;
 import org.springframework.context.annotation.Primary;

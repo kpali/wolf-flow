@@ -1,4 +1,4 @@
-package me.kpali.wolfflow.sample.taskflow;
+package me.kpali.wolfflow.sample.cluster.taskflow;
 
 import me.kpali.wolfflow.core.exception.TaskExecuteException;
 import me.kpali.wolfflow.core.exception.TaskInterruptedException;
@@ -7,7 +7,7 @@ import me.kpali.wolfflow.core.logger.ITaskLogger;
 import me.kpali.wolfflow.core.model.ContextKey;
 import me.kpali.wolfflow.core.model.Task;
 import me.kpali.wolfflow.core.model.TaskFlowContext;
-import me.kpali.wolfflow.sample.util.SpringContextUtil;
+import me.kpali.wolfflow.sample.cluster.util.SpringContextUtil;
 
 public class MyTask extends Task {
     private boolean requiredToStop = false;

@@ -1,4 +1,4 @@
-package me.kpali.wolfflow.sample.config;
+package me.kpali.wolfflow.sample.cluster.config;
 
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;

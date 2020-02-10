@@ -1,4 +1,4 @@
-package me.kpali.wolfflow.sample.listener;
+package me.kpali.wolfflow.sample.cluster.listener;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -9,7 +9,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 @Component
-public class TaskFlowListener {
+public class TaskFlowEventListener {
     private ObjectMapper objectMapper = new ObjectMapper();
 
     @EventListener

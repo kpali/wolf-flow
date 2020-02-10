@@ -22,8 +22,8 @@ public class DefaultClusterController implements IClusterController {
 
     private final Object lock = new Object();
     private Map<String, Lock> lockMap = new HashMap<>();
-    private Queue<TaskFlowExecRequest> taskFlowExecQueue = new LinkedList<>();
-    private Set<Long> taskFlowStopSet = new HashSet<>();
+    private Queue<TaskFlowExecRequest> taskFlowExecRequest = new LinkedList<>();
+    private Set<Long> taskFlowStopRequest = new HashSet<>();
 
     private Lock getLock(String name) {
         Lock rLock = null;
@@ -71,35 +71,35 @@ public class DefaultClusterController implements IClusterController {
     @Override
     public boolean execRequestOffer(TaskFlowExecRequest request) {
         synchronized (lock) {
-            return taskFlowExecQueue.offer(request);
+            return taskFlowExecRequest.offer(request);
         }
     }
 
     @Override
     public TaskFlowExecRequest execRequestPoll() {
         synchronized (lock) {
-            return taskFlowExecQueue.poll();
+            return taskFlowExecRequest.poll();
         }
     }
 
     @Override
     public void stopRequestAdd(Long logId) {
         synchronized (lock) {
-            taskFlowStopSet.add(logId);
+            taskFlowStopRequest.add(logId);
         }
     }
 
     @Override
     public Boolean stopRequestContains(Long logId) {
         synchronized (lock) {
-            return taskFlowStopSet.contains(logId);
+            return taskFlowStopRequest.contains(logId);
         }
     }
 
     @Override
     public void stopRequestRemove(Long logId) {
         synchronized (lock) {
-            taskFlowStopSet.remove(logId);
+            taskFlowStopRequest.remove(logId);
         }
     }
 }
