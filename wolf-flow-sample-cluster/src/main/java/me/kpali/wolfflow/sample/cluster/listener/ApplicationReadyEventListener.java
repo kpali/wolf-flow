@@ -7,7 +7,7 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.stereotype.Component;
 
 /**
- * 程序启动完成事件监听，主要是为了启动任务流调度器
+ * 程序启动完成事件监听，在程序启动后启动任务流调度器
  * （必要）
  *
  * @author kpali
