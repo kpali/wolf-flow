@@ -14,6 +14,12 @@ import org.springframework.stereotype.Component;
 
 import java.util.concurrent.TimeUnit;
 
+/**
+ * 可以覆写默认集群控制器的方法实现自定义，本示例使用Redis实现集群控制器来支持集群
+ * （可选）
+ *
+ * @author kpali
+ */
 @Primary
 @Component
 public class MyClusterController extends DefaultClusterController {

@@ -11,6 +11,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * 自定义任务流查询器，覆写父类的方法，实现自定义任务流查询器
+ * （必要）
+ *
+ * @author kpali
+ */
 @Primary
 @Component
 public class MyTaskFlowQuerier extends DefaultTaskFlowQuerier {

@@ -9,6 +9,12 @@ import me.kpali.wolfflow.core.model.Task;
 import me.kpali.wolfflow.core.model.TaskFlowContext;
 import me.kpali.wolfflow.sample.util.SpringContextUtil;
 
+/**
+ * 自定义任务，覆写父类的方法，实现自定义任务的执行内容
+ * （必要）
+ *
+ * @author kpali
+ */
 public class MyTask extends Task {
     private boolean requiredToStop = false;
 
