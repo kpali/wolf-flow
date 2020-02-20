@@ -13,41 +13,23 @@ import java.util.List;
  */
 public interface ITaskLogger {
     /**
-     * 根据日志ID获取任务日志列表
+     * 根据任务流日志ID获取任务日志列表
      *
-     * @param logId
+     * @param taskFlowLogId
      * @return
      * @throws TaskLogException
      */
-    List<TaskLog> list(Long logId) throws TaskLogException;
+    List<TaskLog> list(Long taskFlowLogId) throws TaskLogException;
 
     /**
-     * 根据任务ID获取最后的任务日志列表
+     * 根据任务流日志ID和任务ID获取任务日志
      *
+     * @param taskFlowLogId
      * @param taskId
      * @return
      * @throws TaskLogException
      */
-    TaskLog last(Long taskId) throws TaskLogException;
-
-    /**
-     * 根据任务流ID获取最后的任务日志列表
-     *
-     * @param taskFlowId
-     * @return
-     * @throws TaskLogException
-     */
-    List<TaskLog> lastByTaskFlowId(Long taskFlowId) throws TaskLogException;
-
-    /**
-     * 根据日志ID和任务ID获取任务日志
-     *
-     * @param logId
-     * @param taskId
-     * @return
-     * @throws TaskLogException
-     */
-    TaskLog get(Long logId, Long taskId) throws TaskLogException;
+    TaskLog get(Long taskFlowLogId, Long taskId) throws TaskLogException;
 
     /**
      * 新增任务日志
@@ -66,42 +48,58 @@ public interface ITaskLogger {
     void update(TaskLog taskLog) throws TaskLogException;
 
     /**
-     * 根据日志ID删除任务日志
+     * 根据任务流日志ID删除任务日志
      *
-     * @param logId
+     * @param taskFlowLogId
      * @throws TaskLogException
      */
-    void delete(Long logId) throws TaskLogException;
-
-    /**
-     * 根据日志ID和任务ID删除任务日志
-     *
-     * @param logId
-     * @param taskId
-     * @throws TaskLogException
-     */
-    void delete(Long logId, Long taskId) throws TaskLogException;
+    void deleteByTaskFlowLogId(Long taskFlowLogId) throws TaskLogException;
 
     /**
      * 记录日志内容，如果日志内容不存在则新增，存在则追加
      *
-     * @param logId
+     * @param taskLogId
      * @param taskId
      * @param logContent
      * @param end
      * @return 当前日志总行数
      * @throws TaskLogException
      */
-    int log(Long logId, Long taskId, String logContent, Boolean end) throws TaskLogException;
+    int log(Long taskLogId, Long taskId, String logContent, Boolean end) throws TaskLogException;
 
     /**
      * 查询日志内容
      *
-     * @param logId
+     * @param taskLogId
      * @param taskId
      * @param fromLineNum
      * @return
      * @throws TaskLogException
      */
-    TaskLogResult query(Long logId, Long taskId, Integer fromLineNum) throws TaskLogException;
+    TaskLogResult query(Long taskLogId, Long taskId, Integer fromLineNum) throws TaskLogException;
+
+    /**
+     * 根据任务ID获取任务状态
+     *
+     * @param taskId
+     * @throws TaskLogException
+     */
+    TaskLog getTaskStatus(Long taskId) throws TaskLogException;
+
+    /**
+     * 根据任务流ID获取任务状态列表
+     *
+     * @param taskFlowId
+     * @return
+     * @throws TaskLogException
+     */
+    List<TaskLog> listTaskStatus(Long taskFlowId) throws TaskLogException;
+
+    /**
+     * 根据任务ID清除任务状态
+     *
+     * @param taskId
+     * @throws TaskLogException
+     */
+    void clearTaskStatus(Long taskId) throws TaskLogException;
 }

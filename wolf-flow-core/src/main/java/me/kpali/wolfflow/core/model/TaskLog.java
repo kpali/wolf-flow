@@ -12,6 +12,7 @@ public class TaskLog implements Serializable {
     private static final long serialVersionUID = 14370329912885306L;
 
     private Long logId;
+    private Long taskFlowLogId;
     private Long taskId;
     private Task task;
     private Long taskFlowId;
@@ -27,6 +28,14 @@ public class TaskLog implements Serializable {
 
     public void setLogId(Long logId) {
         this.logId = logId;
+    }
+
+    public Long getTaskFlowLogId() {
+        return taskFlowLogId;
+    }
+
+    public void setTaskFlowLogId(Long taskFlowLogId) {
+        this.taskFlowLogId = taskFlowLogId;
     }
 
     public Long getTaskId() {

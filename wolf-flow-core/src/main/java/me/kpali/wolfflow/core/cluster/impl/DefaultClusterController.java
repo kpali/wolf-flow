@@ -83,23 +83,23 @@ public class DefaultClusterController implements IClusterController {
     }
 
     @Override
-    public void stopRequestAdd(Long logId) {
+    public void stopRequestAdd(Long taskFlowLogId) {
         synchronized (lock) {
-            taskFlowStopRequest.add(logId);
+            taskFlowStopRequest.add(taskFlowLogId);
         }
     }
 
     @Override
-    public Boolean stopRequestContains(Long logId) {
+    public Boolean stopRequestContains(Long taskFlowLogId) {
         synchronized (lock) {
-            return taskFlowStopRequest.contains(logId);
+            return taskFlowStopRequest.contains(taskFlowLogId);
         }
     }
 
     @Override
-    public void stopRequestRemove(Long logId) {
+    public void stopRequestRemove(Long taskFlowLogId) {
         synchronized (lock) {
-            taskFlowStopRequest.remove(logId);
+            taskFlowStopRequest.remove(taskFlowLogId);
         }
     }
 }

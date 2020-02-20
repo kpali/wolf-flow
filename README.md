@@ -114,7 +114,7 @@ ITaskFlowScheduler taskFlowScheduler;
 public void test() {
     long taskFlowId = 1;
     Map<String, String> params = null;
-    long logId = taskFlowScheduler.trigger(taskFlowId, params);
+    long taskFlowLogId = taskFlowScheduler.trigger(taskFlowId, params);
 }
 ```
 

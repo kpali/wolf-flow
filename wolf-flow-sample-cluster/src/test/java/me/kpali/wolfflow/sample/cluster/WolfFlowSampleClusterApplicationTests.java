@@ -24,31 +24,31 @@ public class WolfFlowSampleClusterApplicationTests {
     @Test
     public void taskFlowTriggerTest() {
         try {
-            long logId1 = taskFlowScheduler.triggerTo(100L, 5L, null);
-            System.out.println(">>>>>>>>>> 日志ID：" + logId1);
+            long taskFLowLogId1 = taskFlowScheduler.triggerTo(100L, 5L, null);
+            System.out.println(">>>>>>>>>> 日志ID：" + taskFLowLogId1);
             Thread.sleep(3 * 1000);
-            //taskFlowScheduler.stop(logId1);
-            this.waitDoneAndPrintLog(logId1);
-            long logId2 = taskFlowScheduler.triggerTo(100L, 6L, null);
-            System.out.println(">>>>>>>>>> 日志ID：" + logId2);
-            this.waitDoneAndPrintLog(logId2);
+            //taskFlowScheduler.stop(taskFLowLogId1);
+            this.waitDoneAndPrintLog(taskFLowLogId1);
+            long taskFLowLogId2 = taskFlowScheduler.triggerTo(100L, 6L, null);
+            System.out.println(">>>>>>>>>> 日志ID：" + taskFLowLogId2);
+            this.waitDoneAndPrintLog(taskFLowLogId2);
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    private void waitDoneAndPrintLog(long logId) {
+    private void waitDoneAndPrintLog(long taskFLowLogId) {
         while (true) {
             try {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            TaskFlowLog taskFlowLog = taskFlowLogger.get(logId);
+            TaskFlowLog taskFlowLog = taskFlowLogger.get(taskFLowLogId);
             if (!taskFlowLogger.isInProgress(taskFlowLog)) {
-                List<TaskLog> taskLogList = taskLogger.list(logId);
+                List<TaskLog> taskLogList = taskLogger.list(taskFLowLogId);
                 for (TaskLog taskLog : taskLogList) {
-                    TaskLogResult taskLogResult = taskLogger.query(logId, taskLog.getTaskId(), 1);
+                    TaskLogResult taskLogResult = taskLogger.query(taskFLowLogId, taskLog.getTaskId(), 1);
                     if (taskLogResult != null) {
                         System.out.println(">>>>>>>>>> 任务[" + taskLog.getTaskId() + "]日志内容：");
                         System.out.println(taskLogResult.getLogContent());

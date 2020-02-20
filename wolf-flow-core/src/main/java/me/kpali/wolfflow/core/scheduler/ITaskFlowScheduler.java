@@ -22,7 +22,7 @@ public interface ITaskFlowScheduler {
      *
      * @param taskFlowId
      * @param params
-     * @return logId
+     * @return taskFlowLogId
      * @throws InvalidTaskFlowException
      * @throws TaskFlowTriggerException
      */
@@ -34,7 +34,7 @@ public interface ITaskFlowScheduler {
      * @param taskFlowId
      * @param fromTaskId
      * @param params
-     * @return logId
+     * @return taskFlowLogId
      * @throws InvalidTaskFlowException
      * @throws TaskFlowTriggerException
      */
@@ -46,7 +46,7 @@ public interface ITaskFlowScheduler {
      * @param taskFlowId
      * @param toTaskId
      * @param params
-     * @return logId
+     * @return taskFlowLogId
      * @throws InvalidTaskFlowException
      * @throws TaskFlowTriggerException
      */
@@ -55,8 +55,8 @@ public interface ITaskFlowScheduler {
     /**
      * 停止任务流
      *
-     * @param logId
+     * @param taskFlowLogId
      * @throws TaskFlowStopException
      */
-    void stop(Long logId) throws TaskFlowStopException;
+    void stop(Long taskFlowLogId) throws TaskFlowStopException;
 }

@@ -9,6 +9,7 @@ import me.kpali.wolfflow.core.exception.*;
 import me.kpali.wolfflow.core.executor.ITaskFlowExecutor;
 import me.kpali.wolfflow.core.logger.ITaskLogger;
 import me.kpali.wolfflow.core.model.*;
+import me.kpali.wolfflow.core.scheduler.impl.SystemTimeUtils;
 import me.kpali.wolfflow.core.util.TaskFlowUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +32,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     private static final Logger log = LoggerFactory.getLogger(DefaultTaskFlowExecutor.class);
 
     @Autowired
-    ExecutorConfig executorConfig;
+    private ExecutorConfig executorConfig;
 
     @Autowired
     private ApplicationEventPublisher eventPublisher;
@@ -42,10 +43,12 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     @Autowired
     private ITaskLogger taskLogger;
 
+    @Autowired
+    private SystemTimeUtils systemTimeUtils;
+
     @Override
     public void beforeExecute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws TaskFlowExecuteException {
         // 清理任务状态
-        Long logId = Long.parseLong(taskFlowContext.get(ContextKey.LOG_ID));
         boolean locked = false;
         try {
             locked = this.clusterController.tryLock(
@@ -54,10 +57,10 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                     ClusterConstants.LOG_LOCK_LEASE_TIME,
                     TimeUnit.SECONDS);
             if (!locked) {
-                throw new TryLockException("获取任务状态记录锁失败！");
+                throw new TryLockException("获取任务日志记录锁失败！");
             }
             for (Task task : taskFlow.getTaskList()) {
-                this.taskLogger.delete(logId, task.getId());
+                this.taskLogger.clearTaskStatus(task.getId());
             }
         } finally {
             if (locked) {
@@ -68,7 +71,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
 
     @Override
     public void execute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws TaskFlowExecuteException, TaskFlowInterruptedException {
-        Long logId = Long.parseLong(taskFlowContext.get(ContextKey.LOG_ID));
+        Long taskFlowLogId = Long.parseLong(taskFlowContext.get(ContextKey.LOG_ID));
         try {
             // 检查任务流是否是一个有向无环图
             List<Task> sortedTaskList = TaskFlowUtils.topologicalSort(taskFlow);
@@ -122,7 +125,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                 } catch (InterruptedException e) {
                     log.warn(e.getMessage(), e);
                 }
-                requireToStop = this.clusterController.stopRequestContains(logId);
+                requireToStop = this.clusterController.stopRequestContains(taskFlowLogId);
                 for (Long taskId : taskIdToStatusMap.keySet()) {
                     String taskStatus = taskIdToStatusMap.get(taskId);
                     if (TaskStatusEnum.WAIT_FOR_EXECUTE.getCode().equals(taskStatus)) {
@@ -191,7 +194,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                 throw new TaskFlowExecuteException("至少有一个任务执行失败");
             }
         } finally {
-            this.clusterController.stopRequestRemove(logId);
+            this.clusterController.stopRequestRemove(taskFlowLogId);
         }
     }
 
@@ -226,15 +229,19 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                         ClusterConstants.LOG_LOCK_LEASE_TIME,
                         TimeUnit.SECONDS);
                 if (!locked) {
-                    throw new TryLockException("获取任务状态记录锁失败！");
+                    throw new TryLockException("获取任务日志记录锁失败！");
                 }
-                Long logId = Long.parseLong(taskFlowContext.get(ContextKey.LOG_ID));
-                TaskLog taskLog = this.taskLogger.get(logId, task.getId());
+                Long taskFlowLogId = Long.parseLong(taskFlowContext.get(ContextKey.LOG_ID));
+                TaskLog taskLog = this.taskLogger.get(taskFlowLogId, task.getId());
                 boolean isNewLog = false;
                 if (taskLog == null) {
                     isNewLog = true;
+                    Long taskLogId = systemTimeUtils.getUniqueTimeStamp();
+                    TaskContext taskContext = taskFlowContext.getTaskContexts().get(task.getId());
+                    taskContext.put(ContextKey.LOG_ID, String.valueOf(taskLogId));
                     taskLog = new TaskLog();
-                    taskLog.setLogId(logId);
+                    taskLog.setLogId(taskLogId);
+                    taskLog.setTaskFlowLogId(taskFlowLogId);
                     taskLog.setTaskId(task.getId());
                 }
                 taskLog.setTask(task);

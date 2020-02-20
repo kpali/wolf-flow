@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
  */
 @Component
 public class DefaultTaskFlowLogger implements ITaskFlowLogger {
-    private Map<Long, TaskFlowLog> taskFlowLogMap = new ConcurrentHashMap<>();
+    private Map<Long, TaskFlowLog> taskFlowLogId_to_taskFlowLog = new ConcurrentHashMap<>();
     private ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
@@ -34,7 +34,7 @@ public class DefaultTaskFlowLogger implements ITaskFlowLogger {
     @Override
     public List<TaskFlowLog> list(Long taskFlowId) throws TaskFlowLogException {
         try {
-            List<TaskFlowLog> taskFlowLogList = taskFlowLogMap.values().stream().filter(taskFlowLog ->
+            List<TaskFlowLog> taskFlowLogList = taskFlowLogId_to_taskFlowLog.values().stream().filter(taskFlowLog ->
                 taskFlowId.equals(taskFlowLog.getTaskFlowId())
             ).collect(Collectors.toList());
             String json = objectMapper.writeValueAsString(taskFlowLogList);
@@ -47,10 +47,10 @@ public class DefaultTaskFlowLogger implements ITaskFlowLogger {
     }
 
     @Override
-    public TaskFlowLog get(Long logId) throws TaskFlowLogException {
+    public TaskFlowLog get(Long taskFlowLogId) throws TaskFlowLogException {
         TaskFlowLog taskFlowLogCloned = null;
-        if (taskFlowLogMap.containsKey(logId)) {
-            TaskFlowLog taskFlowLog = taskFlowLogMap.get(logId);
+        if (taskFlowLogId_to_taskFlowLog.containsKey(taskFlowLogId)) {
+            TaskFlowLog taskFlowLog = taskFlowLogId_to_taskFlowLog.get(taskFlowLogId);
             try {
                 String json = objectMapper.writeValueAsString(taskFlowLog);
                 taskFlowLogCloned = objectMapper.readValue(json, TaskFlowLog.class);
@@ -63,7 +63,7 @@ public class DefaultTaskFlowLogger implements ITaskFlowLogger {
 
     @Override
     public TaskFlowLog last(Long taskFlowId) throws TaskFlowLogException {
-        List<TaskFlowLog> taskFlowLogList = taskFlowLogMap.values().stream().filter(taskFlowLog ->
+        List<TaskFlowLog> taskFlowLogList = taskFlowLogId_to_taskFlowLog.values().stream().filter(taskFlowLog ->
                 taskFlowId.equals(taskFlowLog.getTaskFlowId())
         ).collect(Collectors.toList());
         TaskFlowLog lastTaskFlowLog = null;
@@ -101,36 +101,36 @@ public class DefaultTaskFlowLogger implements ITaskFlowLogger {
             Date now = new Date();
             taskFlowLogCloned.setCreationTime(now);
             taskFlowLogCloned.setUpdateTime(now);
-            TaskFlowLog existsTaskFlowLog = taskFlowLogMap.get(taskFlowLogCloned.getLogId());
+            TaskFlowLog existsTaskFlowLog = taskFlowLogId_to_taskFlowLog.get(taskFlowLogCloned.getLogId());
             if (existsTaskFlowLog != null) {
                 taskFlowLogCloned.setCreationTime(existsTaskFlowLog.getCreationTime());
             }
-            taskFlowLogMap.put(taskFlowLogCloned.getLogId(), taskFlowLogCloned);
+            taskFlowLogId_to_taskFlowLog.put(taskFlowLogCloned.getLogId(), taskFlowLogCloned);
         } catch (JsonProcessingException e) {
             throw new TaskFlowLogException(e);
         }
     }
 
     @Override
-    public void delete(Long logId) throws TaskFlowLogException {
-        taskFlowLogMap.remove(logId);
-        taskLogger.delete(logId);
+    public void delete(Long taskFlowLogId) throws TaskFlowLogException {
+        taskFlowLogId_to_taskFlowLog.remove(taskFlowLogId);
+        taskLogger.deleteByTaskFlowLogId(taskFlowLogId);
     }
 
     @Override
     public void deleteByTaskFlowId(Long taskFlowId) throws TaskFlowLogException {
-        List<TaskFlowLog> taskFlowLogList = taskFlowLogMap.values().stream().filter(taskFlowLog ->
+        List<TaskFlowLog> taskFlowLogList = taskFlowLogId_to_taskFlowLog.values().stream().filter(taskFlowLog ->
                 taskFlowId.equals(taskFlowLog.getTaskFlowId())
         ).collect(Collectors.toList());
         for (TaskFlowLog taskFlowLog : taskFlowLogList) {
-            taskFlowLogMap.remove(taskFlowLog.getLogId());
-            taskLogger.delete(taskFlowLog.getLogId());
+            taskFlowLogId_to_taskFlowLog.remove(taskFlowLog.getLogId());
+            taskLogger.deleteByTaskFlowLogId(taskFlowLog.getLogId());
         }
     }
 
     @Override
-    public boolean isInProgress(Long logId) throws TaskFlowLogException {
-        TaskFlowLog taskFlowLog = this.get(logId);
+    public boolean isInProgress(Long taskFlowLogId) throws TaskFlowLogException {
+        TaskFlowLog taskFlowLog = this.get(taskFlowLogId);
         return (taskFlowLog != null && this.isInProgress(taskFlowLog));
     }
 

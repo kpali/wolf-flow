@@ -21,15 +21,15 @@ public class MyTask extends Task {
     @Override
     public void execute(TaskFlowContext taskFlowContext) throws TaskExecuteException, TaskInterruptedException {
         ITaskLogger taskLogger = SpringContextUtil.getBean(ITaskLogger.class);
-        Long logId = Long.parseLong(taskFlowContext.get(ContextKey.LOG_ID));
-        taskLogger.log(logId, this.getId(), "任务开始执行", false);
-        taskLogger.log(logId, this.getId(), "日志第二行\r日志第三行\n日志第四行\r\n日志第五行", false);
+        Long taskLogId = Long.parseLong(taskFlowContext.getTaskContexts().get(this.getId()).get(ContextKey.LOG_ID));
+        taskLogger.log(taskLogId, this.getId(), "任务开始执行", false);
+        taskLogger.log(taskLogId, this.getId(), "日志第二行\r日志第三行\n日志第四行\r\n日志第五行", false);
         int totalTime = 0;
         int timeout = 2000;
         while (totalTime < timeout) {
             try {
                 if (requiredToStop) {
-                    taskLogger.log(logId, this.getId(), "任务被终止执行", true);
+                    taskLogger.log(taskLogId, this.getId(), "任务被终止执行", true);
                     throw new TaskInterruptedException("任务被终止执行");
                 }
                 Thread.sleep(1000);
@@ -38,7 +38,7 @@ public class MyTask extends Task {
                 e.printStackTrace();
             }
         }
-        taskLogger.log(logId, this.getId(), "任务执行完成", true);
+        taskLogger.log(taskLogId, this.getId(), "任务执行完成", true);
     }
 
     @Override

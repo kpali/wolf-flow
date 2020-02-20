@@ -32,11 +32,11 @@ public interface ITaskFlowLogger {
     /**
      * 根据日志ID获取任务流日志
      *
-     * @param logId
+     * @param taskFlowLogId
      * @return
      * @throws TaskFlowLogException
      */
-    TaskFlowLog get(Long logId) throws TaskFlowLogException;
+    TaskFlowLog get(Long taskFlowLogId) throws TaskFlowLogException;
 
     /**
      * 新增任务流日志
@@ -57,10 +57,10 @@ public interface ITaskFlowLogger {
     /**
      * 根据日志ID删除任务流日志
      *
-     * @param logId
+     * @param taskFlowLogId
      * @throws TaskFlowLogException
      */
-    void delete(Long logId) throws TaskFlowLogException;
+    void delete(Long taskFlowLogId) throws TaskFlowLogException;
 
     /**
      * 根据任务流ID删除所有任务流日志
@@ -73,11 +73,11 @@ public interface ITaskFlowLogger {
     /**
      * 查询是否正在处理中
      *
-     * @param logId
+     * @param taskFlowLogId
      * @return
      * @throws TaskFlowLogException
      */
-    boolean isInProgress(Long logId) throws TaskFlowLogException;
+    boolean isInProgress(Long taskFlowLogId) throws TaskFlowLogException;
 
     /**
      * 查询是否正在处理中

@@ -64,22 +64,22 @@ public interface IClusterController {
     /**
      * 新增任务流停止请求
      *
-     * @param logId
+     * @param taskFlowLogId
      */
-    void stopRequestAdd(Long logId);
+    void stopRequestAdd(Long taskFlowLogId);
 
     /**
      * 查询是否包含任务流停止请求
      *
-     * @param logId
+     * @param taskFlowLogId
      * @return
      */
-    Boolean stopRequestContains(Long logId);
+    Boolean stopRequestContains(Long taskFlowLogId);
 
     /**
      * 删除任务流停止请求
      *
-     * @param logId
+     * @param taskFlowLogId
      */
-    void stopRequestRemove(Long logId);
+    void stopRequestRemove(Long taskFlowLogId);
 }

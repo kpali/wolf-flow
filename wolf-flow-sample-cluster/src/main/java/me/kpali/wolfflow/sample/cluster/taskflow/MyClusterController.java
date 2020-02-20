@@ -74,20 +74,20 @@ public class MyClusterController extends DefaultClusterController {
     }
 
     @Override
-    public void stopRequestAdd(Long logId) {
+    public void stopRequestAdd(Long taskFlowLogId) {
         RSet<Long> set = redisson.getSet(TASK_FLOW_STOP_REQUEST);
-        set.add(logId);
+        set.add(taskFlowLogId);
     }
 
     @Override
-    public Boolean stopRequestContains(Long logId) {
+    public Boolean stopRequestContains(Long taskFlowLogId) {
         RSet<Long> set = redisson.getSet(TASK_FLOW_STOP_REQUEST);
-        return set.contains(logId);
+        return set.contains(taskFlowLogId);
     }
 
     @Override
-    public void stopRequestRemove(Long logId) {
+    public void stopRequestRemove(Long taskFlowLogId) {
         RSet<Long> set = redisson.getSet(TASK_FLOW_STOP_REQUEST);
-        set.remove(logId);
+        set.remove(taskFlowLogId);
     }
 }
