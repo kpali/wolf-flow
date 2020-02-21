@@ -58,25 +58,23 @@ public interface ITaskLogger {
     /**
      * 记录日志内容，如果日志内容不存在则新增，存在则追加
      *
-     * @param taskLogId
-     * @param taskId
+     * @param logFileId
      * @param logContent
      * @param end
      * @return 当前日志总行数
      * @throws TaskLogException
      */
-    int log(Long taskLogId, Long taskId, String logContent, Boolean end) throws TaskLogException;
+    int log(String logFileId, String logContent, Boolean end) throws TaskLogException;
 
     /**
      * 查询日志内容
      *
-     * @param taskLogId
-     * @param taskId
+     * @param logFileId
      * @param fromLineNum
      * @return
      * @throws TaskLogException
      */
-    TaskLogResult query(Long taskLogId, Long taskId, Integer fromLineNum) throws TaskLogException;
+    TaskLogResult query(String logFileId, Integer fromLineNum) throws TaskLogException;
 
     /**
      * 新增或更新任务状态

@@ -6,6 +6,7 @@ import me.kpali.wolfflow.core.exception.TaskStopException;
 import me.kpali.wolfflow.core.logger.ITaskLogger;
 import me.kpali.wolfflow.core.model.ContextKey;
 import me.kpali.wolfflow.core.model.Task;
+import me.kpali.wolfflow.core.model.TaskContext;
 import me.kpali.wolfflow.core.model.TaskFlowContext;
 import me.kpali.wolfflow.sample.util.SpringContextUtil;
 
@@ -21,15 +22,17 @@ public class MyTask extends Task {
     @Override
     public void execute(TaskFlowContext taskFlowContext) throws TaskExecuteException, TaskInterruptedException {
         ITaskLogger taskLogger = SpringContextUtil.getBean(ITaskLogger.class);
-        Long taskLogId = Long.parseLong(taskFlowContext.getTaskContexts().get(this.getId()).get(ContextKey.LOG_ID));
-        taskLogger.log(taskLogId, this.getId(), "任务开始执行", false);
-        taskLogger.log(taskLogId, this.getId(), "日志第二行\r日志第三行\n日志第四行\r\n日志第五行", false);
+        TaskContext taskContext = taskFlowContext.getTaskContexts().get(this.getId());
+        Long taskLogId = Long.parseLong(taskContext.get(ContextKey.LOG_ID));
+        String logFileId = taskContext.get(ContextKey.LOG_FILE_ID);
+        taskLogger.log(logFileId, "任务开始执行", false);
+        taskLogger.log(logFileId, "日志第二行\r日志第三行\n日志第四行\r\n日志第五行", false);
         int totalTime = 0;
         int timeout = 2000;
         while (totalTime < timeout) {
             try {
                 if (requiredToStop) {
-                    taskLogger.log(taskLogId, this.getId(), "任务被终止执行", true);
+                    taskLogger.log(logFileId, "任务被终止执行", true);
                     throw new TaskInterruptedException("任务被终止执行");
                 }
                 Thread.sleep(1000);
@@ -38,7 +41,7 @@ public class MyTask extends Task {
                 e.printStackTrace();
             }
         }
-        taskLogger.log(taskLogId, this.getId(), "任务执行完成", true);
+        taskLogger.log(logFileId, "任务执行完成", true);
     }
 
     @Override

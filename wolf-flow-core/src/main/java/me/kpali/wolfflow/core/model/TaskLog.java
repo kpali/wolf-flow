@@ -19,6 +19,7 @@ public class TaskLog implements Serializable {
     private TaskFlowContext taskFlowContext;
     private String status;
     private String message;
+    private String logFileId;
     private Date creationTime;
     private Date updateTime;
 
@@ -84,6 +85,14 @@ public class TaskLog implements Serializable {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public String getLogFileId() {
+        return logFileId;
+    }
+
+    public void setLogFileId(String logFileId) {
+        this.logFileId = logFileId;
     }
 
     public Date getCreationTime() {

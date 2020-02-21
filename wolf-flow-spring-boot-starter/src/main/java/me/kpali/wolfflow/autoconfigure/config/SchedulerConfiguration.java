@@ -20,7 +20,6 @@ public class SchedulerConfiguration {
         Integer cronScanLockLeaseTime = schedulerProperties.getCronScanLeaseTime();
         Integer corePoolSize = schedulerProperties.getCorePoolSize();
         Integer maximumPoolSize = schedulerProperties.getMaximumPoolSize();
-        Boolean allowParallel = schedulerProperties.getAllowParallel();
         SchedulerConfig schedulerConfig = new SchedulerConfig();
         schedulerConfig.setExecRequestScanInterval(execRequestScanInterval);
         schedulerConfig.setCronScanInterval(cronScanInterval);
@@ -28,7 +27,6 @@ public class SchedulerConfiguration {
         schedulerConfig.setCronScanLockLeaseTime(cronScanLockLeaseTime);
         schedulerConfig.setCorePoolSize(corePoolSize);
         schedulerConfig.setMaximumPoolSize(maximumPoolSize);
-        schedulerConfig.setAllowParallel(allowParallel);
         return schedulerConfig;
     }
 }

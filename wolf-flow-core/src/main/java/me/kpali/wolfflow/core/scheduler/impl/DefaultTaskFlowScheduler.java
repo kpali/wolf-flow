@@ -292,6 +292,8 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
         taskFlowWaitForExecute.setTaskFlowContext(taskFlowContext);
         taskFlowWaitForExecute.setStatus(TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode());
         taskFlowWaitForExecute.setMessage(null);
+
+        // 新增任务流日志
         boolean locked = false;
         try {
             locked = this.clusterController.tryLock(
@@ -302,13 +304,13 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
             if (!locked) {
                 throw new TryLockException("获取任务流日志记录锁失败！");
             }
-            if (!this.schedulerConfig.getAllowParallel()) {
-                TaskFlowLog taskFlowLog = this.taskFlowLogger.last(executeTaskFlow.getId());
-                boolean isInProgress = taskFlowLog != null && this.taskFlowLogger.isInProgress(taskFlowLog);
-                if (isInProgress) {
-                    throw new TaskFlowTriggerException("不允许同时多次执行！");
-                }
+
+            TaskFlowLog lastTaskFlowLog = this.taskFlowLogger.last(executeTaskFlow.getId());
+            boolean isInProgress = lastTaskFlowLog != null && this.taskFlowLogger.isInProgress(lastTaskFlowLog);
+            if (isInProgress) {
+                throw new TaskFlowTriggerException("不允许同时多次执行！");
             }
+
             TaskFlowLog taskFlowLog = new TaskFlowLog();
             taskFlowLog.setLogId(taskFlowLogId);
             taskFlowLog.setTaskFlowId(taskFlow.getId());
@@ -323,6 +325,41 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                 this.clusterController.unlock(ClusterConstants.TASK_FLOW_LOG_LOCK);
             }
         }
+
+        // 将已经成功的、本次不执行的任务日志拷贝一份，与本次任务流日志ID关联以供查询使用
+        try {
+            locked = this.clusterController.tryLock(
+                    ClusterConstants.TASK_LOG_LOCK,
+                    ClusterConstants.LOG_LOCK_WAIT_TIME,
+                    ClusterConstants.LOG_LOCK_LEASE_TIME,
+                    TimeUnit.SECONDS);
+            if (!locked) {
+                throw new TryLockException("获取任务日志记录锁失败！");
+            }
+            for (Task task : taskFlow.getTaskList()) {
+                boolean isExecute = false;
+                for (Task executeTask : executeTaskFlow.getTaskList()) {
+                    if (task.getId().equals(executeTask.getId())) {
+                        isExecute = true;
+                        break;
+                    }
+                }
+                if (!isExecute) {
+                    TaskLog taskLog = this.taskLogger.getTaskStatus(task.getId());
+                    if (taskLog != null) {
+                        Long taskLogId = systemTimeUtils.getUniqueTimeStamp();
+                        taskLog.setLogId(taskLogId);
+                        taskLog.setTaskFlowLogId(taskFlowLogId);
+                        this.taskLogger.add(taskLog);
+                    }
+                }
+            }
+        } finally {
+            if (locked) {
+                this.clusterController.unlock(ClusterConstants.TASK_LOG_LOCK);
+            }
+        }
+
         // 任务流等待执行
         this.publishTaskFlowStatusChangeEvent(executeTaskFlow, taskFlowContext, TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode(), null, false);
 

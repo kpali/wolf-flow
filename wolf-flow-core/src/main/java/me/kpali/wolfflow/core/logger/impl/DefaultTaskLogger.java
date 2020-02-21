@@ -26,13 +26,13 @@ public class DefaultTaskLogger implements ITaskLogger {
      */
     private Map<Long, Map<Long, TaskLog>> taskFlowLogId_to_taskLogMap = new ConcurrentHashMap<>();
     /**
-     * [任务日志ID, 任务日志行列表]
-     */
-    private Map<Long, List<TaskLogLine>> taskLogId_to_taskLogLineListMap = new ConcurrentHashMap<>();
-    /**
      * [任务ID, 任务状态]
      */
     private Map<Long, TaskLog> taskId_to_taskStatus = new ConcurrentHashMap<>();
+    /**
+     * [日志文件ID, 任务日志行列表]
+     */
+    private Map<String, List<TaskLogLine>> logFileId_to_taskLogLineList = new ConcurrentHashMap<>();
     private static final String NEWLINE = System.getProperty("line.separator");
     private ObjectMapper objectMapper = new ObjectMapper();
 
@@ -95,10 +95,7 @@ public class DefaultTaskLogger implements ITaskLogger {
             Date now = new Date();
             taskLogCloned.setCreationTime(now);
             taskLogCloned.setUpdateTime(now);
-            Map<Long, TaskLog> taskLogId_to_taskLog = taskFlowLogId_to_taskLogMap.get(taskLogCloned.getTaskFlowLogId());
-            if (taskLogId_to_taskLog == null) {
-                taskLogId_to_taskLog = new ConcurrentHashMap<>();
-            }
+            Map<Long, TaskLog> taskLogId_to_taskLog = taskFlowLogId_to_taskLogMap.computeIfAbsent(taskLogCloned.getTaskFlowLogId(), k -> new ConcurrentHashMap<>());
             TaskLog existsTaskLog = taskLogId_to_taskLog.get(taskLogCloned.getLogId());
             if (existsTaskLog != null) {
                 taskLogCloned.setCreationTime(existsTaskLog.getCreationTime());
@@ -118,7 +115,7 @@ public class DefaultTaskLogger implements ITaskLogger {
         Map<Long, TaskLog> taskLogMap = taskFlowLogId_to_taskLogMap.get(taskFlowLogId);
         if (taskLogMap != null) {
             for (TaskLog taskLog : taskLogMap.values()) {
-                taskLogId_to_taskLogLineListMap.remove(taskLog.getLogId());
+                logFileId_to_taskLogLineList.remove(taskLog.getLogId());
                 // 删除任务状态
                 this.deleteTaskStatus(taskLog.getTaskId());
             }
@@ -127,8 +124,8 @@ public class DefaultTaskLogger implements ITaskLogger {
     }
 
     @Override
-    public int log(Long taskLogId, Long taskId, String logContent, Boolean end) throws TaskLogException {
-        List<TaskLogLine> taskLogLineList = taskLogId_to_taskLogLineListMap.computeIfAbsent(taskLogId, k -> new ArrayList<>());
+    public int log(String logFileId, String logContent, Boolean end) throws TaskLogException {
+        List<TaskLogLine> taskLogLineList = logFileId_to_taskLogLineList.computeIfAbsent(logFileId, k -> new ArrayList<>());
         if (logContent != null && logContent.length() > 0) {
             String[] lines1 = logContent.split("\r\n");
             List<String> lineList2 = new ArrayList<>();
@@ -159,26 +156,24 @@ public class DefaultTaskLogger implements ITaskLogger {
     }
 
     @Override
-    public TaskLogResult query(Long taskLogId, Long taskId, Integer fromLineNum) throws TaskLogException {
+    public TaskLogResult query(String logFileId, Integer fromLineNum) throws TaskLogException {
         TaskLogResult taskLogResult = null;
-        if (taskLogId_to_taskLogLineListMap.containsKey(taskLogId)) {
-            List<TaskLogLine> allTaskLogLineList = taskLogId_to_taskLogLineListMap.get(taskId);
-            if (allTaskLogLineList != null && allTaskLogLineList.size() >= fromLineNum) {
-                taskLogResult = new TaskLogResult();
-                taskLogResult.setFromLineNum(fromLineNum);
-                StringBuilder logContentBuilder = new StringBuilder();
-                for (int i = 0; i < allTaskLogLineList.size(); i++) {
-                    if (i + 1 >= fromLineNum) {
-                        TaskLogLine taskLogLine = allTaskLogLineList.get(i);
-                        logContentBuilder.append(taskLogLine.getLine());
-                        if (i + 1 < allTaskLogLineList.size()) {
-                            logContentBuilder.append(NEWLINE);
-                        } else {
-                            // 到达最后一行
-                            taskLogResult.setToLineNum(allTaskLogLineList.size());
-                            taskLogResult.setLogContent(logContentBuilder.toString());
-                            taskLogResult.setEnd(taskLogLine.getEnd());
-                        }
+        List<TaskLogLine> allTaskLogLineList = logFileId_to_taskLogLineList.get(logFileId);
+        if (allTaskLogLineList != null && allTaskLogLineList.size() >= fromLineNum) {
+            taskLogResult = new TaskLogResult();
+            taskLogResult.setFromLineNum(fromLineNum);
+            StringBuilder logContentBuilder = new StringBuilder();
+            for (int i = 0; i < allTaskLogLineList.size(); i++) {
+                if (i + 1 >= fromLineNum) {
+                    TaskLogLine taskLogLine = allTaskLogLineList.get(i);
+                    logContentBuilder.append(taskLogLine.getLine());
+                    if (i + 1 < allTaskLogLineList.size()) {
+                        logContentBuilder.append(NEWLINE);
+                    } else {
+                        // 到达最后一行
+                        taskLogResult.setToLineNum(allTaskLogLineList.size());
+                        taskLogResult.setLogContent(logContentBuilder.toString());
+                        taskLogResult.setEnd(taskLogLine.getEnd());
                     }
                 }
             }
@@ -188,23 +183,45 @@ public class DefaultTaskLogger implements ITaskLogger {
 
     @Override
     public void putTaskStatus(TaskLog taskStatus) throws TaskLogException {
-        taskId_to_taskStatus.put(taskStatus.getTaskId(), taskStatus);
+        try {
+            String json = objectMapper.writeValueAsString(taskStatus);
+            TaskLog taskStatusCloned = objectMapper.readValue(json, TaskLog.class);
+            taskId_to_taskStatus.put(taskStatusCloned.getTaskId(), taskStatusCloned);
+        } catch (JsonProcessingException e) {
+            throw new TaskLogException(e);
+        }
     }
 
     @Override
     public TaskLog getTaskStatus(Long taskId) throws TaskLogException {
-        return taskId_to_taskStatus.get(taskId);
+        TaskLog taskStatusCloned = null;
+        TaskLog taskStatus = taskId_to_taskStatus.get(taskId);
+        if (taskStatus != null) {
+            try {
+                String json = objectMapper.writeValueAsString(taskStatus);
+                taskStatusCloned = objectMapper.readValue(json, TaskLog.class);
+            } catch (JsonProcessingException e) {
+                throw new TaskLogException(e);
+            }
+        }
+        return taskStatusCloned;
     }
 
     @Override
     public List<TaskLog> listTaskStatus(Long taskFlowId) throws TaskLogException {
-        List<TaskLog> taskStatusList = new ArrayList<>();
+        List<TaskLog> taskStatusListCloned = new ArrayList<>();
         for (TaskLog taskStatus : taskId_to_taskStatus.values()) {
             if (taskStatus.getTaskFlowId().equals(taskFlowId)) {
-                taskStatusList.add(taskStatus);
+                try {
+                    String json = objectMapper.writeValueAsString(taskStatus);
+                    TaskLog taskStatusCloned = objectMapper.readValue(json, TaskLog.class);
+                    taskStatusListCloned.add(taskStatusCloned);
+                } catch (JsonProcessingException e) {
+                    throw new TaskLogException(e);
+                }
             }
         }
-        return taskStatusList;
+        return taskStatusListCloned;
     }
 
     @Override

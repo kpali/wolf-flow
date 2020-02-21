@@ -57,7 +57,7 @@ public class WolfFlowSampleClusterApplicationTests {
             if (!taskFlowLogger.isInProgress(taskFlowLog)) {
                 List<TaskLog> taskLogList = taskLogger.list(taskFLowLogId);
                 for (TaskLog taskLog : taskLogList) {
-                    TaskLogResult taskLogResult = taskLogger.query(taskFLowLogId, taskLog.getTaskId(), 1);
+                    TaskLogResult taskLogResult = taskLogger.query(taskLog.getLogFileId(), 1);
                     if (taskLogResult != null) {
                         System.out.println(">>>>>>>>>> 任务[" + taskLog.getTaskId() + "]日志内容：");
                         System.out.println(taskLogResult.getLogContent());

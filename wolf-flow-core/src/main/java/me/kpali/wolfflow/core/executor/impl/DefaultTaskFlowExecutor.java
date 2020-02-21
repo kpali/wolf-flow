@@ -20,6 +20,7 @@ import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.*;
 
 /**
@@ -237,12 +238,15 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                 if (taskLog == null) {
                     isNewLog = true;
                     Long taskLogId = systemTimeUtils.getUniqueTimeStamp();
+                    String logFileId = UUID.randomUUID().toString();
                     TaskContext taskContext = taskFlowContext.getTaskContexts().get(task.getId());
                     taskContext.put(ContextKey.LOG_ID, String.valueOf(taskLogId));
+                    taskContext.put(ContextKey.LOG_FILE_ID, logFileId);
                     taskLog = new TaskLog();
                     taskLog.setLogId(taskLogId);
                     taskLog.setTaskFlowLogId(taskFlowLogId);
                     taskLog.setTaskId(task.getId());
+                    taskLog.setLogFileId(logFileId);
                 }
                 taskLog.setTask(task);
                 taskLog.setTaskFlowId(taskFlowId);
