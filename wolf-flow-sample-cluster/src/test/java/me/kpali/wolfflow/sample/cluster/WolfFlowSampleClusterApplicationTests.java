@@ -22,7 +22,6 @@ public class WolfFlowSampleClusterApplicationTests {
     @Autowired
     ITaskLogger taskLogger;
 
-
     @Test
     public void taskFlowTriggerTest() {
         ObjectMapper objectMapper = new ObjectMapper();
