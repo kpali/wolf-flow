@@ -79,6 +79,14 @@ public interface ITaskLogger {
     TaskLogResult query(Long taskLogId, Long taskId, Integer fromLineNum) throws TaskLogException;
 
     /**
+     * 新增或更新任务状态
+     *
+     * @param taskStatus
+     * @throws TaskLogException
+     */
+    void putTaskStatus(TaskLog taskStatus) throws TaskLogException;
+
+    /**
      * 根据任务ID获取任务状态
      *
      * @param taskId
@@ -96,10 +104,10 @@ public interface ITaskLogger {
     List<TaskLog> listTaskStatus(Long taskFlowId) throws TaskLogException;
 
     /**
-     * 根据任务ID清除任务状态
+     * 根据任务ID删除任务状态
      *
      * @param taskId
      * @throws TaskLogException
      */
-    void clearTaskStatus(Long taskId) throws TaskLogException;
+    void deleteTaskStatus(Long taskId) throws TaskLogException;
 }

@@ -60,7 +60,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                 throw new TryLockException("获取任务日志记录锁失败！");
             }
             for (Task task : taskFlow.getTaskList()) {
-                this.taskLogger.clearTaskStatus(task.getId());
+                this.taskLogger.deleteTaskStatus(task.getId());
             }
         } finally {
             if (locked) {

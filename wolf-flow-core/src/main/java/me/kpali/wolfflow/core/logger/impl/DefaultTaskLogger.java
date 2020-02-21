@@ -106,7 +106,8 @@ public class DefaultTaskLogger implements ITaskLogger {
             } else {
                 taskLogId_to_taskLog.put(taskLogCloned.getLogId(), taskLogCloned);
             }
-            taskId_to_taskStatus.put(taskLogCloned.getTaskId(), taskLogCloned);
+            // 更新任务状态
+            this.putTaskStatus(taskLogCloned);
         } catch (JsonProcessingException e) {
             throw new TaskLogException(e);
         }
@@ -118,7 +119,8 @@ public class DefaultTaskLogger implements ITaskLogger {
         if (taskLogMap != null) {
             for (TaskLog taskLog : taskLogMap.values()) {
                 taskLogId_to_taskLogLineListMap.remove(taskLog.getLogId());
-                taskId_to_taskStatus.remove(taskLog.getTaskId());
+                // 删除任务状态
+                this.deleteTaskStatus(taskLog.getTaskId());
             }
         }
         taskFlowLogId_to_taskLogMap.remove(taskFlowLogId);
@@ -185,6 +187,11 @@ public class DefaultTaskLogger implements ITaskLogger {
     }
 
     @Override
+    public void putTaskStatus(TaskLog taskStatus) throws TaskLogException {
+        taskId_to_taskStatus.put(taskStatus.getTaskId(), taskStatus);
+    }
+
+    @Override
     public TaskLog getTaskStatus(Long taskId) throws TaskLogException {
         return taskId_to_taskStatus.get(taskId);
     }
@@ -201,7 +208,7 @@ public class DefaultTaskLogger implements ITaskLogger {
     }
 
     @Override
-    public void clearTaskStatus(Long taskId) throws TaskLogException {
+    public void deleteTaskStatus(Long taskId) throws TaskLogException {
         taskId_to_taskStatus.remove(taskId);
     }
 }
