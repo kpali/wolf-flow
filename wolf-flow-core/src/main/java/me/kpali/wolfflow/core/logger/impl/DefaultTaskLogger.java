@@ -112,14 +112,6 @@ public class DefaultTaskLogger implements ITaskLogger {
 
     @Override
     public void deleteByTaskFlowLogId(Long taskFlowLogId) throws TaskLogException {
-        Map<Long, TaskLog> taskLogMap = taskFlowLogId_to_taskLogMap.get(taskFlowLogId);
-        if (taskLogMap != null) {
-            for (TaskLog taskLog : taskLogMap.values()) {
-                logFileId_to_taskLogLineList.remove(taskLog.getLogId());
-                // 删除任务状态
-                this.deleteTaskStatus(taskLog.getTaskId());
-            }
-        }
         taskFlowLogId_to_taskLogMap.remove(taskFlowLogId);
     }
 
