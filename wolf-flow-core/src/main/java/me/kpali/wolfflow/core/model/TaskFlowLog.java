@@ -13,7 +13,6 @@ public class TaskFlowLog implements Serializable {
 
     private Long logId;
     private Long taskFlowId;
-    private TaskFlow completeTaskFlow;
     private TaskFlow taskFlow;
     private TaskFlowContext taskFlowContext;
     private String status;
@@ -35,14 +34,6 @@ public class TaskFlowLog implements Serializable {
 
     public void setTaskFlowId(Long taskFlowId) {
         this.taskFlowId = taskFlowId;
-    }
-
-    public TaskFlow getCompleteTaskFlow() {
-        return completeTaskFlow;
-    }
-
-    public void setCompleteTaskFlow(TaskFlow completeTaskFlow) {
-        this.completeTaskFlow = completeTaskFlow;
     }
 
     public TaskFlow getTaskFlow() {

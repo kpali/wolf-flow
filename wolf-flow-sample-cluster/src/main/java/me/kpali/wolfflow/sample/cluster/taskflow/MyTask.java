@@ -23,8 +23,8 @@ public class MyTask extends Task {
     public void execute(TaskFlowContext taskFlowContext) throws TaskExecuteException, TaskInterruptedException {
         ITaskLogger taskLogger = SpringContextUtil.getBean(ITaskLogger.class);
         TaskContext taskContext = taskFlowContext.getTaskContexts().get(this.getId());
-        Long taskLogId = Long.parseLong(taskContext.get(ContextKey.LOG_ID));
-        String logFileId = taskContext.get(ContextKey.LOG_FILE_ID);
+        Long taskLogId = taskContext.getLong(ContextKey.LOG_ID);
+        String logFileId = taskContext.getString(ContextKey.LOG_FILE_ID);
         taskLogger.log(logFileId, "任务开始执行", false);
         taskLogger.log(logFileId, "日志第二行\r日志第三行\n日志第四行\r\n日志第五行", false);
         int totalTime = 0;
