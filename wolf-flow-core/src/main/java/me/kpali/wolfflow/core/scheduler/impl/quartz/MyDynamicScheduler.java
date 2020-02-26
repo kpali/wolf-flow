@@ -59,7 +59,7 @@ public class MyDynamicScheduler {
         log.info("Quartz 删除任务成功 -> jobKey:{}", jobKey);
     }
 
-    public static void updateJobCron(String jobGroup, String jobName, String cronExpression) throws SchedulerException {
+    public static void updateJobCron(String jobName, String jobGroup, String cronExpression) throws SchedulerException {
         TriggerKey triggerKey = TriggerKey.triggerKey(jobName, jobGroup);
         if (scheduler.checkExists(triggerKey)) {
             CronTrigger oldTrigger = (CronTrigger) scheduler.getTrigger(triggerKey);
@@ -68,7 +68,7 @@ public class MyDynamicScheduler {
                 CronScheduleBuilder cronScheduleBuilder = CronScheduleBuilder.cronSchedule(cronExpression).withMisfireHandlingInstructionDoNothing();
                 oldTrigger = (CronTrigger) oldTrigger.getTriggerBuilder().withIdentity(triggerKey).withSchedule(cronScheduleBuilder).build();
                 scheduler.rescheduleJob(triggerKey, oldTrigger);
-                log.info("Quartz 更新任务成功 -> jobGroup:{}, jobName:{}, cronExpression:{}", jobGroup, jobName, cronExpression);
+                log.info("Quartz 更新任务成功 -> jobName:{}, jobGroup:{}, cronExpression:{}", jobName, jobGroup, cronExpression);
             }
         }
     }
