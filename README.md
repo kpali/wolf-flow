@@ -124,7 +124,7 @@ public void test() {
 
 ### 架构图
 
-![架构图](https://raw.githubusercontent.com/kpali/wolf-flow/master/docs/%E6%9E%B6%E6%9E%84%E5%9B%BE.jpg)
+![架构图](docs/架构图.jpg)
 
 1. 任务流查询器：提供任务流的查询，包括定时任务流列表的查询。
 
