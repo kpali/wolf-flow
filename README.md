@@ -113,7 +113,7 @@ ITaskFlowScheduler taskFlowScheduler;
 
 public void test() {
     long taskFlowId = 1;
-    Map<String, String> params = null;
+    Map<String, Object> params = null;
     long taskFlowLogId = taskFlowScheduler.trigger(taskFlowId, params);
 }
 ```
@@ -132,7 +132,7 @@ public void test() {
 
 3. 集群控制器：提供分布式锁，分布式队列、集合等操作，用于协调集群各节点有序、安全地执行操作。
 
-4. 任务流执行器：接收任务流执行请求，并通过一定算法执行任务流（有向无环图）中的任务。
+4. 任务流执行器：接收任务流执行请求，并通过算法依序执行任务流（有向无环图）中的任务。
 5. 日志器：提供任务流和任务的日志记录和查询，包括状态的记录和查询。
 
 ### 任务流生命周期
