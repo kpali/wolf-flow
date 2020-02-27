@@ -384,7 +384,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                 if (!locked) {
                     throw new TryLockException("获取任务流日志记录锁失败！");
                 }
-                Long taskFlowLogId = taskFlowContext.getLong(ContextKey.LOG_ID);
+                Long taskFlowLogId = taskFlowContext.getValue(ContextKey.LOG_ID, Long.class);
                 TaskFlowLog taskFlowLog = this.taskFlowLogger.get(taskFlowLogId);
                 boolean isNewLog = false;
                 if (taskFlowLog == null) {

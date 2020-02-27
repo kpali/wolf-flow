@@ -46,99 +46,100 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
 
     @Override
     public void beforeExecute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws TaskFlowExecuteException {
-        // 不作任何操作
+        Long taskFlowLogId = taskFlowContext.getValue(ContextKey.LOG_ID, Long.class);
+        // 检查任务流是否是一个有向无环图
+        List<Task> sortedTaskList = TaskFlowUtils.topologicalSort(taskFlow);
+        if (sortedTaskList == null) {
+            throw new TaskFlowExecuteException("任务流不是一个有向无环图，请检查是否存在回路！");
+        }
+        if (taskFlow.getTaskList().size() == 0) {
+            return;
+        }
+        if (taskFlowContext.getTaskContexts() == null) {
+            taskFlowContext.setTaskContexts(new ConcurrentHashMap<>());
+        }
+
+        // 根据从指定任务开始或到指定任务结束，对任务流进行剪裁
+        Long fromTaskId = taskFlowContext.getValue(ContextKey.FROM_TASK_ID, Long.class);
+        Long toTaskId = taskFlowContext.getValue(ContextKey.TO_TASK_ID, Long.class);
+        TaskFlow prunedTaskFlow = TaskFlowUtils.prune(taskFlow, fromTaskId, toTaskId);
+        // 在到指定任务结束的情况下，已经执行成功的任务无需再执行，因此只保留未执行成功的任务
+        TaskFlow unsuccessfulTaskFlow = null;
+        if (fromTaskId == null && toTaskId != null) {
+            unsuccessfulTaskFlow = this.excludeSuccessfulTasks(prunedTaskFlow);
+        }
+        TaskFlow executeTaskFlow = (unsuccessfulTaskFlow == null ? prunedTaskFlow : unsuccessfulTaskFlow);
+        taskFlowContext.put(ContextKey.EXECUTE_TASK_FLOW, executeTaskFlow);
+
+        boolean locked = false;
+        try {
+            locked = this.clusterController.tryLock(
+                    ClusterConstants.TASK_LOG_LOCK,
+                    ClusterConstants.LOG_LOCK_WAIT_TIME,
+                    ClusterConstants.LOG_LOCK_LEASE_TIME,
+                    TimeUnit.SECONDS);
+            if (!locked) {
+                throw new TryLockException("获取任务日志记录锁失败！");
+            }
+            for (Task task : taskFlow.getTaskList()) {
+                boolean isExecute = false;
+                for (Task executeTask : executeTaskFlow.getTaskList()) {
+                    if (task.getId().equals(executeTask.getId())) {
+                        isExecute = true;
+                        break;
+                    }
+                }
+                if (isExecute) {
+                    // 本次执行的任务，清除任务状态
+                    this.taskLogger.deleteTaskStatus(task.getId());
+                    // 初始化上下文
+                    TaskContext taskContext = new TaskContext();
+                    List<Long> parentTaskIdList = new ArrayList<>();
+                    taskFlow.getLinkList().forEach(link -> {
+                        if (link.getTarget().equals(task.getId())) {
+                            parentTaskIdList.add(link.getSource());
+                        }
+                    });
+                    taskContext.put(ContextKey.PARENT_TASK_ID_LIST, parentTaskIdList);
+                    taskFlowContext.getTaskContexts().put(task.getId(), taskContext);
+                } else {
+                    // 对于本次不执行的任务，如果已经执行过，则复制一份任务状态（日志），并导入任务上下文到本次任务流上下文
+                    TaskLog taskLog = this.taskLogger.getTaskStatus(task.getId());
+                    if (taskLog == null) {
+                        continue;
+                    }
+                    // 任务状态（日志）
+                    Long taskLogId = systemTimeUtils.getUniqueTimeStamp();
+                    taskLog.setLogId(taskLogId);
+                    taskLog.setTaskFlowLogId(taskFlowLogId);
+                    this.taskLogger.add(taskLog);
+                    // 任务上下文
+                    TaskFlowContext lastTaskFlowContext = taskLog.getTaskFlowContext();
+                    if (lastTaskFlowContext == null) {
+                        continue;
+                    }
+                    if (lastTaskFlowContext.getTaskContexts() == null) {
+                        continue;
+                    }
+                    TaskContext lastTaskContext = lastTaskFlowContext.getTaskContexts().get(task.getId());
+                    if (lastTaskContext == null) {
+                        continue;
+                    }
+                    taskFlowContext.getTaskContexts().put(task.getId(), lastTaskContext);
+                }
+            }
+        } finally {
+            if (locked) {
+                this.clusterController.unlock(ClusterConstants.TASK_LOG_LOCK);
+            }
+        }
     }
 
     @Override
     public void execute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws TaskFlowExecuteException, TaskFlowInterruptedException {
-        Long taskFlowLogId = taskFlowContext.getLong(ContextKey.LOG_ID);
+        Long taskFlowLogId = taskFlowContext.getValue(ContextKey.LOG_ID, Long.class);
+        TaskFlow executeTaskFlow = taskFlowContext.getValue(ContextKey.EXECUTE_TASK_FLOW, TaskFlow.class);
         try {
-            // 检查任务流是否是一个有向无环图
-            List<Task> sortedTaskList = TaskFlowUtils.topologicalSort(taskFlow);
-            if (sortedTaskList == null) {
-                throw new TaskFlowExecuteException("任务流不是一个有向无环图，请检查是否存在回路！");
-            }
-            if (taskFlow.getTaskList().size() == 0) {
-                return;
-            }
-            if (taskFlowContext.getTaskContexts() == null) {
-                taskFlowContext.setTaskContexts(new ConcurrentHashMap<>());
-            }
-
-            // 根据从指定任务开始或到指定任务结束，对任务流进行剪裁
-            Long fromTaskId = taskFlowContext.getLong(ContextKey.FROM_TASK_ID);
-            Long toTaskId = taskFlowContext.getLong(ContextKey.TO_TASK_ID);
-            TaskFlow prunedTaskFlow = TaskFlowUtils.prune(taskFlow, fromTaskId, toTaskId);
-            // 在到指定任务结束的情况下，已经执行成功的任务无需再执行，因此只保留未执行成功的任务
-            TaskFlow unsuccessfulTaskFlow = null;
-            if (fromTaskId == null && toTaskId != null) {
-                unsuccessfulTaskFlow = this.excludeSuccessfulTasks(prunedTaskFlow);
-            }
-            TaskFlow executeTaskFlow = (unsuccessfulTaskFlow == null ? prunedTaskFlow : unsuccessfulTaskFlow);
-
-            boolean locked = false;
-            try {
-                locked = this.clusterController.tryLock(
-                        ClusterConstants.TASK_LOG_LOCK,
-                        ClusterConstants.LOG_LOCK_WAIT_TIME,
-                        ClusterConstants.LOG_LOCK_LEASE_TIME,
-                        TimeUnit.SECONDS);
-                if (!locked) {
-                    throw new TryLockException("获取任务日志记录锁失败！");
-                }
-                for (Task task : taskFlow.getTaskList()) {
-                    boolean isExecute = false;
-                    for (Task executeTask : executeTaskFlow.getTaskList()) {
-                        if (task.getId().equals(executeTask.getId())) {
-                            isExecute = true;
-                            break;
-                        }
-                    }
-                    if (isExecute) {
-                        // 本次执行的任务，清除任务状态
-                        this.taskLogger.deleteTaskStatus(task.getId());
-                        // 初始化上下文
-                        TaskContext taskContext = new TaskContext();
-                        List<Long> parentTaskIdList = new ArrayList<>();
-                        taskFlow.getLinkList().forEach(link -> {
-                            if (link.getTarget().equals(task.getId())) {
-                                parentTaskIdList.add(link.getSource());
-                            }
-                        });
-                        taskContext.put(ContextKey.PARENT_TASK_ID_LIST, parentTaskIdList);
-                        taskFlowContext.getTaskContexts().put(task.getId(), taskContext);
-                    } else {
-                        // 对于本次不执行的任务，如果已经执行过，则复制一份任务状态（日志），并导入任务上下文到本次任务流上下文
-                        TaskLog taskLog = this.taskLogger.getTaskStatus(task.getId());
-                        if (taskLog == null) {
-                            continue;
-                        }
-                        // 任务状态（日志）
-                        Long taskLogId = systemTimeUtils.getUniqueTimeStamp();
-                        taskLog.setLogId(taskLogId);
-                        taskLog.setTaskFlowLogId(taskFlowLogId);
-                        this.taskLogger.add(taskLog);
-                        // 任务上下文
-                        TaskFlowContext lastTaskFlowContext = taskLog.getTaskFlowContext();
-                        if (lastTaskFlowContext == null) {
-                            continue;
-                        }
-                        if (lastTaskFlowContext.getTaskContexts() == null) {
-                            continue;
-                        }
-                        TaskContext lastTaskContext = lastTaskFlowContext.getTaskContexts().get(task.getId());
-                        if (lastTaskContext == null) {
-                            continue;
-                        }
-                        taskFlowContext.getTaskContexts().put(task.getId(), lastTaskContext);
-                    }
-                }
-            } finally {
-                if (locked) {
-                    this.clusterController.unlock(ClusterConstants.TASK_LOG_LOCK);
-                }
-            }
-
             // 初始化线程池
             ThreadFactory executorThreadFactory = new ThreadFactoryBuilder()
                     .setNameFormat("taskFlowExecutor-pool-%d").build();
@@ -336,7 +337,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                 if (!locked) {
                     throw new TryLockException("获取任务日志记录锁失败！");
                 }
-                Long taskFlowLogId = taskFlowContext.getLong(ContextKey.LOG_ID);
+                Long taskFlowLogId = taskFlowContext.getValue(ContextKey.LOG_ID, Long.class);
                 TaskLog taskLog = this.taskLogger.get(taskFlowLogId, task.getId());
                 boolean isNewLog = false;
                 if (taskLog == null) {
