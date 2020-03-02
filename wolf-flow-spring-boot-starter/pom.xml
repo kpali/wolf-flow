@@ -5,10 +5,10 @@
     <parent>
         <groupId>me.kpali</groupId>
         <artifactId>wolf-flow</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>1.0.0</version>
     </parent>
     <artifactId>wolf-flow-spring-boot-starter</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>wolf-flow-spring-boot-starter</name>
 
     <dependencies>

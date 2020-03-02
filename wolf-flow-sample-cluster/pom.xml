@@ -10,7 +10,7 @@
     </parent>
     <groupId>me.kpali</groupId>
     <artifactId>wolf-flow-sample-cluster</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>wolf-flow-sample-cluster</name>
     <description>Wolf flow Sample Cluster</description>
 
@@ -56,7 +56,7 @@
         <dependency>
             <groupId>me.kpali</groupId>
             <artifactId>wolf-flow-spring-boot-starter</artifactId>
-            <version>1.0.0-SNAPSHOT</version>
+            <version>1.0.0</version>
         </dependency>
     </dependencies>
 
