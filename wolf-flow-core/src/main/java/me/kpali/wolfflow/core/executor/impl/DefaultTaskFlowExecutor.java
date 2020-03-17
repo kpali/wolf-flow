@@ -146,63 +146,92 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
             ExecutorService executorThreadPool = new ThreadPoolExecutor(this.executorConfig.getCorePoolSize(), this.executorConfig.getMaximumPoolSize(),
                     0L, TimeUnit.MILLISECONDS,
                     new LinkedBlockingQueue<Runnable>(1024), executorThreadFactory, new ThreadPoolExecutor.AbortPolicy());
+            // 任务表、父任务表和子任务表
             Map<Long, Task> idToTaskMap = new HashMap<>();
+            Map<Long, List<Long>> idToParentTaskIdsMap = new HashMap<>();
             taskFlow.getTaskList().forEach(task -> {
                 idToTaskMap.put(task.getId(), task);
-            });
-            // 计算节点入度
-            Map<Long, Integer> taskIdToInDegreeMap = new HashMap<>();
-            executeTaskFlow.getTaskList().forEach(task -> {
-                int inDegree = 0;
-                for (Link link : executeTaskFlow.getLinkList()) {
+                List<Long> parentTaskIds = new ArrayList<>();
+                for (Link link : taskFlow.getLinkList()) {
                     if (link.getTarget().equals(task.getId())) {
-                        inDegree++;
+                        parentTaskIds.add(link.getSource());
                     }
                 }
-                taskIdToInDegreeMap.put(task.getId(), inDegree);
+                idToParentTaskIdsMap.put(task.getId(), parentTaskIds);
             });
-            // 从入度为0的节点开始执行
-            Map<Long, String> taskIdToStatusMap = new ConcurrentHashMap<>();
-            for (Long taskId : taskIdToInDegreeMap.keySet()) {
-                int inDegree = taskIdToInDegreeMap.get(taskId);
+            // 参与执行的父任务表和子任务表
+            Map<Long, List<Long>> idToParentTaskIds4ExecMap = new HashMap<>();
+            Map<Long, List<Long>> idToChildTaskIds4ExecMap = new HashMap<>();
+            executeTaskFlow.getTaskList().forEach(task -> {
+                List<Long> parentTaskIds4Exec = new ArrayList<>();
+                List<Long> childTaskIds4Exec = new ArrayList<>();
+                for (Link link : executeTaskFlow.getLinkList()) {
+                    if (link.getTarget().equals(task.getId())) {
+                        parentTaskIds4Exec.add(link.getSource());
+                    }
+                    if (link.getSource().equals(task.getId())) {
+                        childTaskIds4Exec.add(link.getTarget());
+                    }
+                }
+                idToParentTaskIds4ExecMap.put(task.getId(), parentTaskIds4Exec);
+                idToChildTaskIds4ExecMap.put(task.getId(), childTaskIds4Exec);
+            });
+            // 任务入度表
+            Map<Long, Integer> idToInDegree4ExecMap = new HashMap<>();
+            executeTaskFlow.getTaskList().forEach(task -> {
+                int inDegree = idToParentTaskIds4ExecMap.get(task.getId()).size();
+                idToInDegree4ExecMap.put(task.getId(), inDegree);
+            });
+            // 从入度为0的任务开始执行
+            Map<Long, String> idToTaskStatusMap = new ConcurrentHashMap<>();
+            for (Long taskId : idToInDegree4ExecMap.keySet()) {
+                int inDegree = idToInDegree4ExecMap.get(taskId);
                 if (inDegree == 0) {
-                    taskIdToStatusMap.put(taskId, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode());
+                    idToTaskStatusMap.put(taskId, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode());
                     Task task = idToTaskMap.get(taskId);
                     this.publishTaskStatusChangeEvent(task, executeTaskFlow.getId(), taskFlowContext, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode(), null, true);
                 }
             }
             boolean isSuccess = true;
             boolean requireToStop = false;
-            while (!taskIdToStatusMap.isEmpty()) {
+            while (!idToTaskStatusMap.isEmpty()) {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     log.warn(e.getMessage(), e);
                 }
                 requireToStop = this.clusterController.stopRequestContains(taskFlowLogId);
-                for (Long taskId : taskIdToStatusMap.keySet()) {
-                    String taskStatus = taskIdToStatusMap.get(taskId);
+                for (Long taskId : idToTaskStatusMap.keySet()) {
+                    String taskStatus = idToTaskStatusMap.get(taskId);
                     if (TaskStatusEnum.WAIT_FOR_EXECUTE.getCode().equals(taskStatus)) {
-                        // 等待执行，将节点状态改为执行中，并将任务加入线程池
+                        // 等待执行，将任务状态改为执行中，并将任务加入线程池
                         Task task = idToTaskMap.get(taskId);
-                        taskIdToStatusMap.put(task.getId(), TaskStatusEnum.EXECUTING.getCode());
+                        idToTaskStatusMap.put(task.getId(), TaskStatusEnum.EXECUTING.getCode());
                         executorThreadPool.execute(() -> {
                             try {
+                                // 检查父任务是否已经执行成功
+                                List<Long> parentTaskIds = idToParentTaskIdsMap.get(task.getId());
+                                for (Long parentTaskId : parentTaskIds) {
+                                    TaskLog parentTaskStatus  = this.taskLogger.getTaskStatus(parentTaskId);
+                                    if (parentTaskStatus == null || !TaskStatusEnum.EXECUTE_SUCCESS.getCode().equals(parentTaskStatus.getStatus())) {
+                                        throw new TaskExecuteException("父任务必须先执行成功");
+                                    }
+                                }
                                 task.beforeExecute(taskFlowContext);
                                 this.publishTaskStatusChangeEvent(task, executeTaskFlow.getId(), taskFlowContext, TaskStatusEnum.EXECUTING.getCode(), null, true);
                                 task.execute(taskFlowContext);
                                 task.afterExecute(taskFlowContext);
-                                taskIdToStatusMap.put(task.getId(), TaskStatusEnum.EXECUTE_SUCCESS.getCode());
+                                idToTaskStatusMap.put(task.getId(), TaskStatusEnum.EXECUTE_SUCCESS.getCode());
                                 this.publishTaskStatusChangeEvent(task, executeTaskFlow.getId(), taskFlowContext, TaskStatusEnum.EXECUTE_SUCCESS.getCode(), null, true);
                             } catch (TaskExecuteException | TaskInterruptedException e) {
                                 log.error("任务执行失败！任务ID：" + task.getId() + " 异常信息：" + e.getMessage(), e);
-                                taskIdToStatusMap.put(task.getId(), TaskStatusEnum.EXECUTE_FAILURE.getCode());
+                                idToTaskStatusMap.put(task.getId(), TaskStatusEnum.EXECUTE_FAILURE.getCode());
                                 this.publishTaskStatusChangeEvent(task, executeTaskFlow.getId(), taskFlowContext, TaskStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage(), true);
                             }
                         });
                     } else if (requireToStop && TaskStatusEnum.EXECUTING.getCode().equals(taskStatus)) {
                         Task task = idToTaskMap.get(taskId);
-                        taskIdToStatusMap.put(task.getId(), TaskStatusEnum.STOPPING.getCode());
+                        idToTaskStatusMap.put(task.getId(), TaskStatusEnum.STOPPING.getCode());
                         try {
                             this.publishTaskStatusChangeEvent(task, executeTaskFlow.getId(), taskFlowContext, TaskStatusEnum.STOPPING.getCode(), null, true);
                             task.stop(taskFlowContext);
@@ -210,42 +239,38 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                             log.error("任务终止失败！任务ID：" + task.getId() + " 异常信息：" + e.getMessage(), e);
                         }
                     } else if (TaskStatusEnum.EXECUTE_SUCCESS.getCode().equals(taskStatus)) {
-                        // 执行成功，将子节点的入度减1，如果子节点入度为0，则将子节点状态设置为等待执行并加入状态检查，最后将此节点移除状态检查
-                        for (Link link : executeTaskFlow.getLinkList()) {
-                            if (link.getSource().equals(taskId)) {
-                                Long childTaskId = link.getTarget();
-                                int childTaskInDegree = taskIdToInDegreeMap.get(childTaskId);
-                                childTaskInDegree--;
-                                taskIdToInDegreeMap.put(childTaskId, childTaskInDegree);
-                                if (childTaskInDegree == 0) {
-                                    taskIdToStatusMap.put(childTaskId, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode());
-                                    Task childTask = idToTaskMap.get(childTaskId);
-                                    this.publishTaskStatusChangeEvent(childTask, executeTaskFlow.getId(), taskFlowContext, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode(), null, true);
-                                }
+                        // 执行成功，将子任务的入度减1，如果子任务入度为0，则将子任务状态设置为等待执行并加入状态检查，最后将此任务移除状态检查
+                        List<Long> childTaskIds = idToChildTaskIds4ExecMap.get(taskId);
+                        for (Long childTaskId : childTaskIds) {
+                            int childTaskInDegree = idToInDegree4ExecMap.get(childTaskId);
+                            childTaskInDegree--;
+                            idToInDegree4ExecMap.put(childTaskId, childTaskInDegree);
+                            if (childTaskInDegree == 0) {
+                                idToTaskStatusMap.put(childTaskId, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode());
+                                Task childTask = idToTaskMap.get(childTaskId);
+                                this.publishTaskStatusChangeEvent(childTask, executeTaskFlow.getId(), taskFlowContext, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode(), null, true);
                             }
                         }
-                        taskIdToStatusMap.remove(taskId);
+                        idToTaskStatusMap.remove(taskId);
                     } else if (TaskStatusEnum.EXECUTE_FAILURE.getCode().equals(taskStatus) || TaskStatusEnum.SKIPPED.getCode().equals(taskStatus)) {
                         if (TaskStatusEnum.EXECUTE_FAILURE.getCode().equals(taskStatus)) {
                             isSuccess = false;
                         }
-                        // 执行失败 或者 跳过，将子节点状态设置为跳过，并将此节点移除状态检查
-                        for (Link link : executeTaskFlow.getLinkList()) {
-                            if (link.getSource().equals(taskId)) {
-                                Long childTaskId = link.getTarget();
-                                taskIdToStatusMap.put(childTaskId, TaskStatusEnum.SKIPPED.getCode());
-                                Task childTask = idToTaskMap.get(childTaskId);
-                                this.publishTaskStatusChangeEvent(childTask, executeTaskFlow.getId(), taskFlowContext, TaskStatusEnum.SKIPPED.getCode(), null, true);
-                            }
+                        // 执行失败 或者 跳过，将子任务状态设置为跳过，并将此任务移除状态检查
+                        List<Long> childTaskIds = idToChildTaskIds4ExecMap.get(taskId);
+                        for (Long childTaskId : childTaskIds) {
+                            idToTaskStatusMap.put(childTaskId, TaskStatusEnum.SKIPPED.getCode());
+                            Task childTask = idToTaskMap.get(childTaskId);
+                            this.publishTaskStatusChangeEvent(childTask, executeTaskFlow.getId(), taskFlowContext, TaskStatusEnum.SKIPPED.getCode(), null, true);
                         }
-                        taskIdToStatusMap.remove(taskId);
+                        idToTaskStatusMap.remove(taskId);
                     }
                 }
             }
             if (requireToStop) {
                 throw new TaskFlowInterruptedException("任务流被终止执行");
             } else if (!isSuccess) {
-                throw new TaskFlowExecuteException("至少有一个任务执行失败");
+                throw new TaskFlowExecuteException("一个或多个任务执行失败");
             }
         } finally {
             this.clusterController.stopRequestRemove(taskFlowLogId);
