@@ -230,6 +230,11 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
     }
 
     @Override
+    public long trigger(Long taskFlowId, Long taskId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException {
+        return this.trigger(taskFlowId, taskId, taskId, params);
+    }
+
+    @Override
     public long triggerFrom(Long taskFlowId, Long fromTaskId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException {
         return this.trigger(taskFlowId, fromTaskId, null, params);
     }

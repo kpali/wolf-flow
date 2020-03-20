@@ -78,23 +78,27 @@ public class TaskFlowUtils {
      * @return
      */
     public static TaskFlow prune(TaskFlow taskFlow, Long fromTaskId, Long toTaskId) {
-        if (fromTaskId == null && toTaskId == null) {
-            return taskFlow;
-        }
-
-        Map<Long, Task> id_mapto_task = new HashMap<>();
-        for (Task task : taskFlow.getTaskList()) {
-            id_mapto_task.put(task.getId(), task);
-        }
-
         TaskFlow prunedTaskFlow = new TaskFlow();
         prunedTaskFlow.setId(taskFlow.getId());
         prunedTaskFlow.setCron(taskFlow.getCron());
         prunedTaskFlow.setTaskList(new ArrayList<>());
         prunedTaskFlow.setLinkList(new ArrayList<>());
 
+        Map<Long, Task> id_mapto_task = new HashMap<>();
+        for (Task task : taskFlow.getTaskList()) {
+            id_mapto_task.put(task.getId(), task);
+        }
         Deque<Task> deque = new ArrayDeque<>();
-        if (fromTaskId != null) {
+
+        if (fromTaskId == null && toTaskId == null) {
+            // 执行所有任务
+            prunedTaskFlow = taskFlow;
+        } else if (fromTaskId != null && fromTaskId.equals(toTaskId)) {
+            // 执行指定任务
+            Task fromTask = id_mapto_task.get(fromTaskId);
+            prunedTaskFlow.getTaskList().add(fromTask);
+        } else if (fromTaskId != null) {
+            // 从指定任务开始
             Task fromTask = id_mapto_task.get(fromTaskId);
             prunedTaskFlow.getTaskList().add(fromTask);
             deque.offer(fromTask);
@@ -112,6 +116,7 @@ public class TaskFlowUtils {
                 }
             }
         } else {
+            // 到指定任务结束
             Task toTask = id_mapto_task.get(toTaskId);
             prunedTaskFlow.getTaskList().add(toTask);
             deque.offer(toTask);

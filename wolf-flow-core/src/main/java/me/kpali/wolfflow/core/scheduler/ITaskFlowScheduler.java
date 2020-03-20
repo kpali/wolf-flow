@@ -29,6 +29,18 @@ public interface ITaskFlowScheduler {
     long trigger(Long taskFlowId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException;
 
     /**
+     * 触发任务流，执行指定任务
+     *
+     * @param taskFlowId
+     * @param taskId
+     * @param params
+     * @return taskFlowLogId
+     * @throws InvalidTaskFlowException
+     * @throws TaskFlowTriggerException
+     */
+    long trigger(Long taskFlowId, Long taskId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException;
+
+    /**
      * 触发任务流，从指定任务开始
      *
      * @param taskFlowId
