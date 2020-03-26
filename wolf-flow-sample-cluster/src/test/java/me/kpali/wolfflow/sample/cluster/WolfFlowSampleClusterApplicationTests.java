@@ -33,14 +33,14 @@ public class WolfFlowSampleClusterApplicationTests {
             this.waitDoneAndPrintLog(taskFlowLogId1);
             List<TaskLog> taskStatusList1 = taskLogger.listTaskStatus(100L);
             System.out.println(">>>>>>>>>> 执行完成，当前各任务状态：");
-            System.out.println(objectMapper.writeValueAsString(taskStatusList1));
+            System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(taskStatusList1));
 
             long taskFlowLogId2 = taskFlowScheduler.triggerTo(100L, 6L, null);
             System.out.println(">>>>>>>>>> 任务流日志ID：" + taskFlowLogId2);
             this.waitDoneAndPrintLog(taskFlowLogId2);
             List<TaskLog> taskStatusList2  = taskLogger.listTaskStatus(100L);
             System.out.println(">>>>>>>>>> 执行完成，当前各任务状态：");
-            System.out.println(objectMapper.writeValueAsString(taskStatusList2));
+            System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(taskStatusList2));
         } catch (Exception e) {
             e.printStackTrace();
         }

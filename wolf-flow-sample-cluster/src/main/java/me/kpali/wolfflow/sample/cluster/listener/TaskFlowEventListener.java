@@ -1,6 +1,5 @@
 package me.kpali.wolfflow.sample.cluster.listener;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import me.kpali.wolfflow.core.event.TaskFlowScheduleStatusChangeEvent;
 import me.kpali.wolfflow.core.event.TaskFlowStatusChangeEvent;
@@ -26,20 +25,12 @@ public class TaskFlowEventListener {
     @EventListener
     public void taskFlowStatusChange(TaskFlowStatusChangeEvent event) {
         // 任务流状态变更监听，状态有[等待执行、执行中、执行成功、执行失败、停止中]等
-        try {
-            System.out.println(">>>>>>>>>> 任务流状态变更：\r\n" + objectMapper.writeValueAsString(event.getTaskFlowStatus()));
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
+        System.out.println(">>>>>>>>>> 任务流[" + event.getTaskFlowStatus().getTaskFlow().getId() + "]状态变更为：" + event.getTaskFlowStatus().getStatus());
     }
 
     @EventListener
     public void taskStatusChange(TaskStatusChangeEvent event) {
         // 任务状态变更监听，状态有[等待执行、执行中、执行成功、执行失败、停止中、跳过]等
-        try {
-            System.out.println(">>>>>>>>>> 任务状态变更：\r\n" + objectMapper.writeValueAsString(event.getTaskStatus()));
-        } catch (JsonProcessingException e) {
-            e.printStackTrace();
-        }
+        System.out.println(">>>>>>>>>> 任务[" + event.getTaskStatus().getTask().getId() + "]状态变更为：" + event.getTaskStatus().getStatus());
     }
 }

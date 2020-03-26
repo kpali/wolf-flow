@@ -26,21 +26,21 @@ public class WolfFlowSampleApplicationTests {
     public void taskFlowTriggerTest() {
         ObjectMapper objectMapper = new ObjectMapper();
         try {
-            long taskFlowLogId1 = taskFlowScheduler.triggerTo(100L, 5L, null);
+            long taskFlowLogId1 = taskFlowScheduler.trigger(100L, 10L, null);
             System.out.println(">>>>>>>>>> 任务流日志ID：" + taskFlowLogId1);
             Thread.sleep(3 * 1000);
             //taskFlowScheduler.stop(taskFLowLogId1);
             this.waitDoneAndPrintLog(taskFlowLogId1);
             List<TaskLog> taskStatusList1 = taskLogger.listTaskStatus(100L);
             System.out.println(">>>>>>>>>> 执行完成，当前各任务状态：");
-            System.out.println(objectMapper.writeValueAsString(taskStatusList1));
+            System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(taskStatusList1));
 
-            long taskFlowLogId2 = taskFlowScheduler.triggerTo(100L, 6L, null);
+            long taskFlowLogId2 = taskFlowScheduler.triggerFrom(100L, 11L, null);
             System.out.println(">>>>>>>>>> 任务流日志ID：" + taskFlowLogId2);
             this.waitDoneAndPrintLog(taskFlowLogId2);
             List<TaskLog> taskStatusList2  = taskLogger.listTaskStatus(100L);
             System.out.println(">>>>>>>>>> 执行完成，当前各任务状态：");
-            System.out.println(objectMapper.writeValueAsString(taskStatusList2));
+            System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(taskStatusList2));
         } catch (Exception e) {
             e.printStackTrace();
         }
