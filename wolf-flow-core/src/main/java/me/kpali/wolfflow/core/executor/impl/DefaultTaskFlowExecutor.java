@@ -59,16 +59,30 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
             taskFlowContext.setTaskContexts(new ConcurrentHashMap<>());
         }
 
-        // 根据从指定任务开始或到指定任务结束，对任务流进行剪裁
+        // 根据参数“从指定任务开始”和“到指定任务结束”，分析要执行的任务和受影响的任务
         Long fromTaskId = taskFlowContext.getValue(ContextKey.FROM_TASK_ID, Long.class);
         Long toTaskId = taskFlowContext.getValue(ContextKey.TO_TASK_ID, Long.class);
-        TaskFlow prunedTaskFlow = TaskFlowUtils.prune(taskFlow, fromTaskId, toTaskId);
-        // 在到指定任务结束的情况下，已经执行成功的任务无需再执行，因此只保留未执行成功的任务
-        TaskFlow unsuccessfulTaskFlow = null;
-        if (fromTaskId == null && toTaskId != null) {
-            unsuccessfulTaskFlow = this.excludeSuccessfulTasks(prunedTaskFlow);
+        TaskFlow executeTaskFlow;
+        TaskFlow affectedTaskFlow;
+        if (fromTaskId == null && toTaskId == null) {
+            // 执行所有任务，执行任务 == 受影响任务
+            executeTaskFlow = TaskFlowUtils.prune(taskFlow, null, null);
+            affectedTaskFlow = executeTaskFlow;
+        } else if (fromTaskId != null && fromTaskId.equals(toTaskId)) {
+            // 执行指定任务，执行任务 != 受影响任务，受影响任务 = 指定任务的所有子孙节点
+            executeTaskFlow = TaskFlowUtils.prune(taskFlow, fromTaskId, toTaskId);
+            affectedTaskFlow = TaskFlowUtils.prune(taskFlow, fromTaskId, null);
+        } else if (fromTaskId != null) {
+            // 从指定任务开始，执行任务 == 受影响任务
+            executeTaskFlow = TaskFlowUtils.prune(taskFlow, fromTaskId, toTaskId);
+            affectedTaskFlow = executeTaskFlow;
+        } else {
+            // 到指定任务结束，执行任务 == 受影响任务，但需要排除已经执行成功的任务
+            TaskFlow prunedTaskFlow = TaskFlowUtils.prune(taskFlow, fromTaskId, toTaskId);
+            TaskFlow unsuccessfulTaskFlow = this.excludeSuccessfulTasks(prunedTaskFlow);
+            executeTaskFlow = (unsuccessfulTaskFlow == null ? prunedTaskFlow : unsuccessfulTaskFlow);
+            affectedTaskFlow = executeTaskFlow;
         }
-        TaskFlow executeTaskFlow = (unsuccessfulTaskFlow == null ? prunedTaskFlow : unsuccessfulTaskFlow);
         taskFlowContext.put(ContextKey.EXECUTE_TASK_FLOW, executeTaskFlow);
 
         boolean locked = false;
@@ -82,15 +96,15 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                 throw new TryLockException("获取任务日志记录锁失败！");
             }
             for (Task task : taskFlow.getTaskList()) {
-                boolean isExecute = false;
-                for (Task executeTask : executeTaskFlow.getTaskList()) {
-                    if (task.getId().equals(executeTask.getId())) {
-                        isExecute = true;
+                boolean isAffected = false;
+                for (Task affectedTask : affectedTaskFlow.getTaskList()) {
+                    if (task.getId().equals(affectedTask.getId())) {
+                        isAffected = true;
                         break;
                     }
                 }
-                if (isExecute) {
-                    // 本次执行的任务，清除任务状态
+                if (isAffected) {
+                    // 对于本次执行受影响的任务，清除任务状态
                     this.taskLogger.deleteTaskStatus(task.getId());
                     // 初始化上下文
                     TaskContext taskContext = new TaskContext();
@@ -103,7 +117,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                     taskContext.put(ContextKey.PARENT_TASK_ID_LIST, parentTaskIdList);
                     taskFlowContext.getTaskContexts().put(task.getId(), taskContext);
                 } else {
-                    // 对于本次不执行的任务，如果已经执行过，则复制一份任务状态（日志），并导入任务上下文到本次任务流上下文
+                    // 对于本次执行不受影响的任务，如果已经执行过，则复制一份任务状态（日志），并导入任务上下文到本次任务流上下文
                     TaskLog taskLog = this.taskLogger.getTaskStatus(task.getId());
                     if (taskLog == null) {
                         continue;

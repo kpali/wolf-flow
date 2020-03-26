@@ -91,10 +91,10 @@ public class TaskFlowUtils {
         Deque<Task> deque = new ArrayDeque<>();
 
         if (fromTaskId == null && toTaskId == null) {
-            // 执行所有任务
+            // 所有任务
             prunedTaskFlow = taskFlow;
         } else if (fromTaskId != null && fromTaskId.equals(toTaskId)) {
-            // 执行指定任务
+            // 指定任务
             Task fromTask = id_mapto_task.get(fromTaskId);
             prunedTaskFlow.getTaskList().add(fromTask);
         } else if (fromTaskId != null) {
