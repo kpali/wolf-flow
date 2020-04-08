@@ -55,9 +55,6 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
         if (taskFlow.getTaskList().size() == 0) {
             return;
         }
-        if (taskFlowContext.getTaskContexts() == null) {
-            taskFlowContext.setTaskContexts(new ConcurrentHashMap<>());
-        }
 
         // 根据参数“从指定任务开始”和“到指定任务结束”，分析要执行的任务和受影响的任务
         Long fromTaskId = taskFlowContext.getValue(ContextKey.FROM_TASK_ID, Long.class);
@@ -115,7 +112,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                         }
                     });
                     taskContext.put(ContextKey.PARENT_TASK_ID_LIST, parentTaskIdList);
-                    taskFlowContext.getTaskContexts().put(task.getId(), taskContext);
+                    taskFlowContext.putTaskContext(task.getId(), taskContext);
                 } else {
                     // 对于本次执行不受影响的任务，如果已经执行过，则复制一份任务状态（日志），并导入任务上下文到本次任务流上下文
                     TaskLog taskLog = this.taskLogger.getTaskStatus(task.getId());
@@ -135,11 +132,11 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                     if (lastTaskFlowContext.getTaskContexts() == null) {
                         continue;
                     }
-                    TaskContext lastTaskContext = lastTaskFlowContext.getTaskContexts().get(task.getId());
+                    TaskContext lastTaskContext = lastTaskFlowContext.getTaskContext(task.getId());
                     if (lastTaskContext == null) {
                         continue;
                     }
-                    taskFlowContext.getTaskContexts().put(task.getId(), lastTaskContext);
+                    taskFlowContext.putTaskContext(task.getId(), lastTaskContext);
                 }
             }
         } finally {
@@ -383,9 +380,9 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                     isNewLog = true;
                     Long taskLogId = systemTimeUtils.getUniqueTimeStamp();
                     String logFileId = UUID.randomUUID().toString();
-                    TaskContext taskContext = taskFlowContext.getTaskContexts().get(task.getId());
-                    taskContext.put(ContextKey.LOG_ID, taskLogId);
-                    taskContext.put(ContextKey.LOG_FILE_ID, logFileId);
+                    TaskContext taskContext = taskFlowContext.getTaskContext(task.getId());
+                    taskContext.put(ContextKey.TASK_LOG_ID, taskLogId);
+                    taskContext.put(ContextKey.TASK_LOG_FILE_ID, logFileId);
                     taskLog = new TaskLog();
                     taskLog.setLogId(taskLogId);
                     taskLog.setTaskFlowLogId(taskFlowLogId);
