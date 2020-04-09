@@ -5,6 +5,7 @@ import me.kpali.wolfflow.core.exception.TaskInterruptedException;
 import me.kpali.wolfflow.core.exception.TaskStopException;
 
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * 任务
@@ -24,19 +25,19 @@ public class Task implements Serializable {
         this.id = id;
     }
 
-    public void beforeExecute(TaskFlowContext taskFlowContext) throws TaskExecuteException {
+    public void beforeExecute(Map<String, Object> taskFlowContext) throws TaskExecuteException {
         // 不做任何操作
     }
 
-    public void execute(TaskFlowContext taskFlowContext) throws TaskExecuteException, TaskInterruptedException {
+    public void execute(Map<String, Object> taskFlowContext) throws TaskExecuteException, TaskInterruptedException {
         // 不做任何操作
     }
 
-    public void afterExecute(TaskFlowContext taskFlowContext) throws TaskExecuteException {
+    public void afterExecute(Map<String, Object> taskFlowContext) throws TaskExecuteException {
         // 不做任何操作
     }
 
-    public void stop(TaskFlowContext taskFlowContext) throws TaskStopException {
+    public void stop(Map<String, Object> taskFlowContext) throws TaskStopException {
         // 不做任何操作
     }
 }

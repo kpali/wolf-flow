@@ -1,22 +1,53 @@
 package me.kpali.wolfflow.core.model;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Map;
 
 /**
- * 上下文
+ * 上下文包装类
  *
  * @author kpali
  */
-public class Context extends ConcurrentHashMap<String, Object> {
+public class ContextWrapper {
+    public ContextWrapper() {
+        this.context = new HashMap<>();
+    }
+
+    public ContextWrapper(Map<String, Object> context) {
+        this.context = context;
+    }
+
+    protected Map<String, Object> context;
+
+    public Map<String, Object> getContext() {
+        return context;
+    }
+
+    public void setContext(Map<String, Object> context) {
+        this.context = context;
+    }
+
+    public Object get(String key) {
+        return this.context.get(key);
+    }
+
+    public Object put(String key, Object value) {
+        return this.context.put(key, value);
+    }
+
+    public boolean containsKey(String key) {
+        return this.context.containsKey(key);
+    }
+
     public <T> T getValue(String key, Class<T> clazz) {
-        Object value = this.get(key);
+        Object value = this.context.get(key);
         return this.cast(value, clazz);
     }
 
     public <T> List<T> getList(String key, Class<T> clazz) {
-        Object value = this.get(key);
+        Object value = this.context.get(key);
         if (value != null) {
             List<T> result = new ArrayList<T>();
             if (value instanceof List<?>) {

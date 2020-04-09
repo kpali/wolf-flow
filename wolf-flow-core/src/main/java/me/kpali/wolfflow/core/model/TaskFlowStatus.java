@@ -1,6 +1,7 @@
 package me.kpali.wolfflow.core.model;
 
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * 任务流状态
@@ -11,7 +12,7 @@ public class TaskFlowStatus implements Serializable {
     private static final long serialVersionUID = 4373673109768512258L;
 
     private TaskFlow taskFlow;
-    private TaskFlowContext taskFlowContext;
+    private Map<String, Object> taskFlowContext;
     private String status;
     private String message;
 
@@ -23,11 +24,11 @@ public class TaskFlowStatus implements Serializable {
         this.taskFlow = taskFlow;
     }
 
-    public TaskFlowContext getTaskFlowContext() {
+    public Map<String, Object> getTaskFlowContext() {
         return taskFlowContext;
     }
 
-    public void setTaskFlowContext(TaskFlowContext taskFlowContext) {
+    public void setTaskFlowContext(Map<String, Object> taskFlowContext) {
         this.taskFlowContext = taskFlowContext;
     }
 

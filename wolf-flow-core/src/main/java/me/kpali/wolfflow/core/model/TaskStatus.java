@@ -1,6 +1,7 @@
 package me.kpali.wolfflow.core.model;
 
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * 任务状态
@@ -12,7 +13,7 @@ public class TaskStatus implements Serializable {
 
     private Task task;
     private Long taskFlowId;
-    private TaskFlowContext taskFlowContext;
+    private Map<String, Object> taskFlowContext;
     private String status;
     private String message;
 
@@ -32,11 +33,11 @@ public class TaskStatus implements Serializable {
         this.taskFlowId = taskFlowId;
     }
 
-    public TaskFlowContext getTaskFlowContext() {
+    public Map<String, Object> getTaskFlowContext() {
         return taskFlowContext;
     }
 
-    public void setTaskFlowContext(TaskFlowContext taskFlowContext) {
+    public void setTaskFlowContext(Map<String, Object> taskFlowContext) {
         this.taskFlowContext = taskFlowContext;
     }
 

@@ -1,6 +1,7 @@
 package me.kpali.wolfflow.core.model;
 
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * 任务流执行请求
@@ -13,13 +14,13 @@ public class TaskFlowExecRequest implements Serializable {
     public TaskFlowExecRequest() {
     }
 
-    public TaskFlowExecRequest(TaskFlow taskFlow, TaskFlowContext taskFlowContext) {
+    public TaskFlowExecRequest(TaskFlow taskFlow, Map<String, Object> taskFlowContext) {
         this.taskFlow = taskFlow;
         this.taskFlowContext = taskFlowContext;
     }
 
     private TaskFlow taskFlow;
-    private TaskFlowContext taskFlowContext;
+    private Map<String, Object> taskFlowContext;
 
     public TaskFlow getTaskFlow() {
         return taskFlow;
@@ -29,11 +30,11 @@ public class TaskFlowExecRequest implements Serializable {
         this.taskFlow = taskFlow;
     }
 
-    public TaskFlowContext getTaskFlowContext() {
+    public Map<String, Object> getTaskFlowContext() {
         return taskFlowContext;
     }
 
-    public void setTaskFlowContext(TaskFlowContext taskFlowContext) {
+    public void setTaskFlowContext(Map<String, Object> taskFlowContext) {
         this.taskFlowContext = taskFlowContext;
     }
 }

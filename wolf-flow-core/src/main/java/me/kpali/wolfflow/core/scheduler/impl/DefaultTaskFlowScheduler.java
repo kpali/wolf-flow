@@ -100,7 +100,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                     if (request != null) {
                         log.info("扫描到新的任务流执行请求，任务流ID：{}", request.getTaskFlow().getId());
                         TaskFlow executeTaskFlow = request.getTaskFlow();
-                        TaskFlowContext taskFlowContext = request.getTaskFlowContext();
+                        Map<String, Object> taskFlowContext = request.getTaskFlowContext();
                         // 任务流执行
                         if (this.threadPool == null) {
                             synchronized (this.lock) {
@@ -262,21 +262,21 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
         long taskFlowLogId = systemTimeUtils.getUniqueTimeStamp();
 
         // 初始化任务流上下文
-        TaskFlowContext taskFlowContext = new TaskFlowContext();
+        TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper();
         if (params != null) {
-            taskFlowContext.setParams(params);
+            taskFlowContextWrapper.setParams(params);
         }
         if (fromTaskId != null) {
-            taskFlowContext.put(ContextKey.FROM_TASK_ID, fromTaskId);
+            taskFlowContextWrapper.put(ContextKey.FROM_TASK_ID, fromTaskId);
         }
         if (toTaskId != null) {
-            taskFlowContext.put(ContextKey.TO_TASK_ID, toTaskId);
+            taskFlowContextWrapper.put(ContextKey.TO_TASK_ID, toTaskId);
         }
-        taskFlowContext.put(ContextKey.LOG_ID, taskFlowLogId);
+        taskFlowContextWrapper.put(ContextKey.LOG_ID, taskFlowLogId);
 
         TaskFlowStatus taskFlowWaitForExecute = new TaskFlowStatus();
         taskFlowWaitForExecute.setTaskFlow(taskFlow);
-        taskFlowWaitForExecute.setTaskFlowContext(taskFlowContext);
+        taskFlowWaitForExecute.setTaskFlowContext(taskFlowContextWrapper.getContext());
         taskFlowWaitForExecute.setStatus(TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode());
         taskFlowWaitForExecute.setMessage(null);
 
@@ -313,12 +313,12 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
         }
 
         // 任务流等待执行
-        this.publishTaskFlowStatusChangeEvent(taskFlow, taskFlowContext, TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode(), null, false);
+        this.publishTaskFlowStatusChangeEvent(taskFlow, taskFlowContextWrapper.getContext(), TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode(), null, false);
 
         // 插入执行请求队列
-        boolean success = this.clusterController.execRequestOffer(new TaskFlowExecRequest(taskFlow, taskFlowContext));
+        boolean success = this.clusterController.execRequestOffer(new TaskFlowExecRequest(taskFlow, taskFlowContextWrapper.getContext()));
         if (!success) {
-            this.publishTaskFlowStatusChangeEvent(taskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), "插入执行请求队列失败", true);
+            this.publishTaskFlowStatusChangeEvent(taskFlow, taskFlowContextWrapper.getContext(), TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), "插入执行请求队列失败", true);
         }
 
         return taskFlowLogId;
@@ -372,7 +372,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
      * @param message
      * @param record
      */
-    private void publishTaskFlowStatusChangeEvent(TaskFlow taskFlow, TaskFlowContext taskFlowContext, String status, String message, boolean record) {
+    private void publishTaskFlowStatusChangeEvent(TaskFlow taskFlow, Map<String, Object> taskFlowContext, String status, String message, boolean record) {
         TaskFlowStatus taskFlowStatus = new TaskFlowStatus();
         taskFlowStatus.setTaskFlow(taskFlow);
         taskFlowStatus.setTaskFlowContext(taskFlowContext);
@@ -389,7 +389,8 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                 if (!locked) {
                     throw new TryLockException("获取任务流日志记录锁失败！");
                 }
-                Long taskFlowLogId = taskFlowContext.getValue(ContextKey.LOG_ID, Long.class);
+                TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(taskFlowContext);
+                Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
                 TaskFlowLog taskFlowLog = this.taskFlowLogger.get(taskFlowLogId);
                 boolean isNewLog = false;
                 if (taskFlowLog == null) {

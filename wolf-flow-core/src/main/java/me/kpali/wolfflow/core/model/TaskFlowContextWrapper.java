@@ -4,13 +4,21 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * 任务流上下文
+ * 任务流上下文包装类
  *
  * @author kpali
  */
-public class TaskFlowContext extends Context {
+public class TaskFlowContextWrapper extends ContextWrapper {
+    public TaskFlowContextWrapper() {
+        super();
+    }
+
+    public TaskFlowContextWrapper(Map<String, Object> context) {
+        super(context);
+    }
+
     public Map<String, Object> getParams() {
-        Object paramsObj = this.get(ContextKey.PARAMS);
+        Object paramsObj = this.context.get(ContextKey.PARAMS);
         if (paramsObj == null) {
             return null;
         }
@@ -18,9 +26,9 @@ public class TaskFlowContext extends Context {
     }
 
     public synchronized void setParams(Map<String, Object> params) {
-        Object paramsObj = this.get(ContextKey.PARAMS);
+        Object paramsObj = this.context.get(ContextKey.PARAMS);
         if (paramsObj == null) {
-            this.put(ContextKey.PARAMS, params);
+            this.context.put(ContextKey.PARAMS, params);
         } else {
             paramsObj = params;
         }
@@ -38,41 +46,41 @@ public class TaskFlowContext extends Context {
         Map<String, Object> params = this.getParams();
         if (params == null) {
             params = new HashMap<>();
-            this.put(ContextKey.PARAMS, params);
+            this.context.put(ContextKey.PARAMS, params);
         }
         params.put(name, param);
     }
 
-    public Map<Long, TaskContext> getTaskContexts() {
-        Object taskContextObj = this.get(ContextKey.TASK_CONTEXTS);
+    public Map<String, Map<String, Object>> getTaskContexts() {
+        Object taskContextObj = this.context.get(ContextKey.TASK_CONTEXTS);
         if (taskContextObj == null) {
             return null;
         }
-        return (Map<Long, TaskContext>) taskContextObj;
+        return (Map<String, Map<String, Object>>) taskContextObj;
     }
 
-    public synchronized void setTaskContexts(Map<Long, TaskContext> taskContexts) {
-        Object taskContextObj = this.get(ContextKey.TASK_CONTEXTS);
+    public synchronized void setTaskContexts(Map<String, Map<String, Object>> taskContexts) {
+        Object taskContextObj = this.context.get(ContextKey.TASK_CONTEXTS);
         if (taskContextObj == null) {
-            this.put(ContextKey.TASK_CONTEXTS, taskContexts);
+            this.context.put(ContextKey.TASK_CONTEXTS, taskContexts);
         } else {
             taskContextObj = taskContexts;
         }
     }
 
-    public TaskContext getTaskContext(Long taskId) {
-        Map<Long, TaskContext> taskContexts = this.getTaskContexts();
+    public Map<String, Object> getTaskContext(String taskId) {
+        Map<String, Map<String, Object>> taskContexts = this.getTaskContexts();
         if (taskContexts == null) {
             return null;
         }
         return taskContexts.get(taskId);
     }
 
-    public synchronized void putTaskContext(Long taskId, TaskContext taskContext) {
-        Map<Long, TaskContext> taskContexts = this.getTaskContexts();
+    public synchronized void putTaskContext(String taskId, Map<String, Object> taskContext) {
+        Map<String, Map<String, Object>> taskContexts = this.getTaskContexts();
         if (taskContexts == null) {
             taskContexts = new HashMap<>();
-            this.put(ContextKey.TASK_CONTEXTS, taskContexts);
+            this.context.put(ContextKey.TASK_CONTEXTS, taskContexts);
         }
         taskContexts.put(taskId, taskContext);
     }

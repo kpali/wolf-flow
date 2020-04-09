@@ -3,7 +3,8 @@ package me.kpali.wolfflow.core.executor;
 import me.kpali.wolfflow.core.exception.TaskFlowExecuteException;
 import me.kpali.wolfflow.core.exception.TaskFlowInterruptedException;
 import me.kpali.wolfflow.core.model.TaskFlow;
-import me.kpali.wolfflow.core.model.TaskFlowContext;
+
+import java.util.Map;
 
 /**
  * 任务流执行器接口
@@ -19,7 +20,7 @@ public interface ITaskFlowExecutor {
      * @param taskFlowContext
      * @throws TaskFlowExecuteException
      */
-    void beforeExecute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws TaskFlowExecuteException;
+    void beforeExecute(TaskFlow taskFlow, Map<String, Object> taskFlowContext) throws TaskFlowExecuteException;
 
     /**
      * 任务流执行
@@ -29,7 +30,7 @@ public interface ITaskFlowExecutor {
      * @throws TaskFlowExecuteException
      * @throws TaskFlowInterruptedException
      */
-    void execute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws TaskFlowExecuteException, TaskFlowInterruptedException;
+    void execute(TaskFlow taskFlow, Map<String, Object> taskFlowContext) throws TaskFlowExecuteException, TaskFlowInterruptedException;
 
     /**
      * 任务流后置处理
@@ -38,5 +39,5 @@ public interface ITaskFlowExecutor {
      * @param taskFlowContext
      * @throws TaskFlowExecuteException
      */
-    void afterExecute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws TaskFlowExecuteException;
+    void afterExecute(TaskFlow taskFlow, Map<String, Object> taskFlowContext) throws TaskFlowExecuteException;
 }

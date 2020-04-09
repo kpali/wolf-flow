@@ -45,8 +45,9 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     private SystemTimeUtils systemTimeUtils;
 
     @Override
-    public void beforeExecute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws TaskFlowExecuteException {
-        Long taskFlowLogId = taskFlowContext.getValue(ContextKey.LOG_ID, Long.class);
+    public void beforeExecute(TaskFlow taskFlow, Map<String, Object> taskFlowContext) throws TaskFlowExecuteException {
+        TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(taskFlowContext);
+        Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
         // 检查任务流是否是一个有向无环图
         List<Task> sortedTaskList = TaskFlowUtils.topologicalSort(taskFlow);
         if (sortedTaskList == null) {
@@ -57,8 +58,8 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
         }
 
         // 根据参数“从指定任务开始”和“到指定任务结束”，分析要执行的任务和受影响的任务
-        Long fromTaskId = taskFlowContext.getValue(ContextKey.FROM_TASK_ID, Long.class);
-        Long toTaskId = taskFlowContext.getValue(ContextKey.TO_TASK_ID, Long.class);
+        Long fromTaskId = taskFlowContextWrapper.getValue(ContextKey.FROM_TASK_ID, Long.class);
+        Long toTaskId = taskFlowContextWrapper.getValue(ContextKey.TO_TASK_ID, Long.class);
         TaskFlow executeTaskFlow;
         TaskFlow affectedTaskFlow;
         if (fromTaskId == null && toTaskId == null) {
@@ -104,15 +105,15 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                     // 对于本次执行受影响的任务，清除任务状态
                     this.taskLogger.deleteTaskStatus(task.getId());
                     // 初始化上下文
-                    TaskContext taskContext = new TaskContext();
+                    TaskContextWrapper taskContextWrapper = new TaskContextWrapper();
                     List<Long> parentTaskIdList = new ArrayList<>();
                     taskFlow.getLinkList().forEach(link -> {
                         if (link.getTarget().equals(task.getId())) {
                             parentTaskIdList.add(link.getSource());
                         }
                     });
-                    taskContext.put(ContextKey.PARENT_TASK_ID_LIST, parentTaskIdList);
-                    taskFlowContext.putTaskContext(task.getId(), taskContext);
+                    taskContextWrapper.put(ContextKey.PARENT_TASK_ID_LIST, parentTaskIdList);
+                    taskFlowContextWrapper.putTaskContext(task.getId().toString(), taskContextWrapper.getContext());
                 } else {
                     // 对于本次执行不受影响的任务，如果已经执行过，则复制一份任务状态（日志），并导入任务上下文到本次任务流上下文
                     TaskLog taskLog = this.taskLogger.getTaskStatus(task.getId());
@@ -125,18 +126,19 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                     taskLog.setTaskFlowLogId(taskFlowLogId);
                     this.taskLogger.add(taskLog);
                     // 任务上下文
-                    TaskFlowContext lastTaskFlowContext = taskLog.getTaskFlowContext();
+                    Map<String, Object> lastTaskFlowContext = taskLog.getTaskFlowContext();
                     if (lastTaskFlowContext == null) {
                         continue;
                     }
-                    if (lastTaskFlowContext.getTaskContexts() == null) {
+                    TaskFlowContextWrapper lastTaskFlowContextWrapper = new TaskFlowContextWrapper(lastTaskFlowContext);
+                    if (lastTaskFlowContextWrapper.getTaskContexts() == null) {
                         continue;
                     }
-                    TaskContext lastTaskContext = lastTaskFlowContext.getTaskContext(task.getId());
+                    Map<String, Object> lastTaskContext = lastTaskFlowContextWrapper.getTaskContext(task.getId().toString());
                     if (lastTaskContext == null) {
                         continue;
                     }
-                    taskFlowContext.putTaskContext(task.getId(), lastTaskContext);
+                    taskFlowContextWrapper.putTaskContext(task.getId().toString(), lastTaskContext);
                 }
             }
         } finally {
@@ -147,9 +149,10 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     }
 
     @Override
-    public void execute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws TaskFlowExecuteException, TaskFlowInterruptedException {
-        Long taskFlowLogId = taskFlowContext.getValue(ContextKey.LOG_ID, Long.class);
-        TaskFlow executeTaskFlow = taskFlowContext.getValue(ContextKey.EXECUTE_TASK_FLOW, TaskFlow.class);
+    public void execute(TaskFlow taskFlow, Map<String, Object> taskFlowContext) throws TaskFlowExecuteException, TaskFlowInterruptedException {
+        TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(taskFlowContext);
+        Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
+        TaskFlow executeTaskFlow = taskFlowContextWrapper.getValue(ContextKey.EXECUTE_TASK_FLOW, TaskFlow.class);
         try {
             // 初始化线程池
             ThreadFactory executorThreadFactory = new ThreadFactoryBuilder()
@@ -289,7 +292,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     }
 
     @Override
-    public void afterExecute(TaskFlow taskFlow, TaskFlowContext taskFlowContext) throws TaskFlowExecuteException {
+    public void afterExecute(TaskFlow taskFlow, Map<String, Object> taskFlowContext) throws TaskFlowExecuteException {
         // 不做任何操作
     }
 
@@ -355,7 +358,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
      * @param message
      * @param record
      */
-    private void publishTaskStatusChangeEvent(Task task, Long taskFlowId, TaskFlowContext taskFlowContext, String status, String message, boolean record) {
+    private void publishTaskStatusChangeEvent(Task task, Long taskFlowId, Map<String, Object> taskFlowContext, String status, String message, boolean record) {
         TaskStatus taskStatus = new TaskStatus();
         taskStatus.setTask(task);
         taskStatus.setTaskFlowId(taskFlowId);
@@ -373,14 +376,15 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                 if (!locked) {
                     throw new TryLockException("获取任务日志记录锁失败！");
                 }
-                Long taskFlowLogId = taskFlowContext.getValue(ContextKey.LOG_ID, Long.class);
+                TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(taskFlowContext);
+                Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
                 TaskLog taskLog = this.taskLogger.get(taskFlowLogId, task.getId());
                 boolean isNewLog = false;
                 if (taskLog == null) {
                     isNewLog = true;
                     Long taskLogId = systemTimeUtils.getUniqueTimeStamp();
                     String logFileId = UUID.randomUUID().toString();
-                    TaskContext taskContext = taskFlowContext.getTaskContext(task.getId());
+                    Map<String, Object> taskContext = taskFlowContextWrapper.getTaskContext(task.getId().toString());
                     taskContext.put(ContextKey.TASK_LOG_ID, taskLogId);
                     taskContext.put(ContextKey.TASK_LOG_FILE_ID, logFileId);
                     taskLog = new TaskLog();

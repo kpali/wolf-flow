@@ -2,6 +2,7 @@ package me.kpali.wolfflow.core.model;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.Map;
 
 /**
  * 任务流日志
@@ -14,7 +15,7 @@ public class TaskFlowLog implements Serializable {
     private Long logId;
     private Long taskFlowId;
     private TaskFlow taskFlow;
-    private TaskFlowContext taskFlowContext;
+    private Map<String, Object> taskFlowContext;
     private String status;
     private String message;
     private Date creationTime;
@@ -44,11 +45,11 @@ public class TaskFlowLog implements Serializable {
         this.taskFlow = taskFlow;
     }
 
-    public TaskFlowContext getTaskFlowContext() {
+    public Map<String, Object> getTaskFlowContext() {
         return taskFlowContext;
     }
 
-    public void setTaskFlowContext(TaskFlowContext taskFlowContext) {
+    public void setTaskFlowContext(Map<String, Object> taskFlowContext) {
         this.taskFlowContext = taskFlowContext;
     }
 
