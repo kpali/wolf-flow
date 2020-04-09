@@ -17,7 +17,7 @@ public class ContextKey {
 
     // 任务上下文
 
-    public static final String TASK_LOG_ID = "taskLogId";
-    public static final String TASK_LOG_FILE_ID = "taskLogFileId";
+    public static final String TASK_LOG_ID = "logId";
+    public static final String TASK_LOG_FILE_ID = "logFileId";
     public static final String PARENT_TASK_ID_LIST = "parentTaskIdList";
 }
