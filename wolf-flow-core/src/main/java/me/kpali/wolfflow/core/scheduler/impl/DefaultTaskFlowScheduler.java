@@ -98,9 +98,11 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                     Thread.sleep(this.schedulerConfig.getExecRequestScanInterval() * 1000);
                     TaskFlowExecRequest request = this.clusterController.execRequestPoll();
                     if (request != null) {
-                        log.info("扫描到新的任务流执行请求，任务流ID：{}", request.getTaskFlow().getId());
                         TaskFlow executeTaskFlow = request.getTaskFlow();
                         Map<String, Object> taskFlowContext = request.getTaskFlowContext();
+                        TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(taskFlowContext);
+                        Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
+                        log.info("扫描到新的任务流执行请求，任务流ID：{}，任务流日志ID：{}", request.getTaskFlow().getId(), taskFlowLogId);
                         // 任务流执行
                         if (this.threadPool == null) {
                             synchronized (this.lock) {
