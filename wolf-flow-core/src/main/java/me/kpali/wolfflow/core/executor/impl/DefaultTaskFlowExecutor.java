@@ -27,7 +27,14 @@ import java.util.concurrent.*;
  */
 @Component
 public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
+    public DefaultTaskFlowExecutor() {
+        this.executorId = UUID.randomUUID().toString();
+        log.info("任务流执行器初始化完成，执行器ID：{}", this.executorId);
+    }
+
     private static final Logger log = LoggerFactory.getLogger(DefaultTaskFlowExecutor.class);
+
+    private String executorId;
 
     @Autowired
     private ExecutorConfig executorConfig;
@@ -43,6 +50,11 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
 
     @Autowired
     private SystemTimeUtils systemTimeUtils;
+
+    @Override
+    public String getExecutorId() {
+        return this.executorId;
+    }
 
     @Override
     public void beforeExecute(TaskFlow taskFlow, Map<String, Object> taskFlowContext) throws TaskFlowExecuteException {

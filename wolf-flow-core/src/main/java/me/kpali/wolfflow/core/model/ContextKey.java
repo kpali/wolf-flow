@@ -14,6 +14,7 @@ public class ContextKey {
     public static final String EXECUTE_TASK_FLOW = "executeTaskFlow";
     public static final String PARAMS = "params";
     public static final String TASK_CONTEXTS = "taskContexts";
+    public static final String EXECUTOR_ID = "executorId";
 
     // 任务上下文
 
