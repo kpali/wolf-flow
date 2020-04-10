@@ -102,7 +102,8 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                         Map<String, Object> taskFlowContext = request.getTaskFlowContext();
                         TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(taskFlowContext);
                         Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
-                        log.info("扫描到新的任务流执行请求，任务流ID：{}，任务流日志ID：{}", request.getTaskFlow().getId(), taskFlowLogId);
+                        log.info("扫描到新的任务流执行请求，任务流ID：{}，任务流日志ID：{}，当前节点ID：{}",
+                                request.getTaskFlow().getId(), taskFlowLogId, this.clusterController.getNodeId());
                         // 任务流上下文写入当前节点ID
                         taskFlowContextWrapper.put(ContextKey.EXECUTED_BY_NODE, this.clusterController.getNodeId());
                         // 任务流执行

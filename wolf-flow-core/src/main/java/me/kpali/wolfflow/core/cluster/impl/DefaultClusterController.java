@@ -20,7 +20,6 @@ import java.util.concurrent.locks.ReentrantLock;
 public class DefaultClusterController implements IClusterController {
     public DefaultClusterController() {
         this.nodeId = UUID.randomUUID().toString();
-        log.info("集群控制器初始化完成，当前节点ID：{}", this.nodeId);
     }
 
     private static final Logger log = LoggerFactory.getLogger(DefaultClusterController.class);
