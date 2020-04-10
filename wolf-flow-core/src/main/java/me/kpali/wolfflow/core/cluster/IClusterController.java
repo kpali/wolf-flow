@@ -18,6 +18,19 @@ public interface IClusterController {
     String getNodeId();
 
     /**
+     * 发送当前节点心跳
+     */
+    void heartbeat();
+
+    /**
+     * 查询其他节点是否存活
+     *
+     * @param nodeId
+     * @return
+     */
+    boolean isNodeAlive(String nodeId);
+
+    /**
      * 加锁，如果暂时无法加锁，则当前线程休眠，直到加锁成功
      * 加锁成功后，解锁需要调用unlock方法
      *

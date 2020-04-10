@@ -10,19 +10,19 @@ import org.springframework.stereotype.Component;
 @Component
 public class SchedulerConfig {
     /**
-     * 任务流执行请求扫描间隔
+     * 任务流执行请求扫描间隔，单位秒
      */
     private Integer execRequestScanInterval;
     /**
-     * 定时任务流扫描间隔
+     * 定时任务流扫描间隔，单位秒
      */
     private Integer cronScanInterval;
     /**
-     * 定时任务流扫描尝试加锁最大等待时间
+     * 定时任务流扫描尝试加锁最大等待时间，单位秒
      */
     private Integer cronScanLockWaitTime;
     /**
-     * 定时任务流扫描加锁后自动解锁时间
+     * 定时任务流扫描加锁后自动解锁时间，单位秒
      */
     private Integer cronScanLockLeaseTime;
     /**

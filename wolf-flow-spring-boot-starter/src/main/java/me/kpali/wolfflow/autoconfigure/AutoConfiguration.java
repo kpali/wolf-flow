@@ -1,6 +1,7 @@
 package me.kpali.wolfflow.autoconfigure;
 
 import me.kpali.wolfflow.autoconfigure.config.*;
+import me.kpali.wolfflow.autoconfigure.properties.ClusterProperties;
 import me.kpali.wolfflow.autoconfigure.properties.ExecutorProperties;
 import me.kpali.wolfflow.autoconfigure.properties.SchedulerProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -13,7 +14,8 @@ import org.springframework.context.annotation.Import;
  * @author kpali
  */
 @EnableConfigurationProperties({SchedulerProperties.class,
-        ExecutorProperties.class})
+        ExecutorProperties.class,
+        ClusterProperties.class})
 @Import({SchedulerConfiguration.class,
         ExecutorConfiguration.class,
         QuerierConfiguration.class,

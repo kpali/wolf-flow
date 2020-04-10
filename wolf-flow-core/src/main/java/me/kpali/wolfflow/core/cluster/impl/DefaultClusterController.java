@@ -1,9 +1,11 @@
 package me.kpali.wolfflow.core.cluster.impl;
 
 import me.kpali.wolfflow.core.cluster.IClusterController;
+import me.kpali.wolfflow.core.config.ClusterConfig;
 import me.kpali.wolfflow.core.model.TaskFlowExecRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -24,15 +26,41 @@ public class DefaultClusterController implements IClusterController {
 
     private static final Logger log = LoggerFactory.getLogger(DefaultClusterController.class);
 
+    @Autowired
+    private ClusterConfig clusterConfig;
+
     private String nodeId;
     private final Object lock = new Object();
     private Map<String, Lock> lockMap = new HashMap<>();
     private Queue<TaskFlowExecRequest> taskFlowExecRequest = new LinkedList<>();
     private Set<Long> taskFlowStopRequest = new HashSet<>();
+    private Map<String, Date> heartbeatMap = new HashMap<>();
 
     @Override
     public String getNodeId() {
         return this.nodeId;
+    }
+
+    @Override
+    public void heartbeat() {
+        synchronized (lock) {
+            long heartbeatDurationInMilliseconds = this.clusterConfig.getNodeHeartbeatDuration() * 1000;
+            Date now = new Date();
+            Date heartbeatExpireDate = new Date(now.getTime() + heartbeatDurationInMilliseconds);
+            this.heartbeatMap.put(this.getNodeId(), heartbeatExpireDate);
+        }
+    }
+
+    @Override
+    public boolean isNodeAlive(String nodeId) {
+        synchronized (lock) {
+            if (this.heartbeatMap.containsKey(nodeId)) {
+                Date heartbeatExpireDate = this.heartbeatMap.get(nodeId);
+                Date now = new Date();
+                return now.before(heartbeatExpireDate);
+            }
+            return false;
+        }
     }
 
     private Lock getLock(String name) {

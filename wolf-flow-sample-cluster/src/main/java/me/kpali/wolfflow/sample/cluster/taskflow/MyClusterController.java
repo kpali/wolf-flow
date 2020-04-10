@@ -1,6 +1,7 @@
 package me.kpali.wolfflow.sample.cluster.taskflow;
 
 import me.kpali.wolfflow.core.cluster.impl.DefaultClusterController;
+import me.kpali.wolfflow.core.config.ClusterConfig;
 import me.kpali.wolfflow.core.model.TaskFlowExecRequest;
 import org.redisson.api.RLock;
 import org.redisson.api.RQueue;
@@ -28,8 +29,24 @@ public class MyClusterController extends DefaultClusterController {
     @Autowired
     private RedissonClient redisson;
 
+    @Autowired
+    private ClusterConfig clusterConfig;
+
     private static final String TASK_FLOW_EXEC_REQUEST = "taskFlowExecRequest";
     private static final String TASK_FLOW_STOP_REQUEST = "taskFlowStopRequest";
+    private static final String NODE_HEARTBEAT = "nodeHeartbeat";
+
+    @Override
+    public void heartbeat() {
+        RLock lock = redisson.getLock(NODE_HEARTBEAT + ":" + this.getNodeId());
+        lock.lock(this.clusterConfig.getNodeHeartbeatDuration(), TimeUnit.SECONDS);
+    }
+
+    @Override
+    public boolean isNodeAlive(String nodeId) {
+        RLock lock = redisson.getLock(NODE_HEARTBEAT + ":" + nodeId);
+        return lock.isLocked();
+    }
 
     @Override
     public void lock(String name) {
