@@ -13,13 +13,6 @@ import java.util.Map;
  */
 public interface ITaskFlowExecutor {
     /**
-     * 获取当前执行器ID
-     *
-     * @return
-     */
-    String getExecutorId();
-
-    /**
      * 任务流执行前置处理
      *
      * @param taskFlow

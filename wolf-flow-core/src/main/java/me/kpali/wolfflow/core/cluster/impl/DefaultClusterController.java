@@ -18,12 +18,23 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 @Component
 public class DefaultClusterController implements IClusterController {
+    public DefaultClusterController() {
+        this.nodeId = UUID.randomUUID().toString();
+        log.info("集群控制器初始化完成，当前节点ID：{}", this.nodeId);
+    }
+
     private static final Logger log = LoggerFactory.getLogger(DefaultClusterController.class);
 
+    private String nodeId;
     private final Object lock = new Object();
     private Map<String, Lock> lockMap = new HashMap<>();
     private Queue<TaskFlowExecRequest> taskFlowExecRequest = new LinkedList<>();
     private Set<Long> taskFlowStopRequest = new HashSet<>();
+
+    @Override
+    public String getNodeId() {
+        return this.nodeId;
+    }
 
     private Lock getLock(String name) {
         Lock rLock = null;

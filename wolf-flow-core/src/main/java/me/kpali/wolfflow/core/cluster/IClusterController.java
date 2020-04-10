@@ -11,6 +11,13 @@ import java.util.concurrent.TimeUnit;
  */
 public interface IClusterController {
     /**
+     * 获取当前节点ID
+     *
+     * @return 节点ID
+     */
+    String getNodeId();
+
+    /**
      * 加锁，如果暂时无法加锁，则当前线程休眠，直到加锁成功
      * 加锁成功后，解锁需要调用unlock方法
      *
