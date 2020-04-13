@@ -2,7 +2,6 @@ package me.kpali.wolfflow.core.scheduler.impl;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import me.kpali.wolfflow.core.cluster.IClusterController;
-import me.kpali.wolfflow.core.config.ClusterConfig;
 import me.kpali.wolfflow.core.config.SchedulerConfig;
 import me.kpali.wolfflow.core.enums.TaskFlowScheduleStatusEnum;
 import me.kpali.wolfflow.core.enums.TaskFlowStatusEnum;
@@ -11,7 +10,6 @@ import me.kpali.wolfflow.core.event.TaskFlowStatusChangeEvent;
 import me.kpali.wolfflow.core.exception.*;
 import me.kpali.wolfflow.core.executor.ITaskFlowExecutor;
 import me.kpali.wolfflow.core.logger.ITaskFlowLogger;
-import me.kpali.wolfflow.core.logger.ITaskLogger;
 import me.kpali.wolfflow.core.model.*;
 import me.kpali.wolfflow.core.querier.ITaskFlowQuerier;
 import me.kpali.wolfflow.core.scheduler.ITaskFlowScheduler;
@@ -57,14 +55,9 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
 
     @Autowired
     private ITaskFlowLogger taskFlowLogger;
-    @Autowired
-    private ITaskLogger taskLogger;
 
     @Autowired
     private IClusterController clusterController;
-
-    @Autowired
-    private ClusterConfig clusterConfig;
 
     @Autowired
     private SystemTimeUtils systemTimeUtils;
@@ -83,7 +76,6 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                 this.schedulerConfig.getMaximumPoolSize());
         this.started = true;
         this.startTaskFlowScaner();
-        this.startNodeHeartbeat();
     }
 
     /**
@@ -229,31 +221,6 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                     }
                 } catch (Exception e) {
                     log.error("定时任务流扫描异常！" + e.getMessage(), e);
-                }
-            }
-        });
-    }
-
-    /**
-     * 启动节点心跳发送
-     */
-    private void startNodeHeartbeat() {
-        ThreadFactory heartbeatThreadFactory = new ThreadFactoryBuilder()
-                .setNameFormat("nodeHeartbeat-pool-%d").build();
-        ExecutorService heartbeatThreadPool = new ThreadPoolExecutor(1, 1,
-                0L, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<Runnable>(1024), heartbeatThreadFactory, new ThreadPoolExecutor.AbortPolicy());
-
-        log.info("节点心跳线程启动");
-        heartbeatThreadPool.execute(() -> {
-            while (true) {
-                try {
-                    log.info("发送节点心跳，当前节点ID：{}", this.clusterController.getNodeId());
-                    Integer heartbeatIntervalInMilliseconds = this.clusterConfig.getNodeHeartbeatInterval() * 1000;
-                    this.clusterController.heartbeat();
-                    Thread.sleep(heartbeatIntervalInMilliseconds);
-                } catch (Exception e) {
-                    log.error("发送节点心跳异常！" + e.getMessage(), e);
                 }
             }
         });

@@ -11,6 +11,11 @@ import java.util.concurrent.TimeUnit;
  */
 public interface IClusterController {
     /**
+     * 启动集群控制器
+     */
+    void startup();
+
+    /**
      * 获取当前节点ID
      *
      * @return 节点ID

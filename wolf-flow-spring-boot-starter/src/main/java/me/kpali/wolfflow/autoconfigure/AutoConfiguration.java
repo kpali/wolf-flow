@@ -20,7 +20,8 @@ import org.springframework.context.annotation.Import;
         ExecutorConfiguration.class,
         QuerierConfiguration.class,
         LoggerConfiguration.class,
-        ClusterConfiguration.class})
+        ClusterConfiguration.class,
+        LauncherConfiguration.class})
 @Configuration
 public class AutoConfiguration {
 }

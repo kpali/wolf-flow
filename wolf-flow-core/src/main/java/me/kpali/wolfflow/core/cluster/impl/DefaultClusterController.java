@@ -1,5 +1,6 @@
 package me.kpali.wolfflow.core.cluster.impl;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import me.kpali.wolfflow.core.cluster.IClusterController;
 import me.kpali.wolfflow.core.config.ClusterConfig;
 import me.kpali.wolfflow.core.model.TaskFlowExecRequest;
@@ -9,7 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -35,6 +36,45 @@ public class DefaultClusterController implements IClusterController {
     private Queue<TaskFlowExecRequest> taskFlowExecRequest = new LinkedList<>();
     private Set<Long> taskFlowStopRequest = new HashSet<>();
     private Map<String, Date> heartbeatMap = new HashMap<>();
+
+    private boolean started = false;
+
+    @Override
+    public void startup() {
+        if (this.started) {
+            return;
+        }
+        log.info("集群控制器启动，节点发送心跳间隔时间：{}秒，节点心跳有效期：{}秒",
+                this.clusterConfig.getNodeHeartbeatInterval(),
+                this.clusterConfig.getNodeHeartbeatDuration());
+        this.started = true;
+        this.startNodeHeartbeat();
+    }
+
+    /**
+     * 启动节点心跳发送
+     */
+    private void startNodeHeartbeat() {
+        ThreadFactory heartbeatThreadFactory = new ThreadFactoryBuilder()
+                .setNameFormat("nodeHeartbeat-pool-%d").build();
+        ExecutorService heartbeatThreadPool = new ThreadPoolExecutor(1, 1,
+                0L, TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<Runnable>(1024), heartbeatThreadFactory, new ThreadPoolExecutor.AbortPolicy());
+
+        log.info("节点心跳线程启动");
+        heartbeatThreadPool.execute(() -> {
+            while (true) {
+                try {
+                    log.info("发送节点心跳，当前节点ID：{}", this.getNodeId());
+                    Integer heartbeatIntervalInMilliseconds = this.clusterConfig.getNodeHeartbeatInterval() * 1000;
+                    this.heartbeat();
+                    Thread.sleep(heartbeatIntervalInMilliseconds);
+                } catch (Exception e) {
+                    log.error("发送节点心跳异常！" + e.getMessage(), e);
+                }
+            }
+        });
+    }
 
     @Override
     public String getNodeId() {

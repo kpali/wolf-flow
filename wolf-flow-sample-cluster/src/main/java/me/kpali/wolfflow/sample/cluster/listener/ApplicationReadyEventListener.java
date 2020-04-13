@@ -1,6 +1,6 @@
 package me.kpali.wolfflow.sample.cluster.listener;
 
-import me.kpali.wolfflow.core.scheduler.ITaskFlowScheduler;
+import me.kpali.wolfflow.core.launcher.Launcher;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
@@ -15,10 +15,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class ApplicationReadyEventListener implements ApplicationListener<ApplicationReadyEvent> {
     @Autowired
-    ITaskFlowScheduler taskFlowScheduler;
+    private Launcher launcher;
 
     @Override
     public void onApplicationEvent(ApplicationReadyEvent applicationReadyEvent) {
-        taskFlowScheduler.startup();
+        this.launcher.startup();
     }
 }
