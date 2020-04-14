@@ -4,7 +4,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import me.kpali.wolfflow.core.cluster.IClusterController;
 import me.kpali.wolfflow.core.config.ExecutorConfig;
 import me.kpali.wolfflow.core.enums.TaskStatusEnum;
-import me.kpali.wolfflow.core.event.TaskStatusChangeEvent;
+import me.kpali.wolfflow.core.event.TaskStatusEventPublisher;
 import me.kpali.wolfflow.core.exception.*;
 import me.kpali.wolfflow.core.executor.ITaskFlowExecutor;
 import me.kpali.wolfflow.core.logger.ITaskLogger;
@@ -14,10 +14,12 @@ import me.kpali.wolfflow.core.util.TaskFlowUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 
 /**
@@ -33,7 +35,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     private ExecutorConfig executorConfig;
 
     @Autowired
-    private ApplicationEventPublisher eventPublisher;
+    private TaskStatusEventPublisher taskStatusEventPublisher;
 
     @Autowired
     private IClusterController clusterController;
@@ -203,7 +205,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                 if (inDegree == 0) {
                     idToTaskStatusMap.put(taskId, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode());
                     Task task = idToTaskMap.get(taskId);
-                    this.publishTaskStatusChangeEvent(task, executeTaskFlow.getId(), taskFlowContext, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode(), null, true);
+                    this.taskStatusEventPublisher.publishEvent(task, executeTaskFlow.getId(), taskFlowContext, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode(), null, true);
                 }
             }
             boolean isSuccess = true;
@@ -232,22 +234,22 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                                     }
                                 }
                                 task.beforeExecute(taskFlowContext);
-                                this.publishTaskStatusChangeEvent(task, executeTaskFlow.getId(), taskFlowContext, TaskStatusEnum.EXECUTING.getCode(), null, true);
+                                this.taskStatusEventPublisher.publishEvent(task, executeTaskFlow.getId(), taskFlowContext, TaskStatusEnum.EXECUTING.getCode(), null, true);
                                 task.execute(taskFlowContext);
                                 task.afterExecute(taskFlowContext);
                                 idToTaskStatusMap.put(task.getId(), TaskStatusEnum.EXECUTE_SUCCESS.getCode());
-                                this.publishTaskStatusChangeEvent(task, executeTaskFlow.getId(), taskFlowContext, TaskStatusEnum.EXECUTE_SUCCESS.getCode(), null, true);
+                                this.taskStatusEventPublisher.publishEvent(task, executeTaskFlow.getId(), taskFlowContext, TaskStatusEnum.EXECUTE_SUCCESS.getCode(), null, true);
                             } catch (TaskExecuteException | TaskInterruptedException e) {
                                 log.error("任务执行失败！任务ID：" + task.getId() + " 异常信息：" + e.getMessage(), e);
                                 idToTaskStatusMap.put(task.getId(), TaskStatusEnum.EXECUTE_FAILURE.getCode());
-                                this.publishTaskStatusChangeEvent(task, executeTaskFlow.getId(), taskFlowContext, TaskStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage(), true);
+                                this.taskStatusEventPublisher.publishEvent(task, executeTaskFlow.getId(), taskFlowContext, TaskStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage(), true);
                             }
                         });
                     } else if (requireToStop && TaskStatusEnum.EXECUTING.getCode().equals(taskStatus)) {
                         Task task = idToTaskMap.get(taskId);
                         idToTaskStatusMap.put(task.getId(), TaskStatusEnum.STOPPING.getCode());
                         try {
-                            this.publishTaskStatusChangeEvent(task, executeTaskFlow.getId(), taskFlowContext, TaskStatusEnum.STOPPING.getCode(), null, true);
+                            this.taskStatusEventPublisher.publishEvent(task, executeTaskFlow.getId(), taskFlowContext, TaskStatusEnum.STOPPING.getCode(), null, true);
                             task.stop(taskFlowContext);
                         } catch (TaskStopException e) {
                             log.error("任务终止失败！任务ID：" + task.getId() + " 异常信息：" + e.getMessage(), e);
@@ -262,7 +264,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                             if (childTaskInDegree == 0) {
                                 idToTaskStatusMap.put(childTaskId, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode());
                                 Task childTask = idToTaskMap.get(childTaskId);
-                                this.publishTaskStatusChangeEvent(childTask, executeTaskFlow.getId(), taskFlowContext, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode(), null, true);
+                                this.taskStatusEventPublisher.publishEvent(childTask, executeTaskFlow.getId(), taskFlowContext, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode(), null, true);
                             }
                         }
                         idToTaskStatusMap.remove(taskId);
@@ -275,7 +277,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                         for (Long childTaskId : childTaskIds) {
                             idToTaskStatusMap.put(childTaskId, TaskStatusEnum.SKIPPED.getCode());
                             Task childTask = idToTaskMap.get(childTaskId);
-                            this.publishTaskStatusChangeEvent(childTask, executeTaskFlow.getId(), taskFlowContext, TaskStatusEnum.SKIPPED.getCode(), null, true);
+                            this.taskStatusEventPublisher.publishEvent(childTask, executeTaskFlow.getId(), taskFlowContext, TaskStatusEnum.SKIPPED.getCode(), null, true);
                         }
                         idToTaskStatusMap.remove(taskId);
                     }
@@ -346,70 +348,5 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
             }
         }
         return unsuccessTaskFlow;
-    }
-
-    /**
-     * 发布任务状态变更事件
-     *
-     * @param task
-     * @param taskFlowId
-     * @param taskFlowContext
-     * @param status
-     * @param message
-     * @param record
-     */
-    private void publishTaskStatusChangeEvent(Task task, Long taskFlowId, Map<String, Object> taskFlowContext, String status, String message, boolean record) {
-        TaskStatus taskStatus = new TaskStatus();
-        taskStatus.setTask(task);
-        taskStatus.setTaskFlowId(taskFlowId);
-        taskStatus.setTaskFlowContext(taskFlowContext);
-        taskStatus.setStatus(status);
-        taskStatus.setMessage(message);
-        if (record) {
-            boolean locked = false;
-            try {
-                locked = this.clusterController.tryLock(
-                        ClusterConstants.TASK_LOG_LOCK,
-                        ClusterConstants.LOG_LOCK_WAIT_TIME,
-                        ClusterConstants.LOG_LOCK_LEASE_TIME,
-                        TimeUnit.SECONDS);
-                if (!locked) {
-                    throw new TryLockException("获取任务日志记录锁失败！");
-                }
-                TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(taskFlowContext);
-                Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
-                TaskLog taskLog = this.taskLogger.get(taskFlowLogId, task.getId());
-                boolean isNewLog = false;
-                if (taskLog == null) {
-                    isNewLog = true;
-                    Long taskLogId = systemTimeUtils.getUniqueTimeStamp();
-                    String logFileId = UUID.randomUUID().toString();
-                    Map<String, Object> taskContext = taskFlowContextWrapper.getTaskContext(task.getId().toString());
-                    taskContext.put(ContextKey.TASK_LOG_ID, taskLogId);
-                    taskContext.put(ContextKey.TASK_LOG_FILE_ID, logFileId);
-                    taskLog = new TaskLog();
-                    taskLog.setLogId(taskLogId);
-                    taskLog.setTaskFlowLogId(taskFlowLogId);
-                    taskLog.setTaskId(task.getId());
-                    taskLog.setLogFileId(logFileId);
-                }
-                taskLog.setTask(task);
-                taskLog.setTaskFlowId(taskFlowId);
-                taskLog.setTaskFlowContext(taskFlowContext);
-                taskLog.setStatus(status);
-                taskLog.setMessage(message);
-                if (isNewLog) {
-                    this.taskLogger.add(taskLog);
-                } else {
-                    this.taskLogger.update(taskLog);
-                }
-            } finally {
-                if (locked) {
-                    this.clusterController.unlock(ClusterConstants.TASK_LOG_LOCK);
-                }
-            }
-        }
-        TaskStatusChangeEvent taskStatusChangeEvent = new TaskStatusChangeEvent(this, taskStatus);
-        this.eventPublisher.publishEvent(taskStatusChangeEvent);
     }
 }

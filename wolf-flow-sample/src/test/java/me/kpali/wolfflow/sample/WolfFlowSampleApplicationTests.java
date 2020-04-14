@@ -29,7 +29,7 @@ public class WolfFlowSampleApplicationTests {
             long taskFlowLogId1 = taskFlowScheduler.trigger(100L, 10L, null);
             System.out.println(">>>>>>>>>> 任务流日志ID：" + taskFlowLogId1);
             Thread.sleep(3 * 1000);
-            //taskFlowScheduler.stop(taskFLowLogId1);
+            //taskFlowScheduler.stop(taskFlowLogId1);
             this.waitDoneAndPrintLog(taskFlowLogId1);
             List<TaskLog> taskStatusList1 = taskLogger.listTaskStatus(100L);
             System.out.println(">>>>>>>>>> 执行完成，当前各任务状态：");

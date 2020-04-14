@@ -3,6 +3,7 @@ package me.kpali.wolfflow.core.logger.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import me.kpali.wolfflow.core.enums.TaskStatusEnum;
 import me.kpali.wolfflow.core.exception.TaskLogException;
 import me.kpali.wolfflow.core.logger.ITaskLogger;
 import me.kpali.wolfflow.core.model.TaskLog;
@@ -219,5 +220,11 @@ public class DefaultTaskLogger implements ITaskLogger {
     @Override
     public void deleteTaskStatus(Long taskId) throws TaskLogException {
         taskId_to_taskStatus.remove(taskId);
+    }
+
+    @Override
+    public boolean isInProgress(TaskLog taskLog) throws TaskLogException {
+        return !TaskStatusEnum.EXECUTE_SUCCESS.getCode().equals(taskLog.getStatus())
+                && !TaskStatusEnum.EXECUTE_FAILURE.getCode().equals(taskLog.getStatus());
     }
 }

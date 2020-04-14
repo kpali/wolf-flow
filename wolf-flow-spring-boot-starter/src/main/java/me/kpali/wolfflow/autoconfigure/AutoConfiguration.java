@@ -16,7 +16,8 @@ import org.springframework.context.annotation.Import;
 @EnableConfigurationProperties({SchedulerProperties.class,
         ExecutorProperties.class,
         ClusterProperties.class})
-@Import({SchedulerConfiguration.class,
+@Import({EventPublisherConfiguration.class,
+        SchedulerConfiguration.class,
         ExecutorConfiguration.class,
         QuerierConfiguration.class,
         LoggerConfiguration.class,

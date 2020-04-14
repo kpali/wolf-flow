@@ -108,4 +108,13 @@ public interface ITaskLogger {
      * @throws TaskLogException
      */
     void deleteTaskStatus(Long taskId) throws TaskLogException;
+
+    /**
+     * 查询是否正在处理中
+     *
+     * @param taskLog
+     * @return
+     * @throws TaskLogException
+     */
+    boolean isInProgress(TaskLog taskLog) throws TaskLogException;
 }

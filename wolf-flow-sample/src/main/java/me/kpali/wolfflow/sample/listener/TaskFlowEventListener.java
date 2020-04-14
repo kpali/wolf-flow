@@ -1,7 +1,7 @@
 package me.kpali.wolfflow.sample.listener;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import me.kpali.wolfflow.core.event.TaskFlowScheduleStatusChangeEvent;
+import me.kpali.wolfflow.core.event.ScheduleStatusChangeEvent;
 import me.kpali.wolfflow.core.event.TaskFlowStatusChangeEvent;
 import me.kpali.wolfflow.core.event.TaskStatusChangeEvent;
 import org.springframework.context.event.EventListener;
@@ -18,7 +18,7 @@ public class TaskFlowEventListener {
     private ObjectMapper objectMapper = new ObjectMapper();
 
     @EventListener
-    public void taskFlowScheduleStatusChange(TaskFlowScheduleStatusChangeEvent event) {
+    public void taskFlowScheduleStatusChange(ScheduleStatusChangeEvent event) {
         // 任务流调度状态变更监听，主要为定时任务流，状态有[加入调度、更新调度、调度失败]等
     }
 

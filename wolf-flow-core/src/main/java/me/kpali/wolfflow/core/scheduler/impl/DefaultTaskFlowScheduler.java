@@ -5,11 +5,15 @@ import me.kpali.wolfflow.core.cluster.IClusterController;
 import me.kpali.wolfflow.core.config.SchedulerConfig;
 import me.kpali.wolfflow.core.enums.TaskFlowScheduleStatusEnum;
 import me.kpali.wolfflow.core.enums.TaskFlowStatusEnum;
-import me.kpali.wolfflow.core.event.TaskFlowScheduleStatusChangeEvent;
-import me.kpali.wolfflow.core.event.TaskFlowStatusChangeEvent;
+import me.kpali.wolfflow.core.enums.TaskStatusEnum;
+import me.kpali.wolfflow.core.event.ScheduleStatusChangeEvent;
+import me.kpali.wolfflow.core.event.ScheduleStatusEventPublisher;
+import me.kpali.wolfflow.core.event.TaskFlowStatusEventPublisher;
+import me.kpali.wolfflow.core.event.TaskStatusEventPublisher;
 import me.kpali.wolfflow.core.exception.*;
 import me.kpali.wolfflow.core.executor.ITaskFlowExecutor;
 import me.kpali.wolfflow.core.logger.ITaskFlowLogger;
+import me.kpali.wolfflow.core.logger.ITaskLogger;
 import me.kpali.wolfflow.core.model.*;
 import me.kpali.wolfflow.core.querier.ITaskFlowQuerier;
 import me.kpali.wolfflow.core.scheduler.ITaskFlowScheduler;
@@ -18,7 +22,6 @@ import org.quartz.JobKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -40,7 +43,13 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
     private SchedulerConfig schedulerConfig;
 
     @Autowired
-    private ApplicationEventPublisher eventPublisher;
+    private TaskFlowStatusEventPublisher taskFlowStatusEventPublisher;
+
+    @Autowired
+    private TaskStatusEventPublisher taskStatusEventPublisher;
+
+    @Autowired
+    private ScheduleStatusEventPublisher scheduleStatusEventPublisher;
 
     private boolean started = false;
     private final Object lock = new Object();
@@ -55,6 +64,9 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
 
     @Autowired
     private ITaskFlowLogger taskFlowLogger;
+
+    @Autowired
+    private ITaskLogger taskLogger;
 
     @Autowired
     private IClusterController clusterController;
@@ -118,16 +130,16 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                             try {
                                 this.taskFlowExecutor.beforeExecute(executeTaskFlow, taskFlowContext);
                                 // 任务流执行中
-                                this.publishTaskFlowStatusChangeEvent(executeTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTING.getCode(), null, true);
+                                this.taskFlowStatusEventPublisher.publishEvent(executeTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTING.getCode(), null, true);
                                 // 开始执行
                                 this.taskFlowExecutor.execute(executeTaskFlow, taskFlowContext);
                                 this.taskFlowExecutor.afterExecute(executeTaskFlow, taskFlowContext);
                                 // 任务流执行成功
-                                this.publishTaskFlowStatusChangeEvent(executeTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode(), null, true);
+                                this.taskFlowStatusEventPublisher.publishEvent(executeTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode(), null, true);
                             } catch (TaskFlowExecuteException | TaskFlowInterruptedException e) {
                                 log.error("任务流执行失败！任务流ID：" + executeTaskFlow.getId() + " 异常信息：" + e.getMessage(), e);
                                 // 任务流执行失败
-                                this.publishTaskFlowStatusChangeEvent(executeTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage(), true);
+                                this.taskFlowStatusEventPublisher.publishEvent(executeTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage(), true);
                             }
                         });
                     }
@@ -187,31 +199,31 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                                 if (!MyDynamicScheduler.checkExists(name, jobGroup)) {
                                     MyDynamicScheduler.addJob(name, jobGroup, cronExpression);
                                     // 任务流加入调度
-                                    TaskFlowScheduleStatusChangeEvent taskFlowJoinScheduleEvent = new TaskFlowScheduleStatusChangeEvent(
+                                    ScheduleStatusChangeEvent joinScheduleEvent = new ScheduleStatusChangeEvent(
                                             this,
                                             taskFlow.getId(),
                                             taskFlow.getCron(),
                                             TaskFlowScheduleStatusEnum.JOIN.getCode());
-                                    this.eventPublisher.publishEvent(taskFlowJoinScheduleEvent);
+                                    this.scheduleStatusEventPublisher.publishEvent(joinScheduleEvent);
                                 } else {
                                     MyDynamicScheduler.updateJobCron(name, jobGroup, cronExpression);
                                     // 任务流更新调度
-                                    TaskFlowScheduleStatusChangeEvent taskFlowUpdateScheduleEvent = new TaskFlowScheduleStatusChangeEvent(
+                                    ScheduleStatusChangeEvent updateScheduleEvent = new ScheduleStatusChangeEvent(
                                             this,
                                             taskFlow.getId(),
                                             taskFlow.getCron(),
                                             TaskFlowScheduleStatusEnum.UPDATE.getCode());
-                                    this.eventPublisher.publishEvent(taskFlowUpdateScheduleEvent);
+                                    this.scheduleStatusEventPublisher.publishEvent(updateScheduleEvent);
                                 }
                             } catch (Exception e) {
                                 log.error("定时任务流调度失败，任务流ID：" + taskFlow.getId() + "，失败原因：" + e.getMessage());
                                 // 任务流调度失败
-                                TaskFlowScheduleStatusChangeEvent taskFlowScheduleFailEvent = new TaskFlowScheduleStatusChangeEvent(
+                                ScheduleStatusChangeEvent scheduleFailEvent = new ScheduleStatusChangeEvent(
                                         this,
                                         taskFlow.getId(),
                                         taskFlow.getCron(),
                                         TaskFlowScheduleStatusEnum.FAIL.getCode());
-                                this.eventPublisher.publishEvent(taskFlowScheduleFailEvent);
+                                this.scheduleStatusEventPublisher.publishEvent(scheduleFailEvent);
                             }
                         }
                     } else {
@@ -315,12 +327,12 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
         }
 
         // 任务流等待执行
-        this.publishTaskFlowStatusChangeEvent(taskFlow, taskFlowContextWrapper.getContext(), TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode(), null, false);
+        this.taskFlowStatusEventPublisher.publishEvent(taskFlow, taskFlowContextWrapper.getContext(), TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode(), null, false);
 
         // 插入执行请求队列
         boolean success = this.clusterController.execRequestOffer(new TaskFlowExecRequest(taskFlow, taskFlowContextWrapper.getContext()));
         if (!success) {
-            this.publishTaskFlowStatusChangeEvent(taskFlow, taskFlowContextWrapper.getContext(), TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), "插入执行请求队列失败", true);
+            this.taskFlowStatusEventPublisher.publishEvent(taskFlow, taskFlowContextWrapper.getContext(), TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), "插入执行请求队列失败", true);
         }
 
         return taskFlowLogId;
@@ -328,95 +340,69 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
 
     @Override
     public void stop(Long taskFlowLogId) throws TaskFlowStopException {
-        TaskFlowLog taskFlowLog = null;
-        boolean stopping = false;
-        boolean locked = false;
+        boolean taskFlowLogLocked = false;
         try {
-            locked = this.clusterController.tryLock(
+            taskFlowLogLocked = this.clusterController.tryLock(
                     ClusterConstants.TASK_FLOW_LOG_LOCK,
                     ClusterConstants.LOG_LOCK_WAIT_TIME,
                     ClusterConstants.LOG_LOCK_LEASE_TIME,
                     TimeUnit.SECONDS);
-            if (!locked) {
+            if (!taskFlowLogLocked) {
                 throw new TryLockException("获取任务流日志记录锁失败！");
             }
-            taskFlowLog = this.taskFlowLogger.get(taskFlowLogId);
-            // 如果任务流正在处理中，则更新任务流状态为停止中
+            TaskFlowLog taskFlowLog = this.taskFlowLogger.get(taskFlowLogId);
             if (taskFlowLog != null && this.taskFlowLogger.isInProgress(taskFlowLog)) {
-                stopping = true;
-                if (!this.clusterController.stopRequestContains(taskFlowLogId)) {
-                    this.clusterController.stopRequestAdd(taskFlowLogId);
+                // 检查任务流所在节点是否存活
+                TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(taskFlowLog.getTaskFlowContext());
+                String nodeId = taskFlowContextWrapper.getValue(ContextKey.EXECUTED_BY_NODE, String.class);
+                if (this.clusterController.isNodeAlive(nodeId)) {
+                    // 任务流所在节点存活，则发送停止请求
+                    if (!this.clusterController.stopRequestContains(taskFlowLogId)) {
+                        this.clusterController.stopRequestAdd(taskFlowLogId);
+                    }
+                    // 修改任务流状态为停止中
+                    taskFlowLog.setStatus(TaskFlowStatusEnum.STOPPING.getCode());
+                    taskFlowLog.setMessage(null);
+                } else {
+                    // 任务流所在节点已消亡，则强制停止任务流
+                    // 修改进行中的任务状态为执行失败
+                    boolean taskLogLocked = false;
+                    try {
+                        taskLogLocked = this.clusterController.tryLock(
+                                ClusterConstants.TASK_LOG_LOCK,
+                                ClusterConstants.LOG_LOCK_WAIT_TIME,
+                                ClusterConstants.LOG_LOCK_LEASE_TIME,
+                                TimeUnit.SECONDS);
+                        if (!taskLogLocked) {
+                            throw new TryLockException("获取任务日志记录锁失败！");
+                        }
+                        List<TaskLog> taskLogList = this.taskLogger.list(taskFlowLogId);
+                        if (taskLogList != null) {
+                            for (TaskLog taskLog : taskLogList) {
+                                if (this.taskLogger.isInProgress(taskLog)) {
+                                    taskLog.setStatus(TaskStatusEnum.EXECUTE_FAILURE.getCode());
+                                    taskLog.setMessage("任务被终止执行");
+                                    this.taskLogger.update(taskLog);
+                                    this.taskStatusEventPublisher.publishEvent(taskLog.getTask(), taskLog.getTaskFlowId(), taskLog.getTaskFlowContext(), taskLog.getStatus(), taskLog.getMessage(), false);
+                                }
+                            }
+                        }
+                    } finally {
+                        if (taskLogLocked) {
+                            this.clusterController.unlock(ClusterConstants.TASK_LOG_LOCK);
+                        }
+                    }
+                    // 修改任务流状态为执行失败
+                    taskFlowLog.setStatus(TaskFlowStatusEnum.EXECUTE_FAILURE.getCode());
+                    taskFlowLog.setMessage("任务流被终止执行");
                 }
-                taskFlowLog.setStatus(TaskFlowStatusEnum.STOPPING.getCode());
                 this.taskFlowLogger.update(taskFlowLog);
+                this.taskFlowStatusEventPublisher.publishEvent(taskFlowLog.getTaskFlow(), taskFlowLog.getTaskFlowContext(), taskFlowLog.getStatus(), taskFlowLog.getMessage(), false);
             }
         } finally {
-            if (locked) {
+            if (taskFlowLogLocked) {
                 this.clusterController.unlock(ClusterConstants.TASK_FLOW_LOG_LOCK);
             }
         }
-        if (stopping) {
-            TaskFlowStatus taskFlowStatus = new TaskFlowStatus();
-            taskFlowStatus.setTaskFlow(taskFlowLog.getTaskFlow());
-            taskFlowStatus.setTaskFlowContext(taskFlowLog.getTaskFlowContext());
-            taskFlowStatus.setStatus(taskFlowLog.getStatus());
-            taskFlowStatus.setMessage(taskFlowLog.getMessage());
-            this.publishTaskFlowStatusChangeEvent(taskFlowStatus.getTaskFlow(), taskFlowStatus.getTaskFlowContext(), TaskFlowStatusEnum.STOPPING.getCode(), null, false);
-        }
-    }
-
-    /**
-     * 发布任务流状态变更事件
-     *
-     * @param taskFlow
-     * @param taskFlowContext
-     * @param status
-     * @param message
-     * @param record
-     */
-    private void publishTaskFlowStatusChangeEvent(TaskFlow taskFlow, Map<String, Object> taskFlowContext, String status, String message, boolean record) {
-        TaskFlowStatus taskFlowStatus = new TaskFlowStatus();
-        taskFlowStatus.setTaskFlow(taskFlow);
-        taskFlowStatus.setTaskFlowContext(taskFlowContext);
-        taskFlowStatus.setStatus(status);
-        taskFlowStatus.setMessage(message);
-        if (record) {
-            boolean locked = false;
-            try {
-                locked = this.clusterController.tryLock(
-                        ClusterConstants.TASK_FLOW_LOG_LOCK,
-                        ClusterConstants.LOG_LOCK_WAIT_TIME,
-                        ClusterConstants.LOG_LOCK_LEASE_TIME,
-                        TimeUnit.SECONDS);
-                if (!locked) {
-                    throw new TryLockException("获取任务流日志记录锁失败！");
-                }
-                TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(taskFlowContext);
-                Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
-                TaskFlowLog taskFlowLog = this.taskFlowLogger.get(taskFlowLogId);
-                boolean isNewLog = false;
-                if (taskFlowLog == null) {
-                    isNewLog = true;
-                    taskFlowLog = new TaskFlowLog();
-                    taskFlowLog.setLogId(taskFlowLogId);
-                    taskFlowLog.setTaskFlowId(taskFlow.getId());
-                }
-                taskFlowLog.setTaskFlow(taskFlow);
-                taskFlowLog.setTaskFlowContext(taskFlowContext);
-                taskFlowLog.setStatus(status);
-                taskFlowLog.setMessage(message);
-                if (isNewLog) {
-                    this.taskFlowLogger.add(taskFlowLog);
-                } else {
-                    this.taskFlowLogger.update(taskFlowLog);
-                }
-            } finally {
-                if (locked) {
-                    this.clusterController.unlock(ClusterConstants.TASK_FLOW_LOG_LOCK);
-                }
-            }
-        }
-        TaskFlowStatusChangeEvent taskFlowStatusChangeEvent = new TaskFlowStatusChangeEvent(this, taskFlowStatus);
-        this.eventPublisher.publishEvent(taskFlowStatusChangeEvent);
     }
 }
