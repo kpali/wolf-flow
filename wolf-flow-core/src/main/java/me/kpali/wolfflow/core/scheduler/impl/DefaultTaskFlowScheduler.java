@@ -24,10 +24,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 
 /**
@@ -196,8 +193,15 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                                 if (cronExpression == null || cronExpression.length() == 0) {
                                     throw new InvalidCronExpressionException("cron表达式不能为空");
                                 }
+                                Map<String, Object> jobDataMap = new HashMap<>();
+                                if (taskFlow.getFromTaskId() != null) {
+                                    jobDataMap.put(ContextKey.FROM_TASK_ID, taskFlow.getFromTaskId());
+                                }
+                                if (taskFlow.getToTaskId() != null) {
+                                    jobDataMap.put(ContextKey.TO_TASK_ID, taskFlow.getToTaskId());
+                                }
                                 if (!MyDynamicScheduler.checkExists(name, jobGroup)) {
-                                    MyDynamicScheduler.addJob(name, jobGroup, cronExpression);
+                                    MyDynamicScheduler.addJob(name, jobGroup, cronExpression, jobDataMap);
                                     // 任务流加入调度
                                     ScheduleStatusChangeEvent joinScheduleEvent = new ScheduleStatusChangeEvent(
                                             this,
@@ -206,7 +210,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                                             TaskFlowScheduleStatusEnum.JOIN.getCode());
                                     this.scheduleStatusEventPublisher.publishEvent(joinScheduleEvent);
                                 } else {
-                                    MyDynamicScheduler.updateJobCron(name, jobGroup, cronExpression);
+                                    MyDynamicScheduler.updateJobCron(name, jobGroup, cronExpression, jobDataMap);
                                     // 任务流更新调度
                                     ScheduleStatusChangeEvent updateScheduleEvent = new ScheduleStatusChangeEvent(
                                             this,

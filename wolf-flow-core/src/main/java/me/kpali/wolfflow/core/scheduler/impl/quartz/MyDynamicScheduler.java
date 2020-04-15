@@ -8,6 +8,7 @@ import org.springframework.util.Assert;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -40,33 +41,33 @@ public class MyDynamicScheduler {
         return scheduler.checkExists(triggerKey);
     }
 
-    public static void addJob(String jobName, String jobGroup, String cronExpression) throws SchedulerException {
+    public static void addJob(String jobName, String jobGroup, String cronExpression, Map<String, Object> jobDataMap) throws SchedulerException {
         TriggerKey triggerKey = TriggerKey.triggerKey(jobName, jobGroup);
         JobKey jobKey = new JobKey(jobName, jobGroup);
         if (!scheduler.checkExists(triggerKey)) {
             CronScheduleBuilder cronScheduleBuilder = CronScheduleBuilder.cronSchedule(cronExpression).withMisfireHandlingInstructionDoNothing();
             CronTrigger cronTrigger = (CronTrigger)TriggerBuilder.newTrigger().withIdentity(triggerKey).withSchedule(cronScheduleBuilder).build();
             Class<? extends Job> jobClass_ = MyQuartzJobBean.class;
-            JobDetail jobDetail = JobBuilder.newJob(jobClass_).withIdentity(jobKey).build();
+            JobDetail jobDetail = JobBuilder.newJob(jobClass_).withIdentity(jobKey).usingJobData(new JobDataMap(jobDataMap)).build();
             Date date = scheduler.scheduleJob(jobDetail, cronTrigger);
-            log.info("Quartz 新增任务成功 -> jobKey:{}",  jobKey);
+            log.info("Quartz 新增任务成功 -> jobName:{}, jobGroup:{}, cronExpression:{}", jobName, jobGroup, cronExpression);
         }
     }
 
     public static void removeJob(String jobName, String jobGroup) throws SchedulerException {
         JobKey jobKey = new JobKey(jobName, jobGroup);
         scheduler.deleteJob(jobKey);
-        log.info("Quartz 删除任务成功 -> jobKey:{}", jobKey);
+        log.info("Quartz 删除任务成功 -> jobName:{}, jobGroup:{}", jobName, jobGroup);
     }
 
-    public static void updateJobCron(String jobName, String jobGroup, String cronExpression) throws SchedulerException {
+    public static void updateJobCron(String jobName, String jobGroup, String cronExpression, Map<String, Object> jobDataMap) throws SchedulerException {
         TriggerKey triggerKey = TriggerKey.triggerKey(jobName, jobGroup);
         if (scheduler.checkExists(triggerKey)) {
             CronTrigger oldTrigger = (CronTrigger) scheduler.getTrigger(triggerKey);
             String oldCron = oldTrigger.getCronExpression();
             if (!oldCron.equals(cronExpression)) {
                 CronScheduleBuilder cronScheduleBuilder = CronScheduleBuilder.cronSchedule(cronExpression).withMisfireHandlingInstructionDoNothing();
-                oldTrigger = (CronTrigger) oldTrigger.getTriggerBuilder().withIdentity(triggerKey).withSchedule(cronScheduleBuilder).build();
+                oldTrigger = (CronTrigger) oldTrigger.getTriggerBuilder().withIdentity(triggerKey).usingJobData(new JobDataMap(jobDataMap)).withSchedule(cronScheduleBuilder).build();
                 scheduler.rescheduleJob(triggerKey, oldTrigger);
                 log.info("Quartz 更新任务成功 -> jobName:{}, jobGroup:{}, cronExpression:{}", jobName, jobGroup, cronExpression);
             }

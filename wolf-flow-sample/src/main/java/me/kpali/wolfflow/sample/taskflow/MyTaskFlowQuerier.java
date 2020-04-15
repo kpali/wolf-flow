@@ -54,7 +54,6 @@ public class MyTaskFlowQuerier extends DefaultTaskFlowQuerier {
 
         TaskFlow taskFlow = new TaskFlow();
         taskFlow.setId(100L);
-        //taskFlow.setCron("0 * * * * ?");
         taskFlow.setTaskList(new ArrayList<>());
         taskFlow.setLinkList(new ArrayList<>());
 
@@ -105,6 +104,9 @@ public class MyTaskFlowQuerier extends DefaultTaskFlowQuerier {
         taskFlow.getLinkList().add(new Link(5L, 9L));
         taskFlow.getLinkList().add(new Link(8L, 9L));
         taskFlow.getLinkList().add(new Link(10L, 11L));
+
+        //taskFlow.setCron("0 * * * * ?");
+        //taskFlow.setFromTaskId(1L);
 
         taskFlowList.add(taskFlow);
 
