@@ -15,6 +15,8 @@
         <jackson.version>2.10.1</jackson.version>
         <quartz.version>2.3.0</quartz.version>
         <guava.version>20.0</guava.version>
+        <testng.version>7.1.0</testng.version>
+        <jmockit.version>1.49</jmockit.version>
     </properties>
 
     <dependencies>
@@ -47,6 +49,22 @@
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <version>${guava.version}</version>
+        </dependency>
+
+        <!-- test -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.testng</groupId>
+            <artifactId>testng</artifactId>
+            <version>${testng.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jmockit</groupId>
+            <artifactId>jmockit</artifactId>
+            <version>${jmockit.version}</version>
         </dependency>
     </dependencies>
 
