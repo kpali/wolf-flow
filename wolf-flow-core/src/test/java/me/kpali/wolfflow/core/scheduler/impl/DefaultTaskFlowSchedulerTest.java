@@ -5,16 +5,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import me.kpali.wolfflow.core.BaseTest;
 import me.kpali.wolfflow.core.enums.TaskFlowStatusEnum;
 import me.kpali.wolfflow.core.enums.TaskStatusEnum;
-import me.kpali.wolfflow.core.exception.TaskExecuteException;
 import me.kpali.wolfflow.core.exception.TaskFlowQueryException;
-import me.kpali.wolfflow.core.exception.TaskInterruptedException;
-import me.kpali.wolfflow.core.exception.TaskStopException;
 import me.kpali.wolfflow.core.logger.ITaskFlowLogger;
 import me.kpali.wolfflow.core.logger.ITaskLogger;
 import me.kpali.wolfflow.core.model.*;
 import me.kpali.wolfflow.core.querier.impl.DefaultTaskFlowQuerier;
 import me.kpali.wolfflow.core.scheduler.ITaskFlowScheduler;
-import me.kpali.wolfflow.core.util.SpringContextUtil;
 import mockit.Mock;
 import mockit.MockUp;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,9 +19,8 @@ import org.testng.annotations.Test;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
 
 public class DefaultTaskFlowSchedulerTest extends BaseTest {
 
@@ -194,7 +189,7 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
         long taskFlowId = 100L;
         long taskFlowLogId = this.taskFlowScheduler.trigger(taskFlowId, null);
         try {
-            Thread.sleep(3 * 1000);
+            Thread.sleep(1000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -233,42 +228,6 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
             System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(taskStatusList));
         } catch (JsonProcessingException e) {
             e.printStackTrace();
-        }
-    }
-
-    class MyTask extends Task {
-        private boolean requiredToStop = false;
-
-        @Override
-        public void execute(Map<String, Object> taskFlowContext) throws TaskExecuteException, TaskInterruptedException {
-            ITaskLogger taskLogger = SpringContextUtil.getBean(ITaskLogger.class);
-            TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(taskFlowContext);
-            Map<String, Object> taskContext = taskFlowContextWrapper.getTaskContext(this.getId().toString());
-            TaskContextWrapper taskContextWrapper = new TaskContextWrapper(taskContext);
-            Long taskLogId = taskContextWrapper.getValue(ContextKey.TASK_LOG_ID, Long.class);
-            String taskLogFileId = taskContextWrapper.getValue(ContextKey.TASK_LOG_FILE_ID, String.class);
-            taskLogger.log(taskLogFileId, "任务开始执行", false);
-            taskLogger.log(taskLogFileId, "日志第二行\r日志第三行\n日志第四行\r\n日志第五行", false);
-            int totalTime = 0;
-            int timeout = 2000;
-            while (totalTime < timeout) {
-                try {
-                    if (requiredToStop) {
-                        taskLogger.log(taskLogFileId, "任务被终止执行", true);
-                        throw new TaskInterruptedException("任务被终止执行");
-                    }
-                    Thread.sleep(1000);
-                    totalTime += 1000;
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            taskLogger.log(taskLogFileId, "任务执行完成", true);
-        }
-
-        @Override
-        public void stop(Map<String, Object> taskFlowContext) throws TaskStopException {
-            this.requiredToStop = true;
         }
     }
 }
