@@ -15,7 +15,6 @@ public class SchedulerProperties {
     private Integer cronScanLeaseTime = 60;
     private Integer corePoolSize = 10;
     private Integer maximumPoolSize = 10;
-    private Boolean allowParallel = false;
 
     public Integer getExecRequestScanInterval() {
         return execRequestScanInterval;
@@ -63,13 +62,5 @@ public class SchedulerProperties {
 
     public void setMaximumPoolSize(Integer maximumPoolSize) {
         this.maximumPoolSize = maximumPoolSize;
-    }
-
-    public Boolean getAllowParallel() {
-        return allowParallel;
-    }
-
-    public void setAllowParallel(Boolean allowParallel) {
-        this.allowParallel = allowParallel;
     }
 }

@@ -1,4 +1,4 @@
-package me.kpali.wolfflow.sample.listener;
+package me.kpali.wolfflow.core.listener;
 
 import me.kpali.wolfflow.core.event.ScheduleStatusChangeEvent;
 import me.kpali.wolfflow.core.event.TaskFlowStatusChangeEvent;
@@ -6,12 +6,6 @@ import me.kpali.wolfflow.core.event.TaskStatusChangeEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-/**
- * 任务流事件监听
- * （可选）
- *
- * @author kpali
- */
 @Component
 public class TaskFlowEventListener {
     @EventListener

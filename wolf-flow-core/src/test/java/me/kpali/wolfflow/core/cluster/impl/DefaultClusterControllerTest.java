@@ -1,37 +1,23 @@
 package me.kpali.wolfflow.core.cluster.impl;
 
+import me.kpali.wolfflow.core.BaseTest;
 import me.kpali.wolfflow.core.cluster.IClusterController;
-import me.kpali.wolfflow.core.config.ClusterConfig;
 import me.kpali.wolfflow.core.model.TaskFlowExecRequest;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.testng.AbstractTestNGSpringContextTests;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.*;
 
-@SpringBootTest
-public class DefaultClusterControllerTest extends AbstractTestNGSpringContextTests {
+public class DefaultClusterControllerTest extends BaseTest {
 
     @Autowired
     IClusterController clusterController;
 
-    @Autowired
-    ClusterConfig clusterConfig;
-
     @BeforeClass
     public void setUp() {
-        this.clusterConfig.setNodeHeartbeatInterval(30);
-        this.clusterConfig.setNodeHeartbeatDuration(90);
-    }
-
-    @Test
-    public void testStartup() {
-        this.clusterController.startup();
     }
 
     @Test
@@ -44,9 +30,9 @@ public class DefaultClusterControllerTest extends AbstractTestNGSpringContextTes
         this.clusterController.heartbeat();
     }
 
-    @Test
+    @Test(dependsOnMethods = {"testHeartbeat"})
     public void testIsNodeAlive() {
-        assertEquals(this.clusterController.isNodeAlive(this.clusterController.getNodeId()), true);
+        assertTrue(this.clusterController.isNodeAlive(this.clusterController.getNodeId()));
     }
 
     @Test
@@ -85,6 +71,6 @@ public class DefaultClusterControllerTest extends AbstractTestNGSpringContextTes
         assertEquals(isContains, true);
         this.clusterController.stopRequestRemove(taskFlowLogId);
         isContains = this.clusterController.stopRequestContains(taskFlowLogId);
-        assertEquals(isContains, false);
+        assertFalse(isContains);
     }
 }
