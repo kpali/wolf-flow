@@ -35,6 +35,7 @@ public class DefaultClusterController implements IClusterController {
     private Map<String, Lock> lockMap = new HashMap<>();
     private Queue<TaskFlowExecRequest> taskFlowExecRequest = new LinkedList<>();
     private Set<Long> taskFlowStopRequest = new HashSet<>();
+    private Set<Long> taskManualConfirmed = new HashSet<>();
     private Map<String, Date> heartbeatMap = new HashMap<>();
 
     private boolean started = false;
@@ -178,6 +179,27 @@ public class DefaultClusterController implements IClusterController {
     public void stopRequestRemove(Long taskFlowLogId) {
         synchronized (lock) {
             taskFlowStopRequest.remove(taskFlowLogId);
+        }
+    }
+
+    @Override
+    public void manualConfirmedAdd(Long taskLogId) {
+        synchronized (lock) {
+            taskManualConfirmed.add(taskLogId);
+        }
+    }
+
+    @Override
+    public Boolean manualConfirmedContains(Long taskLogId) {
+        synchronized (lock) {
+            return taskManualConfirmed.contains(taskLogId);
+        }
+    }
+
+    @Override
+    public void manualConfirmedRemove(Long taskLogId) {
+        synchronized (lock) {
+            taskManualConfirmed.remove(taskLogId);
         }
     }
 }

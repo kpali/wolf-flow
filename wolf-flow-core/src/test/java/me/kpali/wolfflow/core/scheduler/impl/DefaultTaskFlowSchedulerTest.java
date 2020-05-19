@@ -3,6 +3,7 @@ package me.kpali.wolfflow.core.scheduler.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import me.kpali.wolfflow.core.BaseTest;
+import me.kpali.wolfflow.core.cluster.IClusterController;
 import me.kpali.wolfflow.core.enums.TaskFlowStatusEnum;
 import me.kpali.wolfflow.core.enums.TaskStatusEnum;
 import me.kpali.wolfflow.core.exception.TaskFlowQueryException;
@@ -30,12 +31,16 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
     ITaskFlowLogger taskFlowLogger;
     @Autowired
     ITaskLogger taskLogger;
+    @Autowired
+    IClusterController clusterController;
 
     @BeforeClass
     public void setUp() {
         new MockUp<DefaultTaskFlowQuerier>() {
             @Mock
             public TaskFlow getTaskFlow(Long taskFlowId) throws TaskFlowQueryException {
+                List<TaskFlow> taskFlowList = new ArrayList<>();
+
                 /**
                  * 示例拓扑图：
                  *                    --> 9
@@ -48,66 +53,86 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
                  *                --> 7
                  * 10 --> 11
                  */
+                TaskFlow taskFlow1 = new TaskFlow();
+                taskFlow1.setId(1L);
+                taskFlow1.setTaskList(new ArrayList<>());
+                taskFlow1.setLinkList(new ArrayList<>());
 
-                List<TaskFlow> taskFlowList = new ArrayList<>();
+                AutoTask autoTask1 = new AutoTask();
+                autoTask1.setId(1L);
+                AutoTask autoTask2 = new AutoTask();
+                autoTask2.setId(2L);
+                AutoTask autoTask3 = new AutoTask();
+                autoTask3.setId(3L);
+                AutoTask autoTask4 = new AutoTask();
+                autoTask4.setId(4L);
+                AutoTask autoTask5 = new AutoTask();
+                autoTask5.setId(5L);
+                AutoTask autoTask6 = new AutoTask();
+                autoTask6.setId(6L);
+                AutoTask autoTask7 = new AutoTask();
+                autoTask7.setId(7L);
+                AutoTask autoTask8 = new AutoTask();
+                autoTask8.setId(8L);
+                AutoTask autoTask9 = new AutoTask();
+                autoTask9.setId(9L);
+                AutoTask autoTask10 = new AutoTask();
+                autoTask10.setId(10L);
+                AutoTask autoTask11 = new AutoTask();
+                autoTask11.setId(11L);
+                taskFlow1.getTaskList().add(autoTask3);
+                taskFlow1.getTaskList().add(autoTask5);
+                taskFlow1.getTaskList().add(autoTask1);
+                taskFlow1.getTaskList().add(autoTask10);
+                taskFlow1.getTaskList().add(autoTask9);
+                taskFlow1.getTaskList().add(autoTask6);
+                taskFlow1.getTaskList().add(autoTask4);
+                taskFlow1.getTaskList().add(autoTask2);
+                taskFlow1.getTaskList().add(autoTask7);
+                taskFlow1.getTaskList().add(autoTask11);
+                taskFlow1.getTaskList().add(autoTask8);
 
-                TaskFlow taskFlow = new TaskFlow();
-                taskFlow.setId(100L);
-                taskFlow.setTaskList(new ArrayList<>());
-                taskFlow.setLinkList(new ArrayList<>());
+                taskFlow1.getLinkList().add(new Link(1L, 2L));
+                taskFlow1.getLinkList().add(new Link(1L, 3L));
+                taskFlow1.getLinkList().add(new Link(2L, 3L));
+                taskFlow1.getLinkList().add(new Link(2L, 4L));
+                taskFlow1.getLinkList().add(new Link(3L, 4L));
+                taskFlow1.getLinkList().add(new Link(3L, 5L));
+                taskFlow1.getLinkList().add(new Link(5L, 6L));
+                taskFlow1.getLinkList().add(new Link(5L, 7L));
+                taskFlow1.getLinkList().add(new Link(6L, 7L));
+                taskFlow1.getLinkList().add(new Link(5L, 8L));
+                taskFlow1.getLinkList().add(new Link(5L, 9L));
+                taskFlow1.getLinkList().add(new Link(8L, 9L));
+                taskFlow1.getLinkList().add(new Link(10L, 11L));
 
-                MyTask myTask1 = new MyTask();
-                myTask1.setId(1L);
-                MyTask myTask2 = new MyTask();
-                myTask2.setId(2L);
-                MyTask myTask3 = new MyTask();
-                myTask3.setId(3L);
-                MyTask myTask4 = new MyTask();
-                myTask4.setId(4L);
-                MyTask myTask5 = new MyTask();
-                myTask5.setId(5L);
-                MyTask myTask6 = new MyTask();
-                myTask6.setId(6L);
-                MyTask myTask7 = new MyTask();
-                myTask7.setId(7L);
-                MyTask myTask8 = new MyTask();
-                myTask8.setId(8L);
-                MyTask myTask9 = new MyTask();
-                myTask9.setId(9L);
-                MyTask myTask10 = new MyTask();
-                myTask10.setId(10L);
-                MyTask myTask11 = new MyTask();
-                myTask11.setId(11L);
-                taskFlow.getTaskList().add(myTask3);
-                taskFlow.getTaskList().add(myTask5);
-                taskFlow.getTaskList().add(myTask1);
-                taskFlow.getTaskList().add(myTask10);
-                taskFlow.getTaskList().add(myTask9);
-                taskFlow.getTaskList().add(myTask6);
-                taskFlow.getTaskList().add(myTask4);
-                taskFlow.getTaskList().add(myTask2);
-                taskFlow.getTaskList().add(myTask7);
-                taskFlow.getTaskList().add(myTask11);
-                taskFlow.getTaskList().add(myTask8);
+                //taskFlow1.setCron("0 * * * * ?");
+                //taskFlow1.setFromTaskId(1L);
 
-                taskFlow.getLinkList().add(new Link(1L, 2L));
-                taskFlow.getLinkList().add(new Link(1L, 3L));
-                taskFlow.getLinkList().add(new Link(2L, 3L));
-                taskFlow.getLinkList().add(new Link(2L, 4L));
-                taskFlow.getLinkList().add(new Link(3L, 4L));
-                taskFlow.getLinkList().add(new Link(3L, 5L));
-                taskFlow.getLinkList().add(new Link(5L, 6L));
-                taskFlow.getLinkList().add(new Link(5L, 7L));
-                taskFlow.getLinkList().add(new Link(6L, 7L));
-                taskFlow.getLinkList().add(new Link(5L, 8L));
-                taskFlow.getLinkList().add(new Link(5L, 9L));
-                taskFlow.getLinkList().add(new Link(8L, 9L));
-                taskFlow.getLinkList().add(new Link(10L, 11L));
+                taskFlowList.add(taskFlow1);
 
-                //taskFlow.setCron("0 * * * * ?");
-                //taskFlow.setFromTaskId(1L);
+                /**
+                 * 示例拓扑图：
+                 *
+                 * 12（手工确认） --> 13
+                 */
 
-                taskFlowList.add(taskFlow);
+                TaskFlow taskFlow2 = new TaskFlow();
+                taskFlow2.setId(2L);
+                taskFlow2.setTaskList(new ArrayList<>());
+                taskFlow2.setLinkList(new ArrayList<>());
+
+                ManualTask manualTask12 = new ManualTask();
+                manualTask12.setId(12L);
+                AutoTask autoTask13 = new AutoTask();
+                autoTask13.setId(13L);
+
+                taskFlow2.getTaskList().add(autoTask13);
+                taskFlow2.getTaskList().add(manualTask12);
+
+                taskFlow2.getLinkList().add(new Link(12L, 13L));
+
+                taskFlowList.add(taskFlow2);
 
                 for (TaskFlow tf : taskFlowList) {
                     if (tf.getId().equals(taskFlowId)) {
@@ -121,7 +146,7 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
 
     @Test
     public void testTriggerSingle() {
-        long taskFlowId = 100L;
+        long taskFlowId = 1L;
         long taskId = 10L;
         long taskFlowLogId = this.taskFlowScheduler.trigger(taskFlowId, taskId, null);
         this.waitDoneAndPrintLog(taskFlowId, taskFlowLogId);
@@ -138,7 +163,7 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
 
     @Test(dependsOnMethods = {"testTriggerSingle"})
     public void testTriggerFrom() {
-        long taskFlowId = 100L;
+        long taskFlowId = 1L;
         long taskId = 10L;
         long taskFlowLogId = this.taskFlowScheduler.triggerFrom(taskFlowId, taskId, null);
         this.waitDoneAndPrintLog(taskFlowId, taskFlowLogId);
@@ -155,7 +180,7 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
 
     @Test(dependsOnMethods = {"testTriggerFrom"})
     public void testTriggerTo() {
-        long taskFlowId = 100L;
+        long taskFlowId = 1L;
         long taskId = 11L;
         long taskFlowLogId = this.taskFlowScheduler.triggerTo(taskFlowId, taskId, null);
         this.waitDoneAndPrintLog(taskFlowId, taskFlowLogId);
@@ -172,7 +197,7 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
 
     @Test(dependsOnMethods = {"testTriggerTo"})
     public void testTrigger() {
-        long taskFlowId = 100L;
+        long taskFlowId = 1L;
         long taskFlowLogId = this.taskFlowScheduler.trigger(taskFlowId, null);
         this.waitDoneAndPrintLog(taskFlowId, taskFlowLogId);
         TaskFlowLog taskFlowLog = this.taskFlowLogger.get(taskFlowLogId);
@@ -186,7 +211,7 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
 
     @Test(dependsOnMethods = {"testTrigger"})
     public void testStop() {
-        long taskFlowId = 100L;
+        long taskFlowId = 1L;
         long taskFlowLogId = this.taskFlowScheduler.trigger(taskFlowId, null);
         try {
             Thread.sleep(1000);
@@ -198,6 +223,31 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
 
         TaskFlowLog taskFlowLog = this.taskFlowLogger.get(taskFlowLogId);
         assertEquals(taskFlowLog.getStatus(), TaskFlowStatusEnum.EXECUTE_FAILURE.getCode());
+    }
+
+    @Test
+    public void testManualTask() {
+        long taskFlowId = 2L;
+        long taskFlowLogId = this.taskFlowScheduler.trigger(taskFlowId, null);
+
+        while (true) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            if (TaskFlowStatusEnum.EXECUTING.getCode().equals(this.taskFlowLogger.get(taskFlowLogId).getStatus())) {
+                TaskLog manualTaskLog = taskLogger.getTaskStatus(12L);
+                if (TaskStatusEnum.MANUAL_CONFIRM.getCode().equals(manualTaskLog.getStatus())) {
+                    clusterController.manualConfirmedAdd(manualTaskLog.getLogId());
+                    break;
+                }
+            }
+        }
+
+        this.waitDoneAndPrintLog(taskFlowId, taskFlowLogId);
+        TaskFlowLog taskFlowLog = this.taskFlowLogger.get(taskFlowLogId);
+        assertEquals(taskFlowLog.getStatus(), TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode());
     }
 
     private void waitDoneAndPrintLog(long taskFlowId, long taskFlowLogId) {

@@ -107,4 +107,26 @@ public interface IClusterController {
      * @param taskFlowLogId
      */
     void stopRequestRemove(Long taskFlowLogId);
+
+    /**
+     * 新增手工任务确认
+     *
+     * @param taskLogId
+     */
+    void manualConfirmedAdd(Long taskLogId);
+
+    /**
+     * 查询是否包含手工任务确认
+     *
+     * @param taskLogId
+     * @return
+     */
+    Boolean manualConfirmedContains(Long taskLogId);
+
+    /**
+     * 删除手工任务确认
+     *
+     * @param taskLogId
+     */
+    void manualConfirmedRemove(Long taskLogId);
 }

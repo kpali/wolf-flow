@@ -8,7 +8,7 @@ import me.kpali.wolfflow.core.util.SpringContextUtil;
 
 import java.util.Map;
 
-public class MyTask extends Task {
+public class AutoTask extends Task {
     private boolean requiredToStop = false;
 
     @Override

@@ -220,21 +220,22 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                 for (Long taskId : idToTaskStatusMap.keySet()) {
                     String taskStatus = idToTaskStatusMap.get(taskId);
                     if (TaskStatusEnum.WAIT_FOR_EXECUTE.getCode().equals(taskStatus)) {
-                        // 等待执行，将任务状态改为执行中，并将任务加入线程池
+                        // 等待执行，自动任务状态改为执行中，手工任务状态改为手工确认，并将任务加入线程池
                         Task task = idToTaskMap.get(taskId);
-                        idToTaskStatusMap.put(task.getId(), TaskStatusEnum.EXECUTING.getCode());
+                        String statusCode = task.getManual() ? TaskStatusEnum.MANUAL_CONFIRM.getCode() : TaskStatusEnum.EXECUTING.getCode();
+                        idToTaskStatusMap.put(task.getId(), statusCode);
                         executorThreadPool.execute(() -> {
                             try {
                                 // 检查父任务是否已经执行成功
                                 List<Long> parentTaskIds = idToParentTaskIdsMap.get(task.getId());
                                 for (Long parentTaskId : parentTaskIds) {
-                                    TaskLog parentTaskStatus  = this.taskLogger.getTaskStatus(parentTaskId);
+                                    TaskLog parentTaskStatus = this.taskLogger.getTaskStatus(parentTaskId);
                                     if (parentTaskStatus == null || !TaskStatusEnum.EXECUTE_SUCCESS.getCode().equals(parentTaskStatus.getStatus())) {
                                         throw new TaskExecuteException("父任务必须先执行成功");
                                     }
                                 }
                                 task.beforeExecute(taskFlowContext);
-                                this.taskStatusEventPublisher.publishEvent(task, executeTaskFlow.getId(), taskFlowContext, TaskStatusEnum.EXECUTING.getCode(), null, true);
+                                this.taskStatusEventPublisher.publishEvent(task, executeTaskFlow.getId(), taskFlowContext, statusCode, null, true);
                                 task.execute(taskFlowContext);
                                 task.afterExecute(taskFlowContext);
                                 idToTaskStatusMap.put(task.getId(), TaskStatusEnum.EXECUTE_SUCCESS.getCode());
@@ -245,7 +246,8 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                                 this.taskStatusEventPublisher.publishEvent(task, executeTaskFlow.getId(), taskFlowContext, TaskStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage(), true);
                             }
                         });
-                    } else if (requireToStop && TaskStatusEnum.EXECUTING.getCode().equals(taskStatus)) {
+                    } else if (requireToStop &&
+                            (TaskStatusEnum.EXECUTING.getCode().equals(taskStatus) || TaskStatusEnum.MANUAL_CONFIRM.getCode().equals(taskStatus))) {
                         Task task = idToTaskMap.get(taskId);
                         idToTaskStatusMap.put(task.getId(), TaskStatusEnum.STOPPING.getCode());
                         try {

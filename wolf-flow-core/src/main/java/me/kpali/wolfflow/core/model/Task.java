@@ -16,6 +16,7 @@ public class Task implements Serializable {
     private static final long serialVersionUID = 1097164523753393528L;
 
     private Long id;
+    private boolean manual = false;
 
     public Long getId() {
         return id;
@@ -23,6 +24,14 @@ public class Task implements Serializable {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public boolean getManual() {
+        return this.manual;
+    }
+
+    public void setManual(boolean manual) {
+        this.manual = manual;
     }
 
     public void beforeExecute(Map<String, Object> taskFlowContext) throws TaskExecuteException {

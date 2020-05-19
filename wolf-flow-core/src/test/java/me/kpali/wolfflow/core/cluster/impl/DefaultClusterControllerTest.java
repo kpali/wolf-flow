@@ -73,4 +73,15 @@ public class DefaultClusterControllerTest extends BaseTest {
         isContains = this.clusterController.stopRequestContains(taskFlowLogId);
         assertFalse(isContains);
     }
+
+    @Test
+    public void testManualConfirmed() {
+        Long taskLogId = 1L;
+        this.clusterController.manualConfirmedAdd(taskLogId);
+        boolean isContains = this.clusterController.manualConfirmedContains(taskLogId);
+        assertEquals(isContains, true);
+        this.clusterController.manualConfirmedRemove(taskLogId);
+        isContains = this.clusterController.manualConfirmedContains(taskLogId);
+        assertFalse(isContains);
+    }
 }
