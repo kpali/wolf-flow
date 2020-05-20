@@ -116,7 +116,7 @@ public interface IClusterController {
     void manualConfirmedAdd(Long taskLogId);
 
     /**
-     * 查询是否包含手工任务确认
+     * 查询手工任务是否确认
      *
      * @param taskLogId
      * @return
