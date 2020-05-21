@@ -47,8 +47,8 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     private SystemTimeUtils systemTimeUtils;
 
     @Override
-    public void beforeExecute(TaskFlow taskFlow, Map<String, Object> taskFlowContext) throws TaskFlowExecuteException {
-        TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(taskFlowContext);
+    public void beforeExecute(TaskFlow taskFlow, Map<String, Object> context) throws TaskFlowExecuteException {
+        TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
         Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
         // 检查任务流是否是一个有向无环图
         List<Task> sortedTaskList = TaskFlowUtils.topologicalSort(taskFlow);
@@ -83,7 +83,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
             executeTaskFlow = (unsuccessfulTaskFlow == null ? prunedTaskFlow : unsuccessfulTaskFlow);
             affectedTaskFlow = executeTaskFlow;
         }
-        taskFlowContext.put(ContextKey.EXECUTE_TASK_FLOW, executeTaskFlow);
+        context.put(ContextKey.EXECUTE_TASK_FLOW, executeTaskFlow);
 
         boolean locked = false;
         try {
@@ -128,7 +128,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                     taskLog.setTaskFlowLogId(taskFlowLogId);
                     this.taskLogger.add(taskLog);
                     // 任务上下文
-                    Map<String, Object> lastTaskFlowContext = taskLog.getTaskFlowContext();
+                    Map<String, Object> lastTaskFlowContext = taskLog.getContext();
                     if (lastTaskFlowContext == null) {
                         continue;
                     }
@@ -151,8 +151,8 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     }
 
     @Override
-    public void execute(TaskFlow taskFlow, Map<String, Object> taskFlowContext) throws TaskFlowExecuteException, TaskFlowInterruptedException {
-        TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(taskFlowContext);
+    public void execute(TaskFlow taskFlow, Map<String, Object> context) throws TaskFlowExecuteException, TaskFlowInterruptedException {
+        TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
         Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
         TaskFlow executeTaskFlow = taskFlowContextWrapper.getValue(ContextKey.EXECUTE_TASK_FLOW, TaskFlow.class);
         try {
@@ -205,7 +205,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                 if (inDegree == 0) {
                     idToTaskStatusMap.put(taskId, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode());
                     Task task = idToTaskMap.get(taskId);
-                    this.taskStatusEventPublisher.publishEvent(task, executeTaskFlow.getId(), taskFlowContext, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode(), null, true);
+                    this.taskStatusEventPublisher.publishEvent(task, executeTaskFlow.getId(), context, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode(), null, true);
                 }
             }
             boolean isSuccess = true;
@@ -234,16 +234,16 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                                         throw new TaskExecuteException("父任务必须先执行成功");
                                     }
                                 }
-                                task.beforeExecute(taskFlowContext);
-                                this.taskStatusEventPublisher.publishEvent(task, executeTaskFlow.getId(), taskFlowContext, statusCode, null, true);
-                                task.execute(taskFlowContext);
-                                task.afterExecute(taskFlowContext);
+                                task.beforeExecute(context);
+                                this.taskStatusEventPublisher.publishEvent(task, executeTaskFlow.getId(), context, statusCode, null, true);
+                                task.execute(context);
+                                task.afterExecute(context);
                                 idToTaskStatusMap.put(task.getId(), TaskStatusEnum.EXECUTE_SUCCESS.getCode());
-                                this.taskStatusEventPublisher.publishEvent(task, executeTaskFlow.getId(), taskFlowContext, TaskStatusEnum.EXECUTE_SUCCESS.getCode(), null, true);
+                                this.taskStatusEventPublisher.publishEvent(task, executeTaskFlow.getId(), context, TaskStatusEnum.EXECUTE_SUCCESS.getCode(), null, true);
                             } catch (TaskExecuteException | TaskInterruptedException e) {
                                 log.error("任务执行失败！任务ID：" + task.getId() + " 异常信息：" + e.getMessage(), e);
                                 idToTaskStatusMap.put(task.getId(), TaskStatusEnum.EXECUTE_FAILURE.getCode());
-                                this.taskStatusEventPublisher.publishEvent(task, executeTaskFlow.getId(), taskFlowContext, TaskStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage(), true);
+                                this.taskStatusEventPublisher.publishEvent(task, executeTaskFlow.getId(), context, TaskStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage(), true);
                             }
                         });
                     } else if (requireToStop &&
@@ -251,8 +251,8 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                         Task task = idToTaskMap.get(taskId);
                         idToTaskStatusMap.put(task.getId(), TaskStatusEnum.STOPPING.getCode());
                         try {
-                            this.taskStatusEventPublisher.publishEvent(task, executeTaskFlow.getId(), taskFlowContext, TaskStatusEnum.STOPPING.getCode(), null, true);
-                            task.stop(taskFlowContext);
+                            this.taskStatusEventPublisher.publishEvent(task, executeTaskFlow.getId(), context, TaskStatusEnum.STOPPING.getCode(), null, true);
+                            task.stop(context);
                         } catch (TaskStopException e) {
                             log.error("任务终止失败！任务ID：" + task.getId() + " 异常信息：" + e.getMessage(), e);
                         }
@@ -266,7 +266,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                             if (childTaskInDegree == 0) {
                                 idToTaskStatusMap.put(childTaskId, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode());
                                 Task childTask = idToTaskMap.get(childTaskId);
-                                this.taskStatusEventPublisher.publishEvent(childTask, executeTaskFlow.getId(), taskFlowContext, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode(), null, true);
+                                this.taskStatusEventPublisher.publishEvent(childTask, executeTaskFlow.getId(), context, TaskStatusEnum.WAIT_FOR_EXECUTE.getCode(), null, true);
                             }
                         }
                         idToTaskStatusMap.remove(taskId);
@@ -279,7 +279,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                         for (Long childTaskId : childTaskIds) {
                             idToTaskStatusMap.put(childTaskId, TaskStatusEnum.SKIPPED.getCode());
                             Task childTask = idToTaskMap.get(childTaskId);
-                            this.taskStatusEventPublisher.publishEvent(childTask, executeTaskFlow.getId(), taskFlowContext, TaskStatusEnum.SKIPPED.getCode(), null, true);
+                            this.taskStatusEventPublisher.publishEvent(childTask, executeTaskFlow.getId(), context, TaskStatusEnum.SKIPPED.getCode(), null, true);
                         }
                         idToTaskStatusMap.remove(taskId);
                     }
@@ -296,7 +296,22 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     }
 
     @Override
-    public void afterExecute(TaskFlow taskFlow, Map<String, Object> taskFlowContext) throws TaskFlowExecuteException {
+    public void afterExecute(TaskFlow taskFlow, Map<String, Object> context) throws TaskFlowExecuteException {
+        // 不做任何操作
+    }
+
+    @Override
+    public void beforeRollback(TaskFlow taskFlow, Map<String, Object> context) throws TaskFlowRollbackException {
+        // 不做任何操作
+    }
+
+    @Override
+    public void rollback(TaskFlow taskFlow, Map<String, Object> context) throws TaskFlowRollbackException, TaskFlowInterruptedException {
+        // 不做任何操作
+    }
+
+    @Override
+    public void afterRollback(TaskFlow taskFlow, Map<String, Object> context) throws TaskFlowRollbackException {
         // 不做任何操作
     }
 

@@ -65,6 +65,17 @@ public interface ITaskFlowScheduler {
     long triggerTo(Long taskFlowId, Long toTaskId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException;
 
     /**
+     * 回滚任务流
+     *
+     * @param taskFlowId
+     * @param params
+     * @return taskFlowLogId
+     * @throws InvalidTaskFlowException
+     * @throws TaskFlowTriggerException
+     */
+    long rollback(Long taskFlowId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException;
+
+    /**
      * 停止任务流
      *
      * @param taskFlowLogId

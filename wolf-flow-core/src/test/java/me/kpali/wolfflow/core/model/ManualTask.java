@@ -16,10 +16,10 @@ public class ManualTask extends Task {
     private boolean requiredToStop = false;
 
     @Override
-    public void execute(Map<String, Object> taskFlowContext) throws TaskExecuteException, TaskInterruptedException {
+    public void execute(Map<String, Object> context) throws TaskExecuteException, TaskInterruptedException {
         try {
             IClusterController clusterController = SpringContextUtil.getBean(IClusterController.class);
-            TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(taskFlowContext);
+            TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
             Map<String, Object> taskContext = taskFlowContextWrapper.getTaskContext(this.getId().toString());
             TaskContextWrapper taskContextWrapper = new TaskContextWrapper(taskContext);
             Long taskLogId = taskContextWrapper.getValue(ContextKey.TASK_LOG_ID, Long.class);
@@ -46,7 +46,7 @@ public class ManualTask extends Task {
     }
 
     @Override
-    public void stop(Map<String, Object> taskFlowContext) throws TaskStopException {
+    public void stop(Map<String, Object> context) throws TaskStopException {
         this.requiredToStop = true;
     }
 }

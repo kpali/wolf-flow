@@ -94,12 +94,12 @@ public class MyTaskFlowQuerier extends DefaultTaskFlowQuerier {
  */
 public class MyTask extends Task {
     @Override
-    public void execute(Map<String, Object> taskFlowContext) throws TaskExecuteException, TaskInterruptedException {
+    public void execute(Map<String, Object> context) throws TaskExecuteException, TaskInterruptedException {
         // TODO 执行任务
     }
 
     @Override
-    public void stop(Map<String, Object> taskFlowContext) throws TaskStopException {
+    public void stop(Map<String, Object> context) throws TaskStopException {
         // TODO 停止任务
     }
 }

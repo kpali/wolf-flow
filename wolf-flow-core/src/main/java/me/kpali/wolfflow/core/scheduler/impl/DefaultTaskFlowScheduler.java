@@ -105,8 +105,8 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                     TaskFlowExecRequest request = this.clusterController.execRequestPoll();
                     if (request != null) {
                         TaskFlow executeTaskFlow = request.getTaskFlow();
-                        Map<String, Object> taskFlowContext = request.getTaskFlowContext();
-                        TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(taskFlowContext);
+                        Map<String, Object> context = request.getContext();
+                        TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
                         Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
                         log.info("扫描到新的任务流执行请求，任务流ID：{}，任务流日志ID：{}，当前节点ID：{}",
                                 request.getTaskFlow().getId(), taskFlowLogId, this.clusterController.getNodeId());
@@ -125,18 +125,18 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                         }
                         this.threadPool.execute(() -> {
                             try {
-                                this.taskFlowExecutor.beforeExecute(executeTaskFlow, taskFlowContext);
+                                this.taskFlowExecutor.beforeExecute(executeTaskFlow, context);
                                 // 任务流执行中
-                                this.taskFlowStatusEventPublisher.publishEvent(executeTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTING.getCode(), null, true);
+                                this.taskFlowStatusEventPublisher.publishEvent(executeTaskFlow, context, TaskFlowStatusEnum.EXECUTING.getCode(), null, true);
                                 // 开始执行
-                                this.taskFlowExecutor.execute(executeTaskFlow, taskFlowContext);
-                                this.taskFlowExecutor.afterExecute(executeTaskFlow, taskFlowContext);
+                                this.taskFlowExecutor.execute(executeTaskFlow, context);
+                                this.taskFlowExecutor.afterExecute(executeTaskFlow, context);
                                 // 任务流执行成功
-                                this.taskFlowStatusEventPublisher.publishEvent(executeTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode(), null, true);
+                                this.taskFlowStatusEventPublisher.publishEvent(executeTaskFlow, context, TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode(), null, true);
                             } catch (TaskFlowExecuteException | TaskFlowInterruptedException e) {
                                 log.error("任务流执行失败！任务流ID：" + executeTaskFlow.getId() + " 异常信息：" + e.getMessage(), e);
                                 // 任务流执行失败
-                                this.taskFlowStatusEventPublisher.publishEvent(executeTaskFlow, taskFlowContext, TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage(), true);
+                                this.taskFlowStatusEventPublisher.publishEvent(executeTaskFlow, context, TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage(), true);
                             }
                         });
                     }
@@ -294,7 +294,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
 
         TaskFlowStatus taskFlowWaitForExecute = new TaskFlowStatus();
         taskFlowWaitForExecute.setTaskFlow(taskFlow);
-        taskFlowWaitForExecute.setTaskFlowContext(taskFlowContextWrapper.getContext());
+        taskFlowWaitForExecute.setContext(taskFlowContextWrapper.getContext());
         taskFlowWaitForExecute.setStatus(TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode());
         taskFlowWaitForExecute.setMessage(null);
 
@@ -320,7 +320,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
             taskFlowLog.setLogId(taskFlowLogId);
             taskFlowLog.setTaskFlowId(taskFlow.getId());
             taskFlowLog.setTaskFlow(taskFlowWaitForExecute.getTaskFlow());
-            taskFlowLog.setTaskFlowContext(taskFlowWaitForExecute.getTaskFlowContext());
+            taskFlowLog.setContext(taskFlowWaitForExecute.getContext());
             taskFlowLog.setStatus(taskFlowWaitForExecute.getStatus());
             taskFlowLog.setMessage(taskFlowWaitForExecute.getMessage());
             this.taskFlowLogger.add(taskFlowLog);
@@ -343,6 +343,11 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
     }
 
     @Override
+    public long rollback(Long taskFlowId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException {
+        return 0;
+    }
+
+    @Override
     public void stop(Long taskFlowLogId) throws TaskFlowStopException {
         boolean taskFlowLogLocked = false;
         try {
@@ -357,7 +362,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
             TaskFlowLog taskFlowLog = this.taskFlowLogger.get(taskFlowLogId);
             if (taskFlowLog != null && this.taskFlowLogger.isInProgress(taskFlowLog)) {
                 // 检查任务流所在节点是否存活
-                TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(taskFlowLog.getTaskFlowContext());
+                TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(taskFlowLog.getContext());
                 String nodeId = taskFlowContextWrapper.getValue(ContextKey.EXECUTED_BY_NODE, String.class);
                 if (this.clusterController.isNodeAlive(nodeId)) {
                     // 任务流所在节点存活，则发送停止请求
@@ -387,7 +392,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                                     taskLog.setStatus(TaskStatusEnum.EXECUTE_FAILURE.getCode());
                                     taskLog.setMessage("任务被终止执行");
                                     this.taskLogger.update(taskLog);
-                                    this.taskStatusEventPublisher.publishEvent(taskLog.getTask(), taskLog.getTaskFlowId(), taskLog.getTaskFlowContext(), taskLog.getStatus(), taskLog.getMessage(), false);
+                                    this.taskStatusEventPublisher.publishEvent(taskLog.getTask(), taskLog.getTaskFlowId(), taskLog.getContext(), taskLog.getStatus(), taskLog.getMessage(), false);
                                 }
                             }
                         }
@@ -401,7 +406,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                     taskFlowLog.setMessage("任务流被终止执行");
                 }
                 this.taskFlowLogger.update(taskFlowLog);
-                this.taskFlowStatusEventPublisher.publishEvent(taskFlowLog.getTaskFlow(), taskFlowLog.getTaskFlowContext(), taskFlowLog.getStatus(), taskFlowLog.getMessage(), false);
+                this.taskFlowStatusEventPublisher.publishEvent(taskFlowLog.getTaskFlow(), taskFlowLog.getContext(), taskFlowLog.getStatus(), taskFlowLog.getMessage(), false);
             }
         } finally {
             if (taskFlowLogLocked) {

@@ -22,7 +22,7 @@ public class MyTask extends Task {
     private boolean requiredToStop = false;
 
     @Override
-    public void execute(Map<String, Object> taskFlowContext) throws TaskExecuteException, TaskInterruptedException {
+    public void execute(Map<String, Object> context) throws TaskExecuteException, TaskInterruptedException {
         ITaskLogger taskLogger = SpringContextUtil.getBean(ITaskLogger.class);
         TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(taskFlowContext);
         Map<String, Object> taskContext = taskFlowContextWrapper.getTaskContext(this.getId().toString());
@@ -49,7 +49,7 @@ public class MyTask extends Task {
     }
 
     @Override
-    public void stop(Map<String, Object> taskFlowContext) throws TaskStopException {
+    public void stop(Map<String, Object> context) throws TaskStopException {
         this.requiredToStop = true;
     }
 }

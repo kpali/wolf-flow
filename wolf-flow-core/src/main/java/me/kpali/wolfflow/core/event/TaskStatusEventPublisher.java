@@ -37,16 +37,16 @@ public class TaskStatusEventPublisher {
      *
      * @param task
      * @param taskFlowId
-     * @param taskFlowContext
+     * @param context
      * @param status
      * @param message
      * @param record
      */
-    public void publishEvent(Task task, Long taskFlowId, Map<String, Object> taskFlowContext, String status, String message, boolean record) {
+    public void publishEvent(Task task, Long taskFlowId, Map<String, Object> context, String status, String message, boolean record) {
         TaskStatus taskStatus = new TaskStatus();
         taskStatus.setTask(task);
         taskStatus.setTaskFlowId(taskFlowId);
-        taskStatus.setTaskFlowContext(taskFlowContext);
+        taskStatus.setContext(context);
         taskStatus.setStatus(status);
         taskStatus.setMessage(message);
         if (record) {
@@ -60,7 +60,7 @@ public class TaskStatusEventPublisher {
                 if (!locked) {
                     throw new TryLockException("获取任务日志记录锁失败！");
                 }
-                TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(taskFlowContext);
+                TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
                 Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
                 TaskLog taskLog = this.taskLogger.get(taskFlowLogId, task.getId());
                 boolean isNewLog = false;
@@ -79,7 +79,7 @@ public class TaskStatusEventPublisher {
                 }
                 taskLog.setTask(task);
                 taskLog.setTaskFlowId(taskFlowId);
-                taskLog.setTaskFlowContext(taskFlowContext);
+                taskLog.setContext(context);
                 taskLog.setStatus(status);
                 taskLog.setMessage(message);
                 if (isNewLog) {

@@ -14,13 +14,13 @@ public class TaskFlowExecRequest implements Serializable {
     public TaskFlowExecRequest() {
     }
 
-    public TaskFlowExecRequest(TaskFlow taskFlow, Map<String, Object> taskFlowContext) {
+    public TaskFlowExecRequest(TaskFlow taskFlow, Map<String, Object> context) {
         this.taskFlow = taskFlow;
-        this.taskFlowContext = taskFlowContext;
+        this.context = context;
     }
 
     private TaskFlow taskFlow;
-    private Map<String, Object> taskFlowContext;
+    private Map<String, Object> context;
 
     public TaskFlow getTaskFlow() {
         return taskFlow;
@@ -30,11 +30,11 @@ public class TaskFlowExecRequest implements Serializable {
         this.taskFlow = taskFlow;
     }
 
-    public Map<String, Object> getTaskFlowContext() {
-        return taskFlowContext;
+    public Map<String, Object> getContext() {
+        return context;
     }
 
-    public void setTaskFlowContext(Map<String, Object> taskFlowContext) {
-        this.taskFlowContext = taskFlowContext;
+    public void setContext(Map<String, Object> context) {
+        this.context = context;
     }
 }

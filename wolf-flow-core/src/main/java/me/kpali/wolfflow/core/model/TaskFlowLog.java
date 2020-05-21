@@ -15,7 +15,7 @@ public class TaskFlowLog implements Serializable {
     private Long logId;
     private Long taskFlowId;
     private TaskFlow taskFlow;
-    private Map<String, Object> taskFlowContext;
+    private Map<String, Object> context;
     private String status;
     private String message;
     private Date creationTime;
@@ -45,12 +45,12 @@ public class TaskFlowLog implements Serializable {
         this.taskFlow = taskFlow;
     }
 
-    public Map<String, Object> getTaskFlowContext() {
-        return taskFlowContext;
+    public Map<String, Object> getContext() {
+        return context;
     }
 
-    public void setTaskFlowContext(Map<String, Object> taskFlowContext) {
-        this.taskFlowContext = taskFlowContext;
+    public void setContext(Map<String, Object> context) {
+        this.context = context;
     }
 
     public String getStatus() {
