@@ -18,7 +18,7 @@ public interface ITaskFlowScheduler {
     void startup();
 
     /**
-     * 触发任务流
+     * 执行任务流
      *
      * @param taskFlowId
      * @param params
@@ -26,10 +26,10 @@ public interface ITaskFlowScheduler {
      * @throws InvalidTaskFlowException
      * @throws TaskFlowTriggerException
      */
-    long trigger(Long taskFlowId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException;
+    long execute(Long taskFlowId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException;
 
     /**
-     * 触发任务流，执行指定任务
+     * 执行任务流，执行指定任务
      *
      * @param taskFlowId
      * @param taskId
@@ -38,10 +38,10 @@ public interface ITaskFlowScheduler {
      * @throws InvalidTaskFlowException
      * @throws TaskFlowTriggerException
      */
-    long trigger(Long taskFlowId, Long taskId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException;
+    long execute(Long taskFlowId, Long taskId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException;
 
     /**
-     * 触发任务流，从指定任务开始
+     * 执行任务流，从指定任务开始
      *
      * @param taskFlowId
      * @param fromTaskId
@@ -50,10 +50,10 @@ public interface ITaskFlowScheduler {
      * @throws InvalidTaskFlowException
      * @throws TaskFlowTriggerException
      */
-    long triggerFrom(Long taskFlowId, Long fromTaskId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException;
+    long executeFrom(Long taskFlowId, Long fromTaskId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException;
 
     /**
-     * 触发任务流，到指定任务结束
+     * 执行任务流，到指定任务结束
      *
      * @param taskFlowId
      * @param toTaskId
@@ -62,7 +62,7 @@ public interface ITaskFlowScheduler {
      * @throws InvalidTaskFlowException
      * @throws TaskFlowTriggerException
      */
-    long triggerTo(Long taskFlowId, Long toTaskId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException;
+    long executeTo(Long taskFlowId, Long toTaskId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException;
 
     /**
      * 回滚任务流

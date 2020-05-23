@@ -104,12 +104,13 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                     Thread.sleep(this.schedulerConfig.getExecRequestScanInterval() * 1000);
                     TaskFlowExecRequest request = this.clusterController.execRequestPoll();
                     if (request != null) {
-                        TaskFlow executeTaskFlow = request.getTaskFlow();
+                        TaskFlow taskFlow = request.getTaskFlow();
                         Map<String, Object> context = request.getContext();
                         TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
                         Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
-                        log.info("扫描到新的任务流执行请求，任务流ID：{}，任务流日志ID：{}，当前节点ID：{}",
-                                request.getTaskFlow().getId(), taskFlowLogId, this.clusterController.getNodeId());
+                        Boolean isRollback = taskFlowContextWrapper.getValue(ContextKey.IS_ROLLBACK, Boolean.class);
+                        log.info("扫描到新的任务流执行请求，任务流ID：{}，任务流日志ID：{}，是否回滚：{}, 当前节点ID：{}",
+                                request.getTaskFlow().getId(), taskFlowLogId, isRollback, this.clusterController.getNodeId());
                         // 任务流上下文写入当前节点ID
                         taskFlowContextWrapper.put(ContextKey.EXECUTED_BY_NODE, this.clusterController.getNodeId());
                         // 任务流执行
@@ -123,22 +124,43 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                                 }
                             }
                         }
-                        this.threadPool.execute(() -> {
-                            try {
-                                this.taskFlowExecutor.beforeExecute(executeTaskFlow, context);
-                                // 任务流执行中
-                                this.taskFlowStatusEventPublisher.publishEvent(executeTaskFlow, context, TaskFlowStatusEnum.EXECUTING.getCode(), null, true);
-                                // 开始执行
-                                this.taskFlowExecutor.execute(executeTaskFlow, context);
-                                this.taskFlowExecutor.afterExecute(executeTaskFlow, context);
-                                // 任务流执行成功
-                                this.taskFlowStatusEventPublisher.publishEvent(executeTaskFlow, context, TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode(), null, true);
-                            } catch (TaskFlowExecuteException | TaskFlowInterruptedException e) {
-                                log.error("任务流执行失败！任务流ID：" + executeTaskFlow.getId() + " 异常信息：" + e.getMessage(), e);
-                                // 任务流执行失败
-                                this.taskFlowStatusEventPublisher.publishEvent(executeTaskFlow, context, TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage(), true);
-                            }
-                        });
+                        if (!isRollback) {
+                            // 任务流执行
+                            this.threadPool.execute(() -> {
+                                try {
+                                    this.taskFlowExecutor.beforeExecute(taskFlow, context);
+                                    // 任务流执行中
+                                    this.taskFlowStatusEventPublisher.publishEvent(taskFlow, context, TaskFlowStatusEnum.EXECUTING.getCode(), null, true);
+                                    // 开始执行
+                                    this.taskFlowExecutor.execute(taskFlow, context);
+                                    this.taskFlowExecutor.afterExecute(taskFlow, context);
+                                    // 任务流执行成功
+                                    this.taskFlowStatusEventPublisher.publishEvent(taskFlow, context, TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode(), null, true);
+                                } catch (TaskFlowExecuteException | TaskFlowInterruptedException e) {
+                                    log.error("任务流执行失败！任务流ID：" + taskFlow.getId() + " 异常信息：" + e.getMessage(), e);
+                                    // 任务流执行失败
+                                    this.taskFlowStatusEventPublisher.publishEvent(taskFlow, context, TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage(), true);
+                                }
+                            });
+                        } else {
+                            // 任务流回滚
+                            this.threadPool.execute(() -> {
+                                try {
+                                    this.taskFlowExecutor.beforeRollback(taskFlow, context);
+                                    // 任务流回滚中
+                                    this.taskFlowStatusEventPublisher.publishEvent(taskFlow, context, TaskFlowStatusEnum.ROLLING_BACK.getCode(), null, true);
+                                    // 开始回滚
+                                    this.taskFlowExecutor.rollback(taskFlow, context);
+                                    this.taskFlowExecutor.afterRollback(taskFlow, context);
+                                    // 任务流回滚成功
+                                    this.taskFlowStatusEventPublisher.publishEvent(taskFlow, context, TaskFlowStatusEnum.ROLLBACK_SUCCESS.getCode(), null, true);
+                                } catch (TaskFlowRollbackException | TaskFlowInterruptedException e) {
+                                    log.error("任务流回滚失败！任务流ID：" + taskFlow.getId() + " 异常信息：" + e.getMessage(), e);
+                                    // 任务流回滚失败
+                                    this.taskFlowStatusEventPublisher.publishEvent(taskFlow, context, TaskFlowStatusEnum.ROLLBACK_FAILURE.getCode(), e.getMessage(), true);
+                                }
+                            });
+                        }
                     }
                 } catch (Exception e) {
                     log.error("任务流执行请求扫描异常！" + e.getMessage(), e);
@@ -243,29 +265,35 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
     }
 
     @Override
-    public long trigger(Long taskFlowId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException {
-        return this.trigger(taskFlowId, null, null, params);
+    public long execute(Long taskFlowId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException {
+        return this.trigger(taskFlowId, false, null, null, params);
     }
 
     @Override
-    public long trigger(Long taskFlowId, Long taskId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException {
-        return this.trigger(taskFlowId, taskId, taskId, params);
+    public long execute(Long taskFlowId, Long taskId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException {
+        return this.trigger(taskFlowId, false, taskId, taskId, params);
     }
 
     @Override
-    public long triggerFrom(Long taskFlowId, Long fromTaskId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException {
-        return this.trigger(taskFlowId, fromTaskId, null, params);
+    public long executeFrom(Long taskFlowId, Long fromTaskId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException {
+        return this.trigger(taskFlowId, false, fromTaskId, null, params);
     }
 
     @Override
-    public long triggerTo(Long taskFlowId, Long toTaskId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException {
-        return this.trigger(taskFlowId, null, toTaskId, params);
+    public long executeTo(Long taskFlowId, Long toTaskId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException {
+        return this.trigger(taskFlowId, false, null, toTaskId, params);
+    }
+
+    @Override
+    public long rollback(Long taskFlowId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException {
+        return this.trigger(taskFlowId, true, null, null, params);
     }
 
     /**
      * 触发任务流
      *
      * @param taskFlowId
+     * @param rollback
      * @param fromTaskId
      * @param toTaskId
      * @param params
@@ -273,29 +301,31 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
      * @throws InvalidTaskFlowException
      * @throws TaskFlowTriggerException
      */
-    private long trigger(Long taskFlowId, Long fromTaskId, Long toTaskId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException {
+    private long trigger(Long taskFlowId, Boolean isRollback, Long fromTaskId, Long toTaskId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException {
         // 获取任务流
         TaskFlow taskFlow = this.taskFlowQuerier.getTaskFlow(taskFlowId);
-
         long taskFlowLogId = systemTimeUtils.getUniqueTimeStamp();
+        String waitForStatus = isRollback ? TaskFlowStatusEnum.WAIT_FOR_ROLLBACK.getCode() : TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode();
+        String failureStatus = isRollback ? TaskFlowStatusEnum.ROLLBACK_FAILURE.getCode() : TaskFlowStatusEnum.EXECUTE_FAILURE.getCode();
 
         // 初始化任务流上下文
         TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper();
-        if (params != null) {
-            taskFlowContextWrapper.setParams(params);
-        }
+        taskFlowContextWrapper.put(ContextKey.IS_ROLLBACK, isRollback);
         if (fromTaskId != null) {
             taskFlowContextWrapper.put(ContextKey.FROM_TASK_ID, fromTaskId);
         }
         if (toTaskId != null) {
             taskFlowContextWrapper.put(ContextKey.TO_TASK_ID, toTaskId);
         }
+        if (params != null) {
+            taskFlowContextWrapper.setParams(params);
+        }
         taskFlowContextWrapper.put(ContextKey.LOG_ID, taskFlowLogId);
 
         TaskFlowStatus taskFlowWaitForExecute = new TaskFlowStatus();
         taskFlowWaitForExecute.setTaskFlow(taskFlow);
         taskFlowWaitForExecute.setContext(taskFlowContextWrapper.getContext());
-        taskFlowWaitForExecute.setStatus(TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode());
+        taskFlowWaitForExecute.setStatus(waitForStatus);
         taskFlowWaitForExecute.setMessage(null);
 
         // 新增任务流日志
@@ -331,20 +361,15 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
         }
 
         // 任务流等待执行
-        this.taskFlowStatusEventPublisher.publishEvent(taskFlow, taskFlowContextWrapper.getContext(), TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode(), null, false);
+        this.taskFlowStatusEventPublisher.publishEvent(taskFlow, taskFlowContextWrapper.getContext(), waitForStatus, null, false);
 
         // 插入执行请求队列
         boolean success = this.clusterController.execRequestOffer(new TaskFlowExecRequest(taskFlow, taskFlowContextWrapper.getContext()));
         if (!success) {
-            this.taskFlowStatusEventPublisher.publishEvent(taskFlow, taskFlowContextWrapper.getContext(), TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), "插入执行请求队列失败", true);
+            this.taskFlowStatusEventPublisher.publishEvent(taskFlow, taskFlowContextWrapper.getContext(), failureStatus, "插入执行请求队列失败", true);
         }
 
         return taskFlowLogId;
-    }
-
-    @Override
-    public long rollback(Long taskFlowId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException {
-        return 0;
     }
 
     @Override

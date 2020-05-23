@@ -1,6 +1,7 @@
 package me.kpali.wolfflow.core.logger;
 
 import me.kpali.wolfflow.core.exception.TaskFlowLogException;
+import me.kpali.wolfflow.core.model.TaskFlow;
 import me.kpali.wolfflow.core.model.TaskFlowLog;
 
 import java.util.List;

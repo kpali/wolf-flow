@@ -145,10 +145,10 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
     }
 
     @Test
-    public void testTriggerSingle() {
+    public void testExecuteSingle() {
         long taskFlowId = 1L;
         long taskId = 10L;
-        long taskFlowLogId = this.taskFlowScheduler.trigger(taskFlowId, taskId, null);
+        long taskFlowLogId = this.taskFlowScheduler.execute(taskFlowId, taskId, null);
         this.waitDoneAndPrintLog(taskFlowId, taskFlowLogId);
 
         TaskFlowLog taskFlowLog = this.taskFlowLogger.get(taskFlowLogId);
@@ -161,11 +161,11 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
         assertEquals(taskLog.getStatus(), TaskStatusEnum.EXECUTE_SUCCESS.getCode());
     }
 
-    @Test(dependsOnMethods = {"testTriggerSingle"})
-    public void testTriggerFrom() {
+    @Test(dependsOnMethods = {"testExecuteSingle"})
+    public void testExecuteFrom() {
         long taskFlowId = 1L;
         long taskId = 10L;
-        long taskFlowLogId = this.taskFlowScheduler.triggerFrom(taskFlowId, taskId, null);
+        long taskFlowLogId = this.taskFlowScheduler.executeFrom(taskFlowId, taskId, null);
         this.waitDoneAndPrintLog(taskFlowId, taskFlowLogId);
 
         TaskFlowLog taskFlowLog = this.taskFlowLogger.get(taskFlowLogId);
@@ -178,11 +178,11 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
         }
     }
 
-    @Test(dependsOnMethods = {"testTriggerFrom"})
-    public void testTriggerTo() {
+    @Test(dependsOnMethods = {"testExecuteFrom"})
+    public void testExecuteTo() {
         long taskFlowId = 1L;
         long taskId = 11L;
-        long taskFlowLogId = this.taskFlowScheduler.triggerTo(taskFlowId, taskId, null);
+        long taskFlowLogId = this.taskFlowScheduler.executeTo(taskFlowId, taskId, null);
         this.waitDoneAndPrintLog(taskFlowId, taskFlowLogId);
 
         TaskFlowLog taskFlowLog = this.taskFlowLogger.get(taskFlowLogId);
@@ -195,10 +195,10 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
         }
     }
 
-    @Test(dependsOnMethods = {"testTriggerTo"})
-    public void testTrigger() {
+    @Test(dependsOnMethods = {"testExecuteTo"})
+    public void testExecute() {
         long taskFlowId = 1L;
-        long taskFlowLogId = this.taskFlowScheduler.trigger(taskFlowId, null);
+        long taskFlowLogId = this.taskFlowScheduler.execute(taskFlowId, null);
         this.waitDoneAndPrintLog(taskFlowId, taskFlowLogId);
         TaskFlowLog taskFlowLog = this.taskFlowLogger.get(taskFlowLogId);
         assertEquals(taskFlowLog.getStatus(), TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode());
@@ -209,10 +209,10 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
         }
     }
 
-    @Test(dependsOnMethods = {"testTrigger"})
+    @Test(dependsOnMethods = {"testExecute"})
     public void testStop() {
         long taskFlowId = 1L;
-        long taskFlowLogId = this.taskFlowScheduler.trigger(taskFlowId, null);
+        long taskFlowLogId = this.taskFlowScheduler.execute(taskFlowId, null);
         try {
             Thread.sleep(1000);
         } catch (InterruptedException e) {
@@ -226,9 +226,9 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
     }
 
     @Test
-    public void testManualTask() {
+    public void testExecuteManualTask() {
         long taskFlowId = 2L;
-        long taskFlowLogId = this.taskFlowScheduler.trigger(taskFlowId, null);
+        long taskFlowLogId = this.taskFlowScheduler.execute(taskFlowId, null);
 
         while (true) {
             try {

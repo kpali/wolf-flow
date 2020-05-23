@@ -137,6 +137,8 @@ public class DefaultTaskFlowLogger implements ITaskFlowLogger {
     @Override
     public boolean isInProgress(TaskFlowLog taskFlowLog) throws TaskFlowLogException {
         return !TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode().equals(taskFlowLog.getStatus())
-                && !TaskFlowStatusEnum.EXECUTE_FAILURE.getCode().equals(taskFlowLog.getStatus());
+                && !TaskFlowStatusEnum.EXECUTE_FAILURE.getCode().equals(taskFlowLog.getStatus())
+                && !TaskFlowStatusEnum.ROLLBACK_SUCCESS.getCode().equals(taskFlowLog.getStatus())
+                && !TaskFlowStatusEnum.ROLLBACK_FAILURE.getCode().equals(taskFlowLog.getStatus());
     }
 }

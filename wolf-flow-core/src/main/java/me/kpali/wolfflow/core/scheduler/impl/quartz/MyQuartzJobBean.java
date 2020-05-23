@@ -36,13 +36,13 @@ public class MyQuartzJobBean extends QuartzJobBean {
         }
         try {
             if (fromTaskId != null && fromTaskId.equals(toTaskId)) {
-                taskFlowScheduler.trigger(taskFlowId, fromTaskId, null);
+                taskFlowScheduler.execute(taskFlowId, fromTaskId, null);
             } else if (fromTaskId != null) {
-                taskFlowScheduler.triggerFrom(taskFlowId, fromTaskId, null);
+                taskFlowScheduler.executeFrom(taskFlowId, fromTaskId, null);
             } else if (toTaskId != null) {
-                taskFlowScheduler.triggerTo(taskFlowId, toTaskId, null);
+                taskFlowScheduler.executeTo(taskFlowId, toTaskId, null);
             } else {
-                taskFlowScheduler.trigger(taskFlowId, null);
+                taskFlowScheduler.execute(taskFlowId, null);
             }
         } catch (InvalidTaskFlowException | TaskFlowTriggerException e) {
             throw new JobExecutionException(e);

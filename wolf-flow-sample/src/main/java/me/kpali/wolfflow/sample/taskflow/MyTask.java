@@ -24,7 +24,7 @@ public class MyTask extends Task {
     @Override
     public void execute(Map<String, Object> context) throws TaskExecuteException, TaskInterruptedException {
         ITaskLogger taskLogger = SpringContextUtil.getBean(ITaskLogger.class);
-        TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(taskFlowContext);
+        TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
         Map<String, Object> taskContext = taskFlowContextWrapper.getTaskContext(this.getId().toString());
         TaskContextWrapper taskContextWrapper = new TaskContextWrapper(taskContext);
         Long taskLogId = taskContextWrapper.getValue(ContextKey.TASK_LOG_ID, Long.class);

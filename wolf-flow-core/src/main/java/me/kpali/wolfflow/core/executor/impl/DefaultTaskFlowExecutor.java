@@ -13,6 +13,7 @@ import me.kpali.wolfflow.core.scheduler.impl.SystemTimeUtils;
 import me.kpali.wolfflow.core.util.TaskFlowUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -50,14 +51,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     public void beforeExecute(TaskFlow taskFlow, Map<String, Object> context) throws TaskFlowExecuteException {
         TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
         Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
-        // 检查任务流是否是一个有向无环图
-        List<Task> sortedTaskList = TaskFlowUtils.topologicalSort(taskFlow);
-        if (sortedTaskList == null) {
-            throw new TaskFlowExecuteException("任务流不是一个有向无环图，请检查是否存在回路！");
-        }
-        if (taskFlow.getTaskList().size() == 0) {
-            return;
-        }
+        this.checkTaskFlow(taskFlow);
 
         // 根据参数“从指定任务开始”和“到指定任务结束”，分析要执行的任务和受影响的任务
         Long fromTaskId = taskFlowContextWrapper.getValue(ContextKey.FROM_TASK_ID, Long.class);
@@ -302,17 +296,243 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
 
     @Override
     public void beforeRollback(TaskFlow taskFlow, Map<String, Object> context) throws TaskFlowRollbackException {
-        // 不做任何操作
+        TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
+        Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
+        this.checkTaskFlow(taskFlow);
+
+        // 要回滚的任务 = 执行过的任务，但需要排除已经回滚的任务
+        TaskFlow rollbackTaskFlow = this.selectRollbackTasks(taskFlow);
+        // 反转任务流方向
+        TaskFlow reversedTaskFlow = this.reverseTaskFlow(rollbackTaskFlow);
+        context.put(ContextKey.ROLLBACK_TASK_FLOW, reversedTaskFlow);
+
+        boolean locked = false;
+        try {
+            locked = this.clusterController.tryLock(
+                    ClusterConstants.TASK_LOG_LOCK,
+                    ClusterConstants.LOG_LOCK_WAIT_TIME,
+                    ClusterConstants.LOG_LOCK_LEASE_TIME,
+                    TimeUnit.SECONDS);
+            if (!locked) {
+                throw new TryLockException("获取任务日志记录锁失败！");
+            }
+            // 复制一份回滚前的任务状态（日志）
+            for (Task task : taskFlow.getTaskList()) {
+                boolean needRollback = false;
+                for (Task rollbackTask : rollbackTaskFlow.getTaskList()) {
+                    if (task.getId().equals(rollbackTask.getId())) {
+                        needRollback = true;
+                        break;
+                    }
+                }
+                TaskLog taskLog = this.taskLogger.getTaskStatus(task.getId());
+                if (taskLog == null) {
+                    continue;
+                }
+                // 任务状态（日志）
+                Long taskLogId = systemTimeUtils.getUniqueTimeStamp();
+                taskLog.setLogId(taskLogId);
+                taskLog.setTaskFlowLogId(taskFlowLogId);
+                this.taskLogger.add(taskLog);
+                if (needRollback) {
+                    // 要回滚的任务，初始化上下文
+                    TaskContextWrapper taskContextWrapper = new TaskContextWrapper();
+                    List<Long> parentTaskIdList = new ArrayList<>();
+                    taskFlow.getLinkList().forEach(link -> {
+                        if (link.getTarget().equals(task.getId())) {
+                            parentTaskIdList.add(link.getSource());
+                        }
+                    });
+                    taskContextWrapper.put(ContextKey.PARENT_TASK_ID_LIST, parentTaskIdList);
+                    taskFlowContextWrapper.putTaskContext(task.getId().toString(), taskContextWrapper.getContext());
+                } else {
+                    // 不需要回滚的任务，导入任务上下文到本次任务流上下文
+                    Map<String, Object> lastTaskFlowContext = taskLog.getContext();
+                    if (lastTaskFlowContext == null) {
+                        continue;
+                    }
+                    TaskFlowContextWrapper lastTaskFlowContextWrapper = new TaskFlowContextWrapper(lastTaskFlowContext);
+                    if (lastTaskFlowContextWrapper.getTaskContexts() == null) {
+                        continue;
+                    }
+                    Map<String, Object> lastTaskContext = lastTaskFlowContextWrapper.getTaskContext(task.getId().toString());
+                    if (lastTaskContext == null) {
+                        continue;
+                    }
+                    taskFlowContextWrapper.putTaskContext(task.getId().toString(), lastTaskContext);
+                }
+            }
+        } finally {
+            if (locked) {
+                this.clusterController.unlock(ClusterConstants.TASK_LOG_LOCK);
+            }
+        }
     }
 
     @Override
     public void rollback(TaskFlow taskFlow, Map<String, Object> context) throws TaskFlowRollbackException, TaskFlowInterruptedException {
-        // 不做任何操作
+        TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
+        Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
+        TaskFlow rollbackTaskFlow = taskFlowContextWrapper.getValue(ContextKey.ROLLBACK_TASK_FLOW, TaskFlow.class);
+        try {
+            // 初始化线程池
+            ThreadFactory executorThreadFactory = new ThreadFactoryBuilder()
+                    .setNameFormat("taskFlowExecutor-pool-%d").build();
+            ExecutorService executorThreadPool = new ThreadPoolExecutor(this.executorConfig.getCorePoolSize(), this.executorConfig.getMaximumPoolSize(),
+                    0L, TimeUnit.MILLISECONDS,
+                    new LinkedBlockingQueue<Runnable>(1024), executorThreadFactory, new ThreadPoolExecutor.AbortPolicy());
+            // 反转任务流
+            TaskFlow reversedTaskFlow = this.reverseTaskFlow(taskFlow);
+            // 任务表、父任务表和子任务表
+            Map<Long, Task> idToTaskMap = new HashMap<>();
+            Map<Long, List<Long>> idToParentTaskIdsMap = new HashMap<>();
+            reversedTaskFlow.getTaskList().forEach(task -> {
+                idToTaskMap.put(task.getId(), task);
+                List<Long> parentTaskIds = new ArrayList<>();
+                for (Link link : reversedTaskFlow.getLinkList()) {
+                    if (link.getTarget().equals(task.getId())) {
+                        parentTaskIds.add(link.getSource());
+                    }
+                }
+                idToParentTaskIdsMap.put(task.getId(), parentTaskIds);
+            });
+            // 参与执行的父任务表和子任务表
+            Map<Long, List<Long>> idToParentTaskIds4ExecMap = new HashMap<>();
+            Map<Long, List<Long>> idToChildTaskIds4ExecMap = new HashMap<>();
+            rollbackTaskFlow.getTaskList().forEach(task -> {
+                List<Long> parentTaskIds4Exec = new ArrayList<>();
+                List<Long> childTaskIds4Exec = new ArrayList<>();
+                for (Link link : rollbackTaskFlow.getLinkList()) {
+                    if (link.getTarget().equals(task.getId())) {
+                        parentTaskIds4Exec.add(link.getSource());
+                    }
+                    if (link.getSource().equals(task.getId())) {
+                        childTaskIds4Exec.add(link.getTarget());
+                    }
+                }
+                idToParentTaskIds4ExecMap.put(task.getId(), parentTaskIds4Exec);
+                idToChildTaskIds4ExecMap.put(task.getId(), childTaskIds4Exec);
+            });
+            // 任务入度表
+            Map<Long, Integer> idToInDegree4ExecMap = new HashMap<>();
+            rollbackTaskFlow.getTaskList().forEach(task -> {
+                int inDegree = idToParentTaskIds4ExecMap.get(task.getId()).size();
+                idToInDegree4ExecMap.put(task.getId(), inDegree);
+            });
+            // 从入度为0的任务开始回滚
+            Map<Long, String> idToTaskStatusMap = new ConcurrentHashMap<>();
+            for (Long taskId : idToInDegree4ExecMap.keySet()) {
+                int inDegree = idToInDegree4ExecMap.get(taskId);
+                if (inDegree == 0) {
+                    idToTaskStatusMap.put(taskId, TaskStatusEnum.WAIT_FOR_ROLLBACK.getCode());
+                    Task task = idToTaskMap.get(taskId);
+                    this.taskStatusEventPublisher.publishEvent(task, rollbackTaskFlow.getId(), context, TaskStatusEnum.WAIT_FOR_ROLLBACK.getCode(), null, true);
+                }
+            }
+            boolean isSuccess = true;
+            boolean requireToStop = false;
+            while (!idToTaskStatusMap.isEmpty()) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    log.warn(e.getMessage(), e);
+                }
+                requireToStop = this.clusterController.stopRequestContains(taskFlowLogId);
+                for (Long taskId : idToTaskStatusMap.keySet()) {
+                    String taskStatus = idToTaskStatusMap.get(taskId);
+                    if (TaskStatusEnum.WAIT_FOR_ROLLBACK.getCode().equals(taskStatus)) {
+                        // 等待回滚，自动任务状态改为回滚中，手工任务状态改为手工确认，并将任务加入线程池
+                        Task task = idToTaskMap.get(taskId);
+                        String statusCode = task.getManual() ? TaskStatusEnum.MANUAL_CONFIRM.getCode() : TaskStatusEnum.ROLLING_BACK.getCode();
+                        idToTaskStatusMap.put(task.getId(), statusCode);
+                        executorThreadPool.execute(() -> {
+                            try {
+                                // 检查父任务是否已经回滚成功
+                                List<Long> parentTaskIds = idToParentTaskIdsMap.get(task.getId());
+                                for (Long parentTaskId : parentTaskIds) {
+                                    TaskLog parentTaskStatus = this.taskLogger.getTaskStatus(parentTaskId);
+                                    if (this.taskLogger.canRollback(parentTaskStatus)
+                                            && !TaskStatusEnum.ROLLBACK_SUCCESS.getCode().equals(parentTaskStatus.getStatus())) {
+                                        throw new TaskRollbackException("父任务必须先回滚成功");
+                                    }
+                                }
+                                task.beforeRollback(context);
+                                this.taskStatusEventPublisher.publishEvent(task, rollbackTaskFlow.getId(), context, statusCode, null, true);
+                                task.rollback(context);
+                                task.afterRollback(context);
+                                idToTaskStatusMap.put(task.getId(), TaskStatusEnum.ROLLBACK_SUCCESS.getCode());
+                                this.taskStatusEventPublisher.publishEvent(task, rollbackTaskFlow.getId(), context, TaskStatusEnum.ROLLBACK_SUCCESS.getCode(), null, true);
+                            } catch (TaskRollbackException | TaskInterruptedException e) {
+                                log.error("任务回滚失败！任务ID：" + task.getId() + " 异常信息：" + e.getMessage(), e);
+                                idToTaskStatusMap.put(task.getId(), TaskStatusEnum.ROLLBACK_FAILURE.getCode());
+                                this.taskStatusEventPublisher.publishEvent(task, rollbackTaskFlow.getId(), context, TaskStatusEnum.ROLLBACK_FAILURE.getCode(), e.getMessage(), true);
+                            }
+                        });
+                    } else if (requireToStop &&
+                            (TaskStatusEnum.ROLLING_BACK.getCode().equals(taskStatus) || TaskStatusEnum.MANUAL_CONFIRM.getCode().equals(taskStatus))) {
+                        Task task = idToTaskMap.get(taskId);
+                        idToTaskStatusMap.put(task.getId(), TaskStatusEnum.STOPPING.getCode());
+                        try {
+                            this.taskStatusEventPublisher.publishEvent(task, rollbackTaskFlow.getId(), context, TaskStatusEnum.STOPPING.getCode(), null, true);
+                            task.stop(context);
+                        } catch (TaskStopException e) {
+                            log.error("任务终止失败！任务ID：" + task.getId() + " 异常信息：" + e.getMessage(), e);
+                        }
+                    } else if (TaskStatusEnum.ROLLBACK_SUCCESS.getCode().equals(taskStatus)) {
+                        // 回滚成功，将子任务的入度减1，如果子任务入度为0，则将子任务状态设置为等待回滚并加入状态检查，最后将此任务移除状态检查
+                        List<Long> childTaskIds = idToChildTaskIds4ExecMap.get(taskId);
+                        for (Long childTaskId : childTaskIds) {
+                            int childTaskInDegree = idToInDegree4ExecMap.get(childTaskId);
+                            childTaskInDegree--;
+                            idToInDegree4ExecMap.put(childTaskId, childTaskInDegree);
+                            if (childTaskInDegree == 0) {
+                                idToTaskStatusMap.put(childTaskId, TaskStatusEnum.WAIT_FOR_ROLLBACK.getCode());
+                                Task childTask = idToTaskMap.get(childTaskId);
+                                this.taskStatusEventPublisher.publishEvent(childTask, rollbackTaskFlow.getId(), context, TaskStatusEnum.WAIT_FOR_ROLLBACK.getCode(), null, true);
+                            }
+                        }
+                        idToTaskStatusMap.remove(taskId);
+                    } else if (TaskStatusEnum.ROLLBACK_FAILURE.getCode().equals(taskStatus)) {
+                        isSuccess = false;
+                        // 回滚失败，将此任务及所有子任务移除状态检查
+                        idToTaskStatusMap.remove(taskId);
+                        List<Long> allChildTaskIds = this.listAllChildTaskIdList(taskId, idToChildTaskIds4ExecMap);
+                        for (Long childTaskId : allChildTaskIds) {
+                            idToTaskStatusMap.remove(childTaskId);
+                        }
+                    }
+                }
+            }
+            if (requireToStop) {
+                throw new TaskFlowInterruptedException("任务流被终止回滚");
+            } else if (!isSuccess) {
+                throw new TaskFlowRollbackException("一个或多个任务回滚失败");
+            }
+        } finally {
+            this.clusterController.stopRequestRemove(taskFlowLogId);
+        }
     }
 
     @Override
     public void afterRollback(TaskFlow taskFlow, Map<String, Object> context) throws TaskFlowRollbackException {
         // 不做任何操作
+    }
+
+    /**
+     * 检查任务流
+     *
+     * @param taskFlow
+     * @throws InvalidTaskFlowException
+     */
+    private void checkTaskFlow(TaskFlow taskFlow) throws InvalidTaskFlowException {
+        // 检查任务流是否是一个有向无环图
+        List<Task> sortedTaskList = TaskFlowUtils.topologicalSort(taskFlow);
+        if (sortedTaskList == null) {
+            throw new InvalidTaskFlowException("任务流不是一个有向无环图，请检查是否存在回路！");
+        }
+        if (taskFlow.getTaskList().size() == 0) {
+            throw new InvalidTaskFlowException("任务流中不存在任何任务！");
+        }
     }
 
     /**
@@ -350,8 +570,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
             }
         }
         TaskFlow unsuccessTaskFlow = new TaskFlow();
-        unsuccessTaskFlow.setId(taskFlow.getId());
-        unsuccessTaskFlow.setCron(taskFlow.getCron());
+        BeanUtils.copyProperties(taskFlow, unsuccessTaskFlow);
         unsuccessTaskFlow.setTaskList(new ArrayList<>());
         unsuccessTaskFlow.setLinkList(new ArrayList<>());
         for (Task task : taskFlow.getTaskList()) {
@@ -365,5 +584,102 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
             }
         }
         return unsuccessTaskFlow;
+    }
+
+    /**
+     * 筛选要回滚的任务
+     *
+     * @param taskFlow
+     * @return
+     */
+    private TaskFlow selectRollbackTasks(TaskFlow taskFlow) {
+        TaskFlow rollbackTaskFlow = new TaskFlow();
+        BeanUtils.copyProperties(taskFlow, rollbackTaskFlow);
+        rollbackTaskFlow.setTaskList(new ArrayList<>());
+        rollbackTaskFlow.setLinkList(new ArrayList<>());
+
+        List<TaskLog> taskStatusList = null;
+        boolean locked = false;
+        try {
+            locked = this.clusterController.tryLock(
+                    ClusterConstants.TASK_LOG_LOCK,
+                    ClusterConstants.LOG_LOCK_WAIT_TIME,
+                    ClusterConstants.LOG_LOCK_LEASE_TIME,
+                    TimeUnit.SECONDS);
+            if (!locked) {
+                throw new TryLockException("获取任务日志记录锁失败！");
+            }
+            taskStatusList = this.taskLogger.listTaskStatus(taskFlow.getId());
+        } finally {
+            if (locked) {
+                this.clusterController.unlock(ClusterConstants.TASK_LOG_LOCK);
+            }
+        }
+
+        if (taskStatusList != null && !taskStatusList.isEmpty()) {
+            List<Long> canRollbackTaskIdList = new ArrayList<>();
+            for (TaskLog taskStatus : taskStatusList) {
+                if (this.taskLogger.canRollback(taskStatus)) {
+                    canRollbackTaskIdList.add(taskStatus.getTaskId());
+                }
+            }
+
+            for (Task task : taskFlow.getTaskList()) {
+                if (canRollbackTaskIdList.contains(task.getId())) {
+                    rollbackTaskFlow.getTaskList().add(task);
+                }
+            }
+            for (Link link : taskFlow.getLinkList()) {
+                if (canRollbackTaskIdList.contains(link.getSource()) && canRollbackTaskIdList.contains(link.getTarget())) {
+                    rollbackTaskFlow.getLinkList().add(link);
+                }
+            }
+        }
+        return rollbackTaskFlow;
+    }
+
+    /**
+     * 反转任务流
+     *
+     * @param taskFlow
+     * @return
+     */
+    private TaskFlow reverseTaskFlow(TaskFlow taskFlow) {
+        TaskFlow reversedTaskFlow = new TaskFlow();
+        BeanUtils.copyProperties(taskFlow, reversedTaskFlow);
+        for (Link link : reversedTaskFlow.getLinkList()) {
+            Long source = link.getSource();
+            Long target = link.getTarget();
+            link.setSource(target);
+            link.setTarget(source);
+        }
+        return reversedTaskFlow;
+    }
+
+    /**
+     * 获取所有子任务ID列表
+     *
+     * @param taskId
+     * @param idToChildTaskIdsMap
+     * @return
+     */
+    private List<Long> listAllChildTaskIdList(Long taskId, Map<Long, List<Long>> idToChildTaskIdsMap) {
+        List<Long> childTaskIdList = idToChildTaskIdsMap.get(taskId);
+        return listChildTaskIdList(childTaskIdList, idToChildTaskIdsMap);
+    }
+
+    /**
+     * 递归获取子任务ID列表
+     *
+     * @param taskIdList
+     * @param idToChildTaskIdsMap
+     * @return
+     */
+    private List<Long> listChildTaskIdList(List<Long> taskIdList, Map<Long, List<Long>> idToChildTaskIdsMap) {
+        for (Long taskId : taskIdList) {
+            List<Long> childTaskIdList = idToChildTaskIdsMap.get(taskId);
+            taskIdList.addAll(listChildTaskIdList(childTaskIdList, idToChildTaskIdsMap));
+        }
+        return taskIdList;
     }
 }

@@ -117,4 +117,13 @@ public interface ITaskLogger {
      * @throws TaskLogException
      */
     boolean isInProgress(TaskLog taskLog) throws TaskLogException;
+
+    /**
+     * 是否可以回滚
+     *
+     * @param taskLog
+     * @return
+     * @throws TaskLogException
+     */
+    boolean canRollback(TaskLog taskLog) throws TaskLogException;
 }

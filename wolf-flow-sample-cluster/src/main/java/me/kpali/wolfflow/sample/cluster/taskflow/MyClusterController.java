@@ -32,9 +32,10 @@ public class MyClusterController extends DefaultClusterController {
     @Autowired
     private ClusterConfig clusterConfig;
 
+    private static final String NODE_HEARTBEAT = "nodeHeartbeat";
     private static final String TASK_FLOW_EXEC_REQUEST = "taskFlowExecRequest";
     private static final String TASK_FLOW_STOP_REQUEST = "taskFlowStopRequest";
-    private static final String NODE_HEARTBEAT = "nodeHeartbeat";
+    private static final String MANUAL_CONFIRMED = "manualConfirmed";
 
     @Override
     public void heartbeat() {
@@ -106,5 +107,23 @@ public class MyClusterController extends DefaultClusterController {
     public void stopRequestRemove(Long taskFlowLogId) {
         RSet<Long> set = redisson.getSet(TASK_FLOW_STOP_REQUEST);
         set.remove(taskFlowLogId);
+    }
+
+    @Override
+    public void manualConfirmedAdd(Long taskLogId) {
+        RSet<Long> set = redisson.getSet(MANUAL_CONFIRMED);
+        set.add(taskLogId);
+    }
+
+    @Override
+    public Boolean manualConfirmedContains(Long taskLogId) {
+        RSet<Long> set = redisson.getSet(MANUAL_CONFIRMED);
+        return set.contains(taskLogId);
+    }
+
+    @Override
+    public void manualConfirmedRemove(Long taskLogId) {
+        RSet<Long> set = redisson.getSet(MANUAL_CONFIRMED);
+        set.remove(taskLogId);
     }
 }

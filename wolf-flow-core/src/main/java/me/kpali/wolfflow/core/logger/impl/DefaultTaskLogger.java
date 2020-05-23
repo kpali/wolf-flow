@@ -225,6 +225,16 @@ public class DefaultTaskLogger implements ITaskLogger {
     @Override
     public boolean isInProgress(TaskLog taskLog) throws TaskLogException {
         return !TaskStatusEnum.EXECUTE_SUCCESS.getCode().equals(taskLog.getStatus())
-                && !TaskStatusEnum.EXECUTE_FAILURE.getCode().equals(taskLog.getStatus());
+                && !TaskStatusEnum.EXECUTE_FAILURE.getCode().equals(taskLog.getStatus())
+                && !TaskStatusEnum.ROLLBACK_SUCCESS.getCode().equals(taskLog.getStatus())
+                && !TaskStatusEnum.ROLLBACK_FAILURE.getCode().equals(taskLog.getStatus());
+    }
+
+    @Override
+    public boolean canRollback(TaskLog taskLog) throws TaskLogException {
+        return taskLog != null
+                && (TaskStatusEnum.EXECUTE_SUCCESS.getCode().equals(taskLog.getStatus())
+                    || TaskStatusEnum.EXECUTE_FAILURE.getCode().equals(taskLog.getStatus())
+                    || TaskStatusEnum.ROLLBACK_FAILURE.getCode().equals(taskLog.getStatus()));
     }
 }

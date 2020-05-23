@@ -32,7 +32,7 @@ wolf-flow 是一个简单的、支持有向无环图（DAG）的轻量级作业�
 <dependency>
     <groupId>me.kpali</groupId>
     <artifactId>wolf-flow-spring-boot-starter</artifactId>
-    <version>1.1.0</version>
+    <version>2.0.0</version>
 </dependency>
 ```
 
@@ -114,7 +114,7 @@ ITaskFlowScheduler taskFlowScheduler;
 public void test() {
     long taskFlowId = 1;
     Map<String, Object> params = null;
-    long taskFlowLogId = taskFlowScheduler.trigger(taskFlowId, params);
+    long taskFlowLogId = taskFlowScheduler.execute(taskFlowId, params);
 }
 ```
 

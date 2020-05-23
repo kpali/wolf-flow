@@ -23,10 +23,10 @@ public class WolfFlowSampleApplicationTests {
     ITaskLogger taskLogger;
 
     @Test
-    public void taskFlowTriggerTest() {
+    public void taskFlowExecuteTest() {
         ObjectMapper objectMapper = new ObjectMapper();
         try {
-            long taskFlowLogId1 = taskFlowScheduler.trigger(100L, 10L, null);
+            long taskFlowLogId1 = taskFlowScheduler.execute(100L, 10L, null);
             System.out.println(">>>>>>>>>> 任务流日志ID：" + taskFlowLogId1);
             Thread.sleep(3 * 1000);
             //taskFlowScheduler.stop(taskFlowLogId1);
@@ -35,7 +35,7 @@ public class WolfFlowSampleApplicationTests {
             System.out.println(">>>>>>>>>> 执行完成，当前各任务状态：");
             System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(taskStatusList1));
 
-            long taskFlowLogId2 = taskFlowScheduler.triggerFrom(100L, 11L, null);
+            long taskFlowLogId2 = taskFlowScheduler.executeFrom(100L, 11L, null);
             System.out.println(">>>>>>>>>> 任务流日志ID：" + taskFlowLogId2);
             this.waitDoneAndPrintLog(taskFlowLogId2);
             List<TaskLog> taskStatusList2  = taskLogger.listTaskStatus(100L);
