@@ -4,7 +4,6 @@ import me.kpali.wolfflow.core.cluster.IClusterController;
 import me.kpali.wolfflow.core.exception.TryLockException;
 import me.kpali.wolfflow.core.logger.ITaskLogger;
 import me.kpali.wolfflow.core.model.*;
-import me.kpali.wolfflow.core.scheduler.impl.SystemTimeUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
@@ -24,9 +23,6 @@ public class TaskStatusEventPublisher {
 
     @Autowired
     private IClusterController clusterController;
-
-    @Autowired
-    private SystemTimeUtils systemTimeUtils;
 
     @Autowired
     private ITaskLogger taskLogger;
