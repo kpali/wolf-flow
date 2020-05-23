@@ -322,12 +322,6 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
         }
         taskFlowContextWrapper.put(ContextKey.LOG_ID, taskFlowLogId);
 
-        TaskFlowStatus taskFlowWaitForExecute = new TaskFlowStatus();
-        taskFlowWaitForExecute.setTaskFlow(taskFlow);
-        taskFlowWaitForExecute.setContext(taskFlowContextWrapper.getContext());
-        taskFlowWaitForExecute.setStatus(waitForStatus);
-        taskFlowWaitForExecute.setMessage(null);
-
         // 新增任务流日志
         boolean locked = false;
         try {
@@ -341,10 +335,18 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
             }
 
             TaskFlowLog lastTaskFlowLog = this.taskFlowLogger.last(taskFlow.getId());
-            boolean isInProgress = lastTaskFlowLog != null && this.taskFlowLogger.isInProgress(lastTaskFlowLog);
-            if (isInProgress) {
-                throw new TaskFlowTriggerException("不允许同时多次执行！");
+            if (lastTaskFlowLog != null) {
+                if (this.taskFlowLogger.isInProgress(lastTaskFlowLog)) {
+                    throw new TaskFlowTriggerException("不允许同时多次执行！");
+                }
+                taskFlowContextWrapper.put(ContextKey.LAST_LOG_ID, lastTaskFlowLog.getLogId());
             }
+
+            TaskFlowStatus taskFlowWaitForExecute = new TaskFlowStatus();
+            taskFlowWaitForExecute.setTaskFlow(taskFlow);
+            taskFlowWaitForExecute.setContext(taskFlowContextWrapper.getContext());
+            taskFlowWaitForExecute.setStatus(waitForStatus);
+            taskFlowWaitForExecute.setMessage(null);
 
             TaskFlowLog taskFlowLog = new TaskFlowLog();
             taskFlowLog.setLogId(taskFlowLogId);

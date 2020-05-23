@@ -10,7 +10,6 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -66,11 +65,10 @@ public class TaskStatusEventPublisher {
                 boolean isNewLog = false;
                 if (taskLog == null) {
                     isNewLog = true;
-                    Long taskLogId = systemTimeUtils.getUniqueTimeStamp();
-                    String logFileId = UUID.randomUUID().toString();
                     Map<String, Object> taskContext = taskFlowContextWrapper.getTaskContext(task.getId().toString());
-                    taskContext.put(ContextKey.TASK_LOG_ID, taskLogId);
-                    taskContext.put(ContextKey.TASK_LOG_FILE_ID, logFileId);
+                    TaskContextWrapper taskContextWrapper = new TaskContextWrapper(taskContext);
+                    Long taskLogId = taskContextWrapper.getValue(ContextKey.TASK_LOG_ID, Long.class);
+                    String logFileId = taskContextWrapper.getValue(ContextKey.TASK_LOG_FILE_ID, String.class);
                     taskLog = new TaskLog();
                     taskLog.setLogId(taskLogId);
                     taskLog.setTaskFlowLogId(taskFlowLogId);

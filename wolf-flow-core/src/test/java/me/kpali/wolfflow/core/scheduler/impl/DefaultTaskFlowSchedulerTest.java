@@ -145,6 +145,15 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
     }
 
     @Test
+    public void testRollbackNothing() {
+        long taskFlowId = 1L;
+        long taskFlowLogId = this.taskFlowScheduler.rollback(taskFlowId, null);
+        this.waitDoneAndPrintLog(taskFlowId, taskFlowLogId);
+        TaskFlowLog taskFlowLog = this.taskFlowLogger.get(taskFlowLogId);
+        assertEquals(taskFlowLog.getStatus(), TaskFlowStatusEnum.ROLLBACK_SUCCESS.getCode());
+    }
+
+    @Test(dependsOnMethods = {"testRollbackNothing"})
     public void testExecuteSingle() {
         long taskFlowId = 1L;
         long taskId = 10L;
@@ -213,16 +222,32 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
     public void testStop() {
         long taskFlowId = 1L;
         long taskFlowLogId = this.taskFlowScheduler.execute(taskFlowId, null);
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        while (true) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            // 等待执行到任务3后，停止任务流
+            TaskLog taskLog = taskLogger.get(taskFlowLogId, 3L);
+            if (taskLog != null) {
+                this.taskFlowScheduler.stop(taskFlowLogId);
+                break;
+            }
         }
-        this.taskFlowScheduler.stop(taskFlowLogId);
         this.waitDoneAndPrintLog(taskFlowId, taskFlowLogId);
 
         TaskFlowLog taskFlowLog = this.taskFlowLogger.get(taskFlowLogId);
         assertEquals(taskFlowLog.getStatus(), TaskFlowStatusEnum.EXECUTE_FAILURE.getCode());
+    }
+
+    @Test(dependsOnMethods = {"testStop"})
+    public void testRollback() {
+        long taskFlowId = 1L;
+        long taskFlowLogId = this.taskFlowScheduler.rollback(taskFlowId, null);
+        this.waitDoneAndPrintLog(taskFlowId, taskFlowLogId);
+        TaskFlowLog taskFlowLog = this.taskFlowLogger.get(taskFlowLogId);
+        assertEquals(taskFlowLog.getStatus(), TaskFlowStatusEnum.ROLLBACK_SUCCESS.getCode());
     }
 
     @Test
@@ -236,18 +261,39 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            if (TaskFlowStatusEnum.EXECUTING.getCode().equals(this.taskFlowLogger.get(taskFlowLogId).getStatus())) {
-                TaskLog manualTaskLog = taskLogger.getTaskStatus(12L);
-                if (TaskStatusEnum.MANUAL_CONFIRM.getCode().equals(manualTaskLog.getStatus())) {
-                    clusterController.manualConfirmedAdd(manualTaskLog.getLogId());
-                    break;
-                }
+            TaskLog manualTaskLog = taskLogger.get(taskFlowLogId, 12L);
+            if (manualTaskLog != null && TaskStatusEnum.MANUAL_CONFIRM.getCode().equals(manualTaskLog.getStatus())) {
+                clusterController.manualConfirmedAdd(manualTaskLog.getLogId());
+                break;
             }
         }
 
         this.waitDoneAndPrintLog(taskFlowId, taskFlowLogId);
         TaskFlowLog taskFlowLog = this.taskFlowLogger.get(taskFlowLogId);
         assertEquals(taskFlowLog.getStatus(), TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode());
+    }
+
+    @Test(dependsOnMethods = {"testExecuteManualTask"})
+    public void testRollbackManualTask() {
+        long taskFlowId = 2L;
+        long taskFlowLogId = this.taskFlowScheduler.rollback(taskFlowId, null);
+
+        while (true) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            TaskLog manualTaskLog = taskLogger.get(taskFlowLogId, 12L);
+            if (manualTaskLog != null && TaskStatusEnum.MANUAL_CONFIRM.getCode().equals(manualTaskLog.getStatus())) {
+                clusterController.manualConfirmedAdd(manualTaskLog.getLogId());
+                break;
+            }
+        }
+
+        this.waitDoneAndPrintLog(taskFlowId, taskFlowLogId);
+        TaskFlowLog taskFlowLog = this.taskFlowLogger.get(taskFlowLogId);
+        assertEquals(taskFlowLog.getStatus(), TaskFlowStatusEnum.ROLLBACK_SUCCESS.getCode());
     }
 
     private void waitDoneAndPrintLog(long taskFlowId, long taskFlowLogId) {

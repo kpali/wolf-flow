@@ -17,10 +17,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
 
 /**
@@ -102,6 +99,10 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                     this.taskLogger.deleteTaskStatus(task.getId());
                     // 初始化上下文
                     TaskContextWrapper taskContextWrapper = new TaskContextWrapper();
+                    Long taskLogId = systemTimeUtils.getUniqueTimeStamp();
+                    taskContextWrapper.put(ContextKey.TASK_LOG_ID, taskLogId);
+                    String logFileId = UUID.randomUUID().toString();
+                    taskContextWrapper.put(ContextKey.TASK_LOG_FILE_ID, logFileId);
                     List<Long> parentTaskIdList = new ArrayList<>();
                     taskFlow.getLinkList().forEach(link -> {
                         if (link.getTarget().equals(task.getId())) {
@@ -337,6 +338,9 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                 if (needRollback) {
                     // 要回滚的任务，初始化上下文
                     TaskContextWrapper taskContextWrapper = new TaskContextWrapper();
+                    taskContextWrapper.put(ContextKey.TASK_LOG_ID, taskLogId);
+                    String logFileId = UUID.randomUUID().toString();
+                    taskContextWrapper.put(ContextKey.TASK_LOG_FILE_ID, logFileId);
                     List<Long> parentTaskIdList = new ArrayList<>();
                     taskFlow.getLinkList().forEach(link -> {
                         if (link.getTarget().equals(task.getId())) {
