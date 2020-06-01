@@ -60,23 +60,23 @@ public class TaskStatusEventPublisher {
                 }
                 Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
                 boolean isRollback = taskFlowContextWrapper.getValue(ContextKey.IS_ROLLBACK, Boolean.class);
+                Long taskLogId = taskContextWrapper.getValue(ContextKey.TASK_LOG_ID, Long.class);
+                String logFileId = taskContextWrapper.getValue(ContextKey.TASK_LOG_FILE_ID, String.class);
                 TaskLog taskLog = this.taskLogger.get(taskFlowLogId, task.getId());
                 boolean isNewLog = false;
                 if (taskLog == null) {
                     isNewLog = true;
-                    Long taskLogId = taskContextWrapper.getValue(ContextKey.TASK_LOG_ID, Long.class);
-                    String logFileId = taskContextWrapper.getValue(ContextKey.TASK_LOG_FILE_ID, String.class);
                     taskLog = new TaskLog();
-                    taskLog.setLogId(taskLogId);
-                    taskLog.setTaskFlowLogId(taskFlowLogId);
-                    taskLog.setTaskId(task.getId());
-                    taskLog.setLogFileId(logFileId);
                 }
+                taskLog.setLogId(taskLogId);
+                taskLog.setTaskId(task.getId());
                 taskLog.setTask(task);
+                taskLog.setTaskFlowLogId(taskFlowLogId);
                 taskLog.setTaskFlowId(taskFlowId);
                 taskLog.setContext(taskContextWrapper.getContext());
                 taskLog.setStatus(status);
                 taskLog.setMessage(message);
+                taskLog.setLogFileId(logFileId);
                 taskLog.setRollback(isRollback);
                 if (isNewLog) {
                     this.taskLogger.add(taskLog);

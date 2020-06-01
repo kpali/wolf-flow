@@ -339,6 +339,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                 Long taskLogId = systemTimeUtils.getUniqueTimeStamp();
                 taskLog.setLogId(taskLogId);
                 taskLog.setTaskFlowLogId(taskFlowLogId);
+                taskLog.setRollback(true);
                 this.taskLogger.add(taskLog);
                 if (needRollback) {
                     // 要回滚的任务，初始化上下文
