@@ -112,6 +112,31 @@ public class DefaultTaskLogger implements ITaskLogger {
     }
 
     @Override
+    public TaskLog getLastExecuteLog(Long taskId) throws TaskLogException {
+        TaskLog lastExecuteLogCloned = null;
+        TaskLog lastExecuteLog = null;
+        for (Map<Long, TaskLog> taskLogMap : taskFlowLogId_to_taskLogMap.values()) {
+            for (TaskLog taskLog : taskLogMap.values()) {
+                if (!taskLog.getTaskId().equals(taskId) || taskLog.isRollback()) {
+                    continue;
+                }
+                if (lastExecuteLog == null || taskLog.getLogId() > lastExecuteLog.getLogId()) {
+                    lastExecuteLog = taskLog;
+                }
+            }
+        }
+        if (lastExecuteLog != null) {
+            try {
+                String json = objectMapper.writeValueAsString(lastExecuteLog);
+                lastExecuteLogCloned = objectMapper.readValue(json, TaskLog.class);
+            } catch (JsonProcessingException e) {
+                throw new TaskLogException(e);
+            }
+        }
+        return lastExecuteLogCloned;
+    }
+
+    @Override
     public void deleteByTaskFlowLogId(Long taskFlowLogId) throws TaskLogException {
         taskFlowLogId_to_taskLogMap.remove(taskFlowLogId);
     }

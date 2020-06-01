@@ -74,7 +74,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
             executeTaskFlow = (unsuccessfulTaskFlow == null ? prunedTaskFlow : unsuccessfulTaskFlow);
             affectedTaskFlow = executeTaskFlow;
         }
-        context.put(ContextKey.EXECUTE_TASK_FLOW, executeTaskFlow);
+        taskFlowContextWrapper.put(ContextKey.EXECUTE_TASK_FLOW, executeTaskFlow);
 
         boolean locked = false;
         try {
@@ -142,6 +142,11 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
             if (locked) {
                 this.clusterController.unlock(ClusterConstants.TASK_LOG_LOCK);
             }
+        }
+
+        // 预检查要执行的任务
+        for (Task task : executeTaskFlow.getTaskList()) {
+            task.executePreCheck(context);
         }
     }
 
@@ -305,7 +310,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
         TaskFlow rollbackTaskFlow = this.selectRollbackTasks(taskFlow);
         // 反转任务流方向
         TaskFlow reversedTaskFlow = this.reverseTaskFlow(rollbackTaskFlow);
-        context.put(ContextKey.ROLLBACK_TASK_FLOW, reversedTaskFlow);
+        taskFlowContextWrapper.put(ContextKey.ROLLBACK_TASK_FLOW, reversedTaskFlow);
 
         boolean locked = false;
         try {
@@ -348,6 +353,10 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                         }
                     });
                     taskContextWrapper.put(ContextKey.PARENT_TASK_ID_LIST, parentTaskIdList);
+                    TaskLog lastExecuteLog = this.taskLogger.getLastExecuteLog(task.getId());
+                    if (lastExecuteLog != null) {
+                        taskContextWrapper.put(ContextKey.TASK_LAST_EXECUTE_LOG_ID, lastExecuteLog.getLogId());
+                    }
                     taskFlowContextWrapper.putTaskContext(task.getId().toString(), taskContextWrapper.getContext());
                 } else {
                     // 不需要回滚的任务，导入任务上下文到本次任务流上下文
@@ -370,6 +379,11 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
             if (locked) {
                 this.clusterController.unlock(ClusterConstants.TASK_LOG_LOCK);
             }
+        }
+
+        // 预检查要回滚的任务
+        for (Task task : rollbackTaskFlow.getTaskList()) {
+            task.rollbackPreCheck(context);
         }
     }
 

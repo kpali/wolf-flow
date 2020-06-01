@@ -38,10 +38,13 @@ public class TaskStatusEventPublisher {
      * @param record
      */
     public void publishEvent(Task task, Long taskFlowId, Map<String, Object> context, String status, String message, boolean record) {
+        TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
+        TaskContextWrapper taskContextWrapper = taskFlowContextWrapper.getTaskContextWrapper(task.getId().toString());
+
         TaskStatus taskStatus = new TaskStatus();
         taskStatus.setTask(task);
         taskStatus.setTaskFlowId(taskFlowId);
-        taskStatus.setContext(context);
+        taskStatus.setContext(taskContextWrapper.getContext());
         taskStatus.setStatus(status);
         taskStatus.setMessage(message);
         if (record) {
@@ -55,14 +58,12 @@ public class TaskStatusEventPublisher {
                 if (!locked) {
                     throw new TryLockException("获取任务日志记录锁失败！");
                 }
-                TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
                 Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
+                boolean isRollback = taskFlowContextWrapper.getValue(ContextKey.IS_ROLLBACK, Boolean.class);
                 TaskLog taskLog = this.taskLogger.get(taskFlowLogId, task.getId());
                 boolean isNewLog = false;
                 if (taskLog == null) {
                     isNewLog = true;
-                    Map<String, Object> taskContext = taskFlowContextWrapper.getTaskContext(task.getId().toString());
-                    TaskContextWrapper taskContextWrapper = new TaskContextWrapper(taskContext);
                     Long taskLogId = taskContextWrapper.getValue(ContextKey.TASK_LOG_ID, Long.class);
                     String logFileId = taskContextWrapper.getValue(ContextKey.TASK_LOG_FILE_ID, String.class);
                     taskLog = new TaskLog();
@@ -73,9 +74,10 @@ public class TaskStatusEventPublisher {
                 }
                 taskLog.setTask(task);
                 taskLog.setTaskFlowId(taskFlowId);
-                taskLog.setContext(context);
+                taskLog.setContext(taskContextWrapper.getContext());
                 taskLog.setStatus(status);
                 taskLog.setMessage(message);
+                taskLog.setRollback(isRollback);
                 if (isNewLog) {
                     this.taskLogger.add(taskLog);
                 } else {

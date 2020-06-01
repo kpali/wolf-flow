@@ -21,6 +21,7 @@ public class TaskLog implements Serializable {
     private String status;
     private String message;
     private String logFileId;
+    private boolean rollback;
     private Date creationTime;
     private Date updateTime;
 
@@ -94,6 +95,14 @@ public class TaskLog implements Serializable {
 
     public void setLogFileId(String logFileId) {
         this.logFileId = logFileId;
+    }
+
+    public boolean isRollback() {
+        return rollback;
+    }
+
+    public void setRollback(boolean rollback) {
+        this.rollback = rollback;
     }
 
     public Date getCreationTime() {

@@ -14,20 +14,20 @@ public class TaskFlowExecRequest implements Serializable {
     public TaskFlowExecRequest() {
     }
 
-    public TaskFlowExecRequest(TaskFlow taskFlow, Map<String, Object> context) {
-        this.taskFlow = taskFlow;
+    public TaskFlowExecRequest(Long taskFlowId, Map<String, Object> context) {
+        this.taskFlowId = taskFlowId;
         this.context = context;
     }
 
-    private TaskFlow taskFlow;
+    private Long taskFlowId;
     private Map<String, Object> context;
 
-    public TaskFlow getTaskFlow() {
-        return taskFlow;
+    public Long getTaskFlowId() {
+        return taskFlowId;
     }
 
-    public void setTaskFlow(TaskFlow taskFlow) {
-        this.taskFlow = taskFlow;
+    public void setTaskFlowId(Long taskFlowId) {
+        this.taskFlowId = taskFlowId;
     }
 
     public Map<String, Object> getContext() {

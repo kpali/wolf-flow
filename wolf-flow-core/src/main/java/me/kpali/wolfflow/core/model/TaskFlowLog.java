@@ -18,6 +18,7 @@ public class TaskFlowLog implements Serializable {
     private Map<String, Object> context;
     private String status;
     private String message;
+    private boolean rollback;
     private Date creationTime;
     private Date updateTime;
 
@@ -67,6 +68,14 @@ public class TaskFlowLog implements Serializable {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public boolean getRollback() {
+        return rollback;
+    }
+
+    public void setRollback(boolean rollback) {
+        this.rollback = rollback;
     }
 
     public Date getCreationTime() {

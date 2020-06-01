@@ -17,6 +17,20 @@ public class TaskFlowContextWrapper extends ContextWrapper {
         super(context);
     }
 
+    public Map<String, Object> getTaskFlowContext() {
+        Map<String, Object> taskFlowContext = null;
+        if (this.getContext() != null) {
+            taskFlowContext = new HashMap<>();
+            for (String key : this.getContext().keySet()) {
+                if (ContextKey.TASK_CONTEXTS.equals(key)) {
+                    continue;
+                }
+                taskFlowContext.put(key, this.getContext().get(key));
+            }
+        }
+        return taskFlowContext;
+    }
+
     public Map<String, Object> getParams() {
         Object paramsObj = this.context.get(ContextKey.PARAMS);
         if (paramsObj == null) {
@@ -68,6 +82,18 @@ public class TaskFlowContextWrapper extends ContextWrapper {
         }
     }
 
+    public TaskContextWrapper getTaskContextWrapper(String taskId) {
+        Map<String, Map<String, Object>> taskContexts = this.getTaskContexts();
+        if (taskContexts == null) {
+            return null;
+        }
+        Map<String, Object> taskContext = taskContexts.get(taskId);
+        if (taskContext == null) {
+            return null;
+        }
+        return new TaskContextWrapper(taskContext);
+    }
+
     public Map<String, Object> getTaskContext(String taskId) {
         Map<String, Map<String, Object>> taskContexts = this.getTaskContexts();
         if (taskContexts == null) {
@@ -85,3 +111,4 @@ public class TaskFlowContextWrapper extends ContextWrapper {
         taskContexts.put(taskId, taskContext);
     }
 }
+

@@ -48,6 +48,14 @@ public interface ITaskLogger {
     void update(TaskLog taskLog) throws TaskLogException;
 
     /**
+     * 根据任务ID获取最后一次执行的日志
+     *
+     * @param taskId
+     * @throws TaskLogException
+     */
+    TaskLog getLastExecuteLog(Long taskId) throws TaskLogException;
+
+    /**
      * 根据任务流日志ID删除任务日志
      *
      * @param taskFlowLogId

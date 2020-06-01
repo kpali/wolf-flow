@@ -17,6 +17,9 @@ public class Task implements Serializable {
     private static final long serialVersionUID = 1097164523753393528L;
 
     private Long id;
+    /**
+     * 是否手工任务
+     */
     private boolean manual = false;
 
     public Long getId() {
@@ -35,6 +38,10 @@ public class Task implements Serializable {
         this.manual = manual;
     }
 
+    public void executePreCheck(Map<String, Object> context) throws TaskExecuteException {
+        // 不作任何操作
+    }
+
     public void beforeExecute(Map<String, Object> context) throws TaskExecuteException {
         // 不做任何操作
     }
@@ -49,6 +56,10 @@ public class Task implements Serializable {
 
     public void beforeRollback(Map<String, Object> context) throws TaskRollbackException {
         // 不做任何操作
+    }
+
+    public void rollbackPreCheck(Map<String, Object> context) throws TaskRollbackException {
+        // 不作任何操作
     }
 
     public void rollback(Map<String, Object> context) throws TaskRollbackException, TaskInterruptedException {

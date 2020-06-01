@@ -104,13 +104,14 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                     Thread.sleep(this.schedulerConfig.getExecRequestScanInterval() * 1000);
                     TaskFlowExecRequest request = this.clusterController.execRequestPoll();
                     if (request != null) {
-                        TaskFlow taskFlow = request.getTaskFlow();
+                        Long taskFlowId = request.getTaskFlowId();
+                        TaskFlow taskFlow = this.taskFlowQuerier.getTaskFlow(taskFlowId);
                         Map<String, Object> context = request.getContext();
                         TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
                         Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
                         Boolean isRollback = taskFlowContextWrapper.getValue(ContextKey.IS_ROLLBACK, Boolean.class);
                         log.info("扫描到新的任务流执行请求，任务流ID：{}，任务流日志ID：{}，是否回滚：{}, 当前节点ID：{}",
-                                request.getTaskFlow().getId(), taskFlowLogId, isRollback, this.clusterController.getNodeId());
+                                taskFlowId, taskFlowLogId, isRollback, this.clusterController.getNodeId());
                         // 任务流上下文写入当前节点ID
                         taskFlowContextWrapper.put(ContextKey.EXECUTED_BY_NODE, this.clusterController.getNodeId());
                         // 任务流执行
@@ -136,7 +137,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                                     this.taskFlowExecutor.afterExecute(taskFlow, context);
                                     // 任务流执行成功
                                     this.taskFlowStatusEventPublisher.publishEvent(taskFlow, context, TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode(), null, true);
-                                } catch (TaskFlowExecuteException | TaskFlowInterruptedException e) {
+                                } catch (Exception e) {
                                     log.error("任务流执行失败！任务流ID：" + taskFlow.getId() + " 异常信息：" + e.getMessage(), e);
                                     // 任务流执行失败
                                     this.taskFlowStatusEventPublisher.publishEvent(taskFlow, context, TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage(), true);
@@ -154,7 +155,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                                     this.taskFlowExecutor.afterRollback(taskFlow, context);
                                     // 任务流回滚成功
                                     this.taskFlowStatusEventPublisher.publishEvent(taskFlow, context, TaskFlowStatusEnum.ROLLBACK_SUCCESS.getCode(), null, true);
-                                } catch (TaskFlowRollbackException | TaskFlowInterruptedException e) {
+                                } catch (Exception e) {
                                     log.error("任务流回滚失败！任务流ID：" + taskFlow.getId() + " 异常信息：" + e.getMessage(), e);
                                     // 任务流回滚失败
                                     this.taskFlowStatusEventPublisher.publishEvent(taskFlow, context, TaskFlowStatusEnum.ROLLBACK_FAILURE.getCode(), e.getMessage(), true);
@@ -310,6 +311,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
 
         // 初始化任务流上下文
         TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper();
+        taskFlowContextWrapper.put(ContextKey.TASK_FLOW_ID, taskFlowId);
         taskFlowContextWrapper.put(ContextKey.IS_ROLLBACK, isRollback);
         if (fromTaskId != null) {
             taskFlowContextWrapper.put(ContextKey.FROM_TASK_ID, fromTaskId);
@@ -339,12 +341,11 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                 if (this.taskFlowLogger.isInProgress(lastTaskFlowLog)) {
                     throw new TaskFlowTriggerException("不允许同时多次执行！");
                 }
-                taskFlowContextWrapper.put(ContextKey.LAST_LOG_ID, lastTaskFlowLog.getLogId());
             }
 
             TaskFlowStatus taskFlowWaitForExecute = new TaskFlowStatus();
             taskFlowWaitForExecute.setTaskFlow(taskFlow);
-            taskFlowWaitForExecute.setContext(taskFlowContextWrapper.getContext());
+            taskFlowWaitForExecute.setContext(taskFlowContextWrapper.getTaskFlowContext());
             taskFlowWaitForExecute.setStatus(waitForStatus);
             taskFlowWaitForExecute.setMessage(null);
 
@@ -355,6 +356,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
             taskFlowLog.setContext(taskFlowWaitForExecute.getContext());
             taskFlowLog.setStatus(taskFlowWaitForExecute.getStatus());
             taskFlowLog.setMessage(taskFlowWaitForExecute.getMessage());
+            taskFlowLog.setRollback(isRollback);
             this.taskFlowLogger.add(taskFlowLog);
         } finally {
             if (locked) {
@@ -366,7 +368,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
         this.taskFlowStatusEventPublisher.publishEvent(taskFlow, taskFlowContextWrapper.getContext(), waitForStatus, null, false);
 
         // 插入执行请求队列
-        boolean success = this.clusterController.execRequestOffer(new TaskFlowExecRequest(taskFlow, taskFlowContextWrapper.getContext()));
+        boolean success = this.clusterController.execRequestOffer(new TaskFlowExecRequest(taskFlow.getId(), taskFlowContextWrapper.getContext()));
         if (!success) {
             this.taskFlowStatusEventPublisher.publishEvent(taskFlow, taskFlowContextWrapper.getContext(), failureStatus, "插入执行请求队列失败", true);
         }
