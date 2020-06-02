@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
+import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -64,9 +65,11 @@ public class TaskStatusEventPublisher {
                 String logFileId = taskContextWrapper.getValue(ContextKey.TASK_LOG_FILE_ID, String.class);
                 TaskLog taskLog = this.taskLogger.get(taskFlowLogId, task.getId());
                 boolean isNewLog = false;
+                Date now = new Date();
                 if (taskLog == null) {
                     isNewLog = true;
                     taskLog = new TaskLog();
+                    taskLog.setCreationTime(now);
                 }
                 taskLog.setLogId(taskLogId);
                 taskLog.setTaskId(task.getId());
@@ -78,6 +81,7 @@ public class TaskStatusEventPublisher {
                 taskLog.setMessage(message);
                 taskLog.setLogFileId(logFileId);
                 taskLog.setRollback(isRollback);
+                taskLog.setUpdateTime(now);
                 if (isNewLog) {
                     this.taskLogger.add(taskLog);
                 } else {

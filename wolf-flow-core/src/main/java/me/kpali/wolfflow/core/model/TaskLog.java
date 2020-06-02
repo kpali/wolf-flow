@@ -97,7 +97,7 @@ public class TaskLog implements Serializable {
         this.logFileId = logFileId;
     }
 
-    public boolean isRollback() {
+    public boolean getRollback() {
         return rollback;
     }
 

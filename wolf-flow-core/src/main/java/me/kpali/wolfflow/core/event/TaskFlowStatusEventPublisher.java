@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
+import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -37,9 +38,11 @@ public class TaskFlowStatusEventPublisher {
      * @param record
      */
     public void publishEvent(TaskFlow taskFlow, Map<String, Object> context, String status, String message, boolean record) {
+        TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
+
         TaskFlowStatus taskFlowStatus = new TaskFlowStatus();
         taskFlowStatus.setTaskFlow(taskFlow);
-        taskFlowStatus.setContext(context);
+        taskFlowStatus.setContext(taskFlowContextWrapper.getTaskFlowContext());
         taskFlowStatus.setStatus(status);
         taskFlowStatus.setMessage(message);
         if (record) {
@@ -53,20 +56,24 @@ public class TaskFlowStatusEventPublisher {
                 if (!locked) {
                     throw new TryLockException("获取任务流日志记录锁失败！");
                 }
-                TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
                 Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
+                boolean isRollback = taskFlowContextWrapper.getValue(ContextKey.IS_ROLLBACK, Boolean.class);
                 TaskFlowLog taskFlowLog = this.taskFlowLogger.get(taskFlowLogId);
                 boolean isNewLog = false;
+                Date now = new Date();
                 if (taskFlowLog == null) {
                     isNewLog = true;
                     taskFlowLog = new TaskFlowLog();
-                    taskFlowLog.setLogId(taskFlowLogId);
-                    taskFlowLog.setTaskFlowId(taskFlow.getId());
+                    taskFlowLog.setCreationTime(now);
                 }
+                taskFlowLog.setLogId(taskFlowLogId);
+                taskFlowLog.setTaskFlowId(taskFlow.getId());
                 taskFlowLog.setTaskFlow(taskFlow);
-                taskFlowLog.setContext(context);
+                taskFlowLog.setContext(taskFlowContextWrapper.getTaskFlowContext());
                 taskFlowLog.setStatus(status);
                 taskFlowLog.setMessage(message);
+                taskFlowLog.setRollback(isRollback);
+                taskFlowLog.setUpdateTime(now);
                 if (isNewLog) {
                     this.taskFlowLogger.add(taskFlowLog);
                 } else {

@@ -117,7 +117,7 @@ public class DefaultTaskLogger implements ITaskLogger {
         TaskLog lastExecuteLog = null;
         for (Map<Long, TaskLog> taskLogMap : taskFlowLogId_to_taskLogMap.values()) {
             for (TaskLog taskLog : taskLogMap.values()) {
-                if (!taskLog.getTaskId().equals(taskId) || taskLog.isRollback()) {
+                if (!taskLog.getTaskId().equals(taskId) || taskLog.getRollback()) {
                     continue;
                 }
                 if (lastExecuteLog == null || taskLog.getLogId() > lastExecuteLog.getLogId()) {
