@@ -589,7 +589,10 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
             }
         }
         TaskFlow unsuccessTaskFlow = new TaskFlow();
-        BeanUtils.copyProperties(taskFlow, unsuccessTaskFlow);
+        unsuccessTaskFlow.setId(taskFlow.getId());
+        unsuccessTaskFlow.setCron(taskFlow.getCron());
+        unsuccessTaskFlow.setFromTaskId(taskFlow.getFromTaskId());
+        unsuccessTaskFlow.setToTaskId(taskFlow.getToTaskId());
         unsuccessTaskFlow.setTaskList(new ArrayList<>());
         unsuccessTaskFlow.setLinkList(new ArrayList<>());
         for (Task task : taskFlow.getTaskList()) {
@@ -613,7 +616,10 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
      */
     private TaskFlow selectRollbackTasks(TaskFlow taskFlow) {
         TaskFlow rollbackTaskFlow = new TaskFlow();
-        BeanUtils.copyProperties(taskFlow, rollbackTaskFlow);
+        rollbackTaskFlow.setId(taskFlow.getId());
+        rollbackTaskFlow.setCron(taskFlow.getCron());
+        rollbackTaskFlow.setFromTaskId(taskFlow.getFromTaskId());
+        rollbackTaskFlow.setToTaskId(taskFlow.getToTaskId());
         rollbackTaskFlow.setTaskList(new ArrayList<>());
         rollbackTaskFlow.setLinkList(new ArrayList<>());
 
@@ -665,12 +671,20 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
      */
     private TaskFlow reverseTaskFlow(TaskFlow taskFlow) {
         TaskFlow reversedTaskFlow = new TaskFlow();
-        BeanUtils.copyProperties(taskFlow, reversedTaskFlow);
-        for (Link link : reversedTaskFlow.getLinkList()) {
-            Long source = link.getSource();
-            Long target = link.getTarget();
-            link.setSource(target);
-            link.setTarget(source);
+        reversedTaskFlow.setId(taskFlow.getId());
+        reversedTaskFlow.setCron(taskFlow.getCron());
+        reversedTaskFlow.setFromTaskId(taskFlow.getFromTaskId());
+        reversedTaskFlow.setToTaskId(taskFlow.getToTaskId());
+        reversedTaskFlow.setTaskList(new ArrayList<>());
+        reversedTaskFlow.setLinkList(new ArrayList<>());
+        for (Task task : taskFlow.getTaskList()) {
+            reversedTaskFlow.getTaskList().add(task);
+        }
+        for (Link link : taskFlow.getLinkList()) {
+            Link reversedLink = new Link();
+            reversedLink.setSource(link.getTarget());
+            reversedLink.setTarget(link.getSource());
+            reversedTaskFlow.getLinkList().add(reversedLink);
         }
         return reversedTaskFlow;
     }
