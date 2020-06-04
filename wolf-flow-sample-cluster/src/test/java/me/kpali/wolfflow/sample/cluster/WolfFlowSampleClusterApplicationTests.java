@@ -1,6 +1,8 @@
 package me.kpali.wolfflow.sample.cluster;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import me.kpali.wolfflow.core.exception.TaskFlowLogException;
+import me.kpali.wolfflow.core.exception.TaskLogException;
 import me.kpali.wolfflow.core.logger.ITaskFlowLogger;
 import me.kpali.wolfflow.core.logger.ITaskLogger;
 import me.kpali.wolfflow.core.model.TaskFlowLog;
@@ -46,7 +48,7 @@ public class WolfFlowSampleClusterApplicationTests {
         }
     }
 
-    private void waitDoneAndPrintLog(long taskFLowLogId) {
+    private void waitDoneAndPrintLog(long taskFLowLogId) throws TaskFlowLogException, TaskLogException {
         while (true) {
             try {
                 Thread.sleep(500);
@@ -67,5 +69,4 @@ public class WolfFlowSampleClusterApplicationTests {
             }
         }
     }
-
 }
