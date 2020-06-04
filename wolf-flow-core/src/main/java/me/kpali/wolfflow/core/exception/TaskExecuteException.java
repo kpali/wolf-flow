@@ -5,7 +5,7 @@ package me.kpali.wolfflow.core.exception;
  *
  * @author kpali
  */
-public class TaskExecuteException extends RuntimeException {
+public class TaskExecuteException extends Exception {
     public TaskExecuteException() {
         super();
     }

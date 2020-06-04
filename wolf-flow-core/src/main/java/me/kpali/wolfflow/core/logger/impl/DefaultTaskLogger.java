@@ -9,6 +9,8 @@ import me.kpali.wolfflow.core.logger.ITaskLogger;
 import me.kpali.wolfflow.core.model.TaskLog;
 import me.kpali.wolfflow.core.model.TaskLogLine;
 import me.kpali.wolfflow.core.model.TaskLogResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 
@@ -22,6 +24,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Component
 public class DefaultTaskLogger implements ITaskLogger {
+    private static final Logger log = LoggerFactory.getLogger(DefaultTaskLogger.class);
+
     /**
      *  [任务流日志ID, [任务日志ID, 任务日志]]
      */

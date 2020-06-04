@@ -5,7 +5,7 @@ package me.kpali.wolfflow.core.exception;
  *
  * @author kpali
  */
-public class InvalidCronExpressionException extends RuntimeException {
+public class InvalidCronExpressionException extends Exception {
     public InvalidCronExpressionException() {
         super();
     }

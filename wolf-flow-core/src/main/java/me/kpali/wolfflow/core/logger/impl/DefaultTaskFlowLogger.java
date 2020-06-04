@@ -5,9 +5,12 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import me.kpali.wolfflow.core.enums.TaskFlowStatusEnum;
 import me.kpali.wolfflow.core.exception.TaskFlowLogException;
+import me.kpali.wolfflow.core.exception.TaskLogException;
 import me.kpali.wolfflow.core.logger.ITaskFlowLogger;
 import me.kpali.wolfflow.core.logger.ITaskLogger;
 import me.kpali.wolfflow.core.model.TaskFlowLog;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -25,6 +28,8 @@ import java.util.stream.Collectors;
  */
 @Component
 public class DefaultTaskFlowLogger implements ITaskFlowLogger {
+    private static final Logger log = LoggerFactory.getLogger(DefaultTaskFlowLogger.class);
+
     private Map<Long, TaskFlowLog> taskFlowLogId_to_taskFlowLog = new ConcurrentHashMap<>();
     private ObjectMapper objectMapper = new ObjectMapper();
 
@@ -114,7 +119,11 @@ public class DefaultTaskFlowLogger implements ITaskFlowLogger {
     @Override
     public void delete(Long taskFlowLogId) throws TaskFlowLogException {
         taskFlowLogId_to_taskFlowLog.remove(taskFlowLogId);
-        taskLogger.deleteByTaskFlowLogId(taskFlowLogId);
+        try {
+            taskLogger.deleteByTaskFlowLogId(taskFlowLogId);
+        } catch (TaskLogException e) {
+            throw new TaskFlowLogException(e);
+        }
     }
 
     @Override
@@ -124,7 +133,11 @@ public class DefaultTaskFlowLogger implements ITaskFlowLogger {
         ).collect(Collectors.toList());
         for (TaskFlowLog taskFlowLog : taskFlowLogList) {
             taskFlowLogId_to_taskFlowLog.remove(taskFlowLog.getLogId());
-            taskLogger.deleteByTaskFlowLogId(taskFlowLog.getLogId());
+            try {
+                taskLogger.deleteByTaskFlowLogId(taskFlowLog.getLogId());
+            } catch (TaskLogException e) {
+                throw new TaskFlowLogException(e);
+            }
         }
     }
 

@@ -41,10 +41,10 @@ public class ManualTask extends Task {
                     break;
                 }
             }
-        } catch (TaskExecuteException | TaskInterruptedException e) {
+        } catch (TaskInterruptedException e) {
             throw e;
         } catch (Exception e) {
-            throw new TaskExecuteException(e.getMessage());
+            throw new TaskExecuteException(e);
         }
     }
 
@@ -73,10 +73,10 @@ public class ManualTask extends Task {
                     break;
                 }
             }
-        } catch (TaskRollbackException | TaskInterruptedException e) {
+        } catch (TaskInterruptedException e) {
             throw e;
         } catch (Exception e) {
-            throw new TaskExecuteException(e.getMessage());
+            throw new TaskRollbackException(e);
         }
     }
 

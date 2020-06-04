@@ -1,6 +1,7 @@
 package me.kpali.wolfflow.core.event;
 
 import me.kpali.wolfflow.core.cluster.IClusterController;
+import me.kpali.wolfflow.core.exception.TaskFlowLogException;
 import me.kpali.wolfflow.core.exception.TryLockException;
 import me.kpali.wolfflow.core.logger.ITaskFlowLogger;
 import me.kpali.wolfflow.core.model.*;
@@ -37,7 +38,7 @@ public class TaskFlowStatusEventPublisher {
      * @param message
      * @param record
      */
-    public void publishEvent(TaskFlow taskFlow, Map<String, Object> context, String status, String message, boolean record) {
+    public void publishEvent(TaskFlow taskFlow, Map<String, Object> context, String status, String message, boolean record) throws TryLockException, TaskFlowLogException {
         TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
 
         TaskFlowStatus taskFlowStatus = new TaskFlowStatus();

@@ -5,7 +5,7 @@ package me.kpali.wolfflow.core.exception;
  *
  * @author kpali
  */
-public class TaskStopException extends RuntimeException {
+public class TaskStopException extends Exception {
     public TaskStopException() {
         super();
     }

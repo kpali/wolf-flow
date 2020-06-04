@@ -5,7 +5,7 @@ package me.kpali.wolfflow.core.exception;
  *
  * @author kpali
  */
-public class TaskRollbackException extends RuntimeException {
+public class TaskRollbackException extends Exception {
     public TaskRollbackException() {
         super();
     }

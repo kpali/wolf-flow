@@ -1,6 +1,5 @@
 package me.kpali.wolfflow.core.scheduler;
 
-import me.kpali.wolfflow.core.exception.InvalidTaskFlowException;
 import me.kpali.wolfflow.core.exception.TaskFlowStopException;
 import me.kpali.wolfflow.core.exception.TaskFlowTriggerException;
 
@@ -23,10 +22,9 @@ public interface ITaskFlowScheduler {
      * @param taskFlowId
      * @param params
      * @return taskFlowLogId
-     * @throws InvalidTaskFlowException
      * @throws TaskFlowTriggerException
      */
-    long execute(Long taskFlowId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException;
+    long execute(Long taskFlowId, Map<String, Object> params) throws TaskFlowTriggerException;
 
     /**
      * 执行任务流，执行指定任务
@@ -35,10 +33,9 @@ public interface ITaskFlowScheduler {
      * @param taskId
      * @param params
      * @return taskFlowLogId
-     * @throws InvalidTaskFlowException
      * @throws TaskFlowTriggerException
      */
-    long execute(Long taskFlowId, Long taskId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException;
+    long execute(Long taskFlowId, Long taskId, Map<String, Object> params) throws TaskFlowTriggerException;
 
     /**
      * 执行任务流，从指定任务开始
@@ -47,10 +44,9 @@ public interface ITaskFlowScheduler {
      * @param fromTaskId
      * @param params
      * @return taskFlowLogId
-     * @throws InvalidTaskFlowException
      * @throws TaskFlowTriggerException
      */
-    long executeFrom(Long taskFlowId, Long fromTaskId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException;
+    long executeFrom(Long taskFlowId, Long fromTaskId, Map<String, Object> params) throws TaskFlowTriggerException;
 
     /**
      * 执行任务流，到指定任务结束
@@ -59,10 +55,9 @@ public interface ITaskFlowScheduler {
      * @param toTaskId
      * @param params
      * @return taskFlowLogId
-     * @throws InvalidTaskFlowException
      * @throws TaskFlowTriggerException
      */
-    long executeTo(Long taskFlowId, Long toTaskId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException;
+    long executeTo(Long taskFlowId, Long toTaskId, Map<String, Object> params) throws TaskFlowTriggerException;
 
     /**
      * 回滚任务流
@@ -70,10 +65,9 @@ public interface ITaskFlowScheduler {
      * @param taskFlowId
      * @param params
      * @return taskFlowLogId
-     * @throws InvalidTaskFlowException
      * @throws TaskFlowTriggerException
      */
-    long rollback(Long taskFlowId, Map<String, Object> params) throws InvalidTaskFlowException, TaskFlowTriggerException;
+    long rollback(Long taskFlowId, Map<String, Object> params) throws TaskFlowTriggerException;
 
     /**
      * 停止任务流

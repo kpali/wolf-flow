@@ -6,7 +6,7 @@ import me.kpali.wolfflow.core.BaseTest;
 import me.kpali.wolfflow.core.cluster.IClusterController;
 import me.kpali.wolfflow.core.enums.TaskFlowStatusEnum;
 import me.kpali.wolfflow.core.enums.TaskStatusEnum;
-import me.kpali.wolfflow.core.exception.TaskFlowQueryException;
+import me.kpali.wolfflow.core.exception.*;
 import me.kpali.wolfflow.core.logger.ITaskFlowLogger;
 import me.kpali.wolfflow.core.logger.ITaskLogger;
 import me.kpali.wolfflow.core.model.*;
@@ -145,7 +145,7 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
     }
 
     @Test
-    public void testRollbackNothing() {
+    public void testRollbackNothing() throws TaskFlowTriggerException, TaskFlowLogException, TaskLogException {
         long taskFlowId = 1L;
         long taskFlowLogId = this.taskFlowScheduler.rollback(taskFlowId, null);
         this.waitDoneAndPrintLog(taskFlowId, taskFlowLogId);
@@ -154,7 +154,7 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
     }
 
     @Test(dependsOnMethods = {"testRollbackNothing"})
-    public void testExecuteSingle() {
+    public void testExecuteSingle() throws TaskFlowTriggerException, TaskFlowLogException, TaskLogException {
         long taskFlowId = 1L;
         long taskId = 10L;
         long taskFlowLogId = this.taskFlowScheduler.execute(taskFlowId, taskId, null);
@@ -171,7 +171,7 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
     }
 
     @Test(dependsOnMethods = {"testExecuteSingle"})
-    public void testExecuteFrom() {
+    public void testExecuteFrom() throws TaskFlowTriggerException, TaskFlowLogException, TaskLogException {
         long taskFlowId = 1L;
         long taskId = 10L;
         long taskFlowLogId = this.taskFlowScheduler.executeFrom(taskFlowId, taskId, null);
@@ -188,7 +188,7 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
     }
 
     @Test(dependsOnMethods = {"testExecuteFrom"})
-    public void testExecuteTo() {
+    public void testExecuteTo() throws TaskFlowTriggerException, TaskFlowLogException, TaskLogException {
         long taskFlowId = 1L;
         long taskId = 11L;
         long taskFlowLogId = this.taskFlowScheduler.executeTo(taskFlowId, taskId, null);
@@ -205,7 +205,7 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
     }
 
     @Test(dependsOnMethods = {"testExecuteTo"})
-    public void testExecute() {
+    public void testExecute() throws TaskFlowTriggerException, TaskFlowLogException, TaskLogException {
         long taskFlowId = 1L;
         long taskFlowLogId = this.taskFlowScheduler.execute(taskFlowId, null);
         this.waitDoneAndPrintLog(taskFlowId, taskFlowLogId);
@@ -219,7 +219,7 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
     }
 
     @Test(dependsOnMethods = {"testExecute"})
-    public void testStop() {
+    public void testStop() throws TaskFlowTriggerException, TaskLogException, TaskFlowStopException, TaskFlowLogException {
         long taskFlowId = 1L;
         long taskFlowLogId = this.taskFlowScheduler.execute(taskFlowId, null);
         while (true) {
@@ -242,7 +242,7 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
     }
 
     @Test(dependsOnMethods = {"testStop"})
-    public void testRollback() {
+    public void testRollback() throws TaskFlowTriggerException, TaskLogException, TaskFlowLogException {
         long taskFlowId = 1L;
         long taskFlowLogId = this.taskFlowScheduler.rollback(taskFlowId, null);
         this.waitDoneAndPrintLog(taskFlowId, taskFlowLogId);
@@ -251,7 +251,7 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
     }
 
     @Test
-    public void testExecuteManualTask() {
+    public void testExecuteManualTask() throws TaskFlowTriggerException, TaskLogException, TaskFlowLogException {
         long taskFlowId = 2L;
         long taskFlowLogId = this.taskFlowScheduler.execute(taskFlowId, null);
 
@@ -274,7 +274,7 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
     }
 
     @Test(dependsOnMethods = {"testExecuteManualTask"})
-    public void testRollbackManualTask() {
+    public void testRollbackManualTask() throws TaskFlowTriggerException, TaskLogException, TaskFlowLogException {
         long taskFlowId = 2L;
         long taskFlowLogId = this.taskFlowScheduler.rollback(taskFlowId, null);
 
@@ -296,7 +296,7 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
         assertEquals(taskFlowLog.getStatus(), TaskFlowStatusEnum.ROLLBACK_SUCCESS.getCode());
     }
 
-    private void waitDoneAndPrintLog(long taskFlowId, long taskFlowLogId) {
+    private void waitDoneAndPrintLog(long taskFlowId, long taskFlowLogId) throws TaskFlowLogException, TaskLogException {
         System.out.println(">>>>>>>>>> 任务流日志ID：" + taskFlowLogId);
         while (true) {
             try {

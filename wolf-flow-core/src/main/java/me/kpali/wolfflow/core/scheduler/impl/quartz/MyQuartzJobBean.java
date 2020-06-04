@@ -44,7 +44,7 @@ public class MyQuartzJobBean extends QuartzJobBean {
             } else {
                 taskFlowScheduler.execute(taskFlowId, null);
             }
-        } catch (InvalidTaskFlowException | TaskFlowTriggerException e) {
+        } catch (TaskFlowTriggerException e) {
             throw new JobExecutionException(e);
         }
     }

@@ -5,7 +5,7 @@ package me.kpali.wolfflow.core.exception;
  *
  * @author kpali
  */
-public class TaskInterruptedException extends RuntimeException {
+public class TaskInterruptedException extends Exception {
     public TaskInterruptedException() {
         super();
     }

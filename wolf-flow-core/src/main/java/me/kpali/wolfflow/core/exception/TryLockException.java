@@ -5,7 +5,7 @@ package me.kpali.wolfflow.core.exception;
  *
  * @author kpali
  */
-public class TryLockException extends RuntimeException {
+public class TryLockException extends Exception {
     public TryLockException() {
         super();
     }

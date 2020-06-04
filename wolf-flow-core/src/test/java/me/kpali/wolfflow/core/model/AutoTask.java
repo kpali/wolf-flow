@@ -14,6 +14,9 @@ public class AutoTask extends Task {
 
     @Override
     public void execute(Map<String, Object> context) throws TaskExecuteException, TaskInterruptedException {
+        if (context == null) {
+            throw new IllegalArgumentException();
+        }
         try {
             ITaskLogger taskLogger = SpringContextUtil.getBean(ITaskLogger.class);
             TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
@@ -38,10 +41,10 @@ public class AutoTask extends Task {
                 }
             }
             taskLogger.log(taskLogFileId, "任务执行完成", true);
-        } catch (TaskExecuteException | TaskInterruptedException e) {
+        } catch (TaskInterruptedException e) {
             throw e;
         } catch (Exception e) {
-            throw new TaskExecuteException(e.getMessage());
+            throw new TaskExecuteException(e);
         }
     }
 
@@ -71,10 +74,10 @@ public class AutoTask extends Task {
                 }
             }
             taskLogger.log(taskLogFileId, "任务回滚完成", true);
-        } catch (TaskRollbackException | TaskInterruptedException e) {
+        } catch (TaskInterruptedException e) {
             throw e;
         } catch (Exception e) {
-            throw new TaskRollbackException(e.getMessage());
+            throw new TaskRollbackException(e);
         }
     }
 
