@@ -237,8 +237,8 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                                         throw new TaskExecuteException("父任务必须先执行成功");
                                     }
                                 }
-                                task.beforeExecute(context);
                                 this.taskStatusEventPublisher.publishEvent(task, executeTaskFlow.getId(), context, statusCode, null, true);
+                                task.beforeExecute(context);
                                 task.execute(context);
                                 task.afterExecute(context);
                                 idToTaskStatusMap.put(task.getId(), TaskStatusEnum.EXECUTE_SUCCESS.getCode());
@@ -490,8 +490,8 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                                         throw new TaskRollbackException("父任务必须先回滚成功");
                                     }
                                 }
-                                task.beforeRollback(context);
                                 this.taskStatusEventPublisher.publishEvent(task, rollbackTaskFlow.getId(), context, statusCode, null, true);
+                                task.beforeRollback(context);
                                 task.rollback(context);
                                 task.afterRollback(context);
                                 idToTaskStatusMap.put(task.getId(), TaskStatusEnum.ROLLBACK_SUCCESS.getCode());

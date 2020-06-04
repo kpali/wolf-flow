@@ -132,10 +132,9 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                             // 任务流执行
                             this.threadPool.execute(() -> {
                                 try {
-                                    this.taskFlowExecutor.beforeExecute(taskFlow, context);
                                     // 任务流执行中
                                     this.taskFlowStatusEventPublisher.publishEvent(taskFlow, context, TaskFlowStatusEnum.EXECUTING.getCode(), null, true);
-                                    // 开始执行
+                                    this.taskFlowExecutor.beforeExecute(taskFlow, context);
                                     this.taskFlowExecutor.execute(taskFlow, context);
                                     this.taskFlowExecutor.afterExecute(taskFlow, context);
                                     // 任务流执行成功
@@ -153,10 +152,9 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                             // 任务流回滚
                             this.threadPool.execute(() -> {
                                 try {
-                                    this.taskFlowExecutor.beforeRollback(taskFlow, context);
                                     // 任务流回滚中
                                     this.taskFlowStatusEventPublisher.publishEvent(taskFlow, context, TaskFlowStatusEnum.ROLLING_BACK.getCode(), null, true);
-                                    // 开始回滚
+                                    this.taskFlowExecutor.beforeRollback(taskFlow, context);
                                     this.taskFlowExecutor.rollback(taskFlow, context);
                                     this.taskFlowExecutor.afterRollback(taskFlow, context);
                                     // 任务流回滚成功
