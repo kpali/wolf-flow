@@ -2,7 +2,7 @@
 
 ## 简介
 
-wolf-flow 是一个简单的、支持有向无环图（DAG）的轻量级作业调度框架。
+wolf-flow 是一个简单的、支持有向无环图（DAG）的轻量级作业调度引擎。
 
 ## 功能特点
 
@@ -97,7 +97,12 @@ public class MyTask extends Task {
     public void execute(Map<String, Object> context) throws TaskExecuteException, TaskInterruptedException {
         // TODO 执行任务
     }
-
+    
+    @Override
+    public void rollback(Map<String, Object> context) throws TaskRollbackException, TaskInterruptedException {
+        // TODO 回滚任务
+    }
+    
     @Override
     public void stop(Map<String, Object> context) throws TaskStopException {
         // TODO 停止任务
@@ -122,6 +127,59 @@ public void test() {
 
 请参考示例程序：`wolf-flow-sample` 和 `wolf-flow-sample-cluster`
 
+## 基本概念
+
+### 任务（Task）
+
+任务是最小的工作单元，是实现作业步骤的实体。
+
+任务定义了若干个接口，例如执行任务、回滚任务、停止任务等，根据不同业务场景可以有不同的实现。
+
+### 连接（Link）
+
+连接用于表示不同任务之间的顺序关系，连接是有向的，表示在某个任务执行完成后执行另一个任务。
+
+### 任务流（Task Flow）
+
+任务流是多个任务和多个连接的组合，通过编排任务和任务之间的连接，形成实现某个具体事务的任务流。
+
+任务流可以立即/定时执行，停止和回滚。
+
+### 上下文（Context）
+
+上下文是执行期间任务流内共享的环境变量，任务中可以直接访问和修改上下文。上下文主要分为任务流上下文和任务上下文，结构大致如下：
+
+``` json
+{
+    "taskFlowId" : 100, // 任务流ID
+    "logId" : 10000,  // 任务流日志ID
+    "..." : "...",  // 任务流的其他上下文
+    "taskContexts" : {  // 任务上下文
+        "1" : {  // 任务1的上下文
+            "logId" : 10001,  // 任务1的任务日志ID
+            "parentTaskIdList" : [  // 任务1的父任务ID列表
+            ],
+            "..." : "..."  // 任务1的其他上下文
+        },
+        "2" : {
+            "logId" : 10002,
+            "parentTaskIdList" : [
+                1
+            ],
+            "..." : "..."
+        }
+    }
+}
+```
+
+### 任务流日志（Task Flow Log）
+
+任务流日志是任务流的执行记录，包含某次执行的任务流状态、上下文和执行时间等数据，一次任务流执行产生一条任务流日志。
+
+### 任务日志（Task Log）
+
+任务日志是任务的执行记录，包含某次执行的任务状态、上下文和执行时间等数据，一次任务执行产生一条任务日志。
+
 ## 架构设计
 
 ### 架构图
@@ -138,6 +196,54 @@ public void test() {
 
 ![集群模式](docs/集群模式.jpg)
 
-### 任务流生命周期
+### 任务流执行
 
-![任务流生命周期](docs/任务流生命周期.jpg)
+![任务流执行](docs/任务流执行.jpg)
+
+执行任务流时，根据任务流编排的方向有序执行。
+
+每个任务依次执行 `beforeExecute() ` ， `execute() ` 和 `afterExecute() ` 接口。
+
+当任务1执行完成后，任务2和任务3会并行执行，任务4则会等待任务2执行完成后再开始执行。
+
+最大并行任务数取决于任务流执行器的线程池最大线程数。
+
+**任务流执行生命周期：**
+
+![任务流执行生命周期](docs/任务流执行生命周期.jpg)
+
+### 任务流回滚
+
+![任务流回滚](docs/任务流回滚.jpg)
+
+任务流回滚的时候，则是反向顺序执行。
+
+每个任务依次执行 `beforeRollback() ` ， `rollback() ` 和 `afterRollback() ` 接口。
+
+由于任务3和任务4没有依赖任务，所以最先开始回滚。任务1则会等待任务2和任务3都回滚成功才会开始回滚。
+
+同样，最大并行任务数取决于任务流执行器的线程池最大线程数。
+
+**任务流回滚生命周期：**
+
+![任务流回滚生命周期](docs/任务流回滚生命周期.jpg)
+
+### 事件发布与监听
+
+引擎运行期间，特定事件发生时会发布事件通知，目前主要有以下事件：
+
+- 任务流定时调度状态变更事件：当一条任务流加入或更新定时调度，以及定时调度失败时发生。
+- 任务流状态变更事件：当任务流变更为”等待执行“、”执行中“、”执行成功“等状态时发生。
+- 任务状态变更事件：当任务变更为”等待执行“、”执行中“、”执行成功“等状态时发生。
+
+事件的发布与订阅使用是 Spring 的事件机制，需要订阅时定义一个事件监听器，参考如下：
+
+``` java
+    @EventListener
+    public void taskFlowStatusChange(TaskFlowStatusChangeEvent event) {
+        Long taskFlowId = event.getTaskFlowStatus().getTaskFlow().getId();
+        String status = event.getTaskFlowStatus().getStatus();
+        System.out.println(">>>>>>>>> 任务流[" + taskFlowId + "]状态变更为：" + status);
+    }
+```
+

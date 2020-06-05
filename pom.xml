@@ -13,7 +13,7 @@
     <version>2.0.0</version>
     <packaging>pom</packaging>
     <name>wolf-flow</name>
-    <description>Wolf flow is a simple, lightweight job scheduling framework</description>
+    <description>Wolf flow is a simple, lightweight job scheduling engine</description>
 
     <properties>
         <java.version>1.8</java.version>
