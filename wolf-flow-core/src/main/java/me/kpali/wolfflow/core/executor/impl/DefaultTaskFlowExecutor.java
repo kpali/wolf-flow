@@ -9,7 +9,7 @@ import me.kpali.wolfflow.core.exception.*;
 import me.kpali.wolfflow.core.executor.ITaskFlowExecutor;
 import me.kpali.wolfflow.core.logger.ITaskLogger;
 import me.kpali.wolfflow.core.model.*;
-import me.kpali.wolfflow.core.scheduler.impl.SystemTimeUtils;
+import me.kpali.wolfflow.core.util.IdGenerator;
 import me.kpali.wolfflow.core.util.TaskFlowUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +41,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     private ITaskLogger taskLogger;
 
     @Autowired
-    private SystemTimeUtils systemTimeUtils;
+    private IdGenerator idGenerator;
 
     @Override
     public void beforeExecute(TaskFlow taskFlow, Map<String, Object> context) throws TaskFlowExecuteException {
@@ -99,7 +99,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                         this.taskLogger.deleteTaskStatus(task.getId());
                         // 初始化上下文
                         TaskContextWrapper taskContextWrapper = new TaskContextWrapper();
-                        Long taskLogId = systemTimeUtils.getUniqueTimeStamp();
+                        Long taskLogId = idGenerator.nextId();
                         taskContextWrapper.put(ContextKey.TASK_LOG_ID, taskLogId);
                         String logFileId = UUID.randomUUID().toString();
                         taskContextWrapper.put(ContextKey.TASK_LOG_FILE_ID, logFileId);
@@ -118,7 +118,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                             continue;
                         }
                         // 任务状态（日志）
-                        Long taskLogId = systemTimeUtils.getUniqueTimeStamp();
+                        Long taskLogId = idGenerator.nextId();
                         taskLog.setLogId(taskLogId);
                         taskLog.setTaskFlowLogId(taskFlowLogId);
                         this.taskLogger.add(taskLog);
@@ -348,7 +348,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                         continue;
                     }
                     // 任务状态（日志）
-                    Long taskLogId = systemTimeUtils.getUniqueTimeStamp();
+                    Long taskLogId = idGenerator.nextId();
                     taskLog.setLogId(taskLogId);
                     taskLog.setTaskFlowLogId(taskFlowLogId);
                     taskLog.setRollback(true);

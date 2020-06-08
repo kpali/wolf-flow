@@ -30,10 +30,17 @@ public class MyClusterController extends DefaultClusterController {
     @Autowired
     private ClusterConfig clusterConfig;
 
+    private static final String NODE_ID = "nodeId";
     private static final String NODE_HEARTBEAT = "nodeHeartbeat";
     private static final String TASK_FLOW_EXEC_REQUEST = "taskFlowExecRequest";
     private static final String TASK_FLOW_STOP_REQUEST = "taskFlowStopRequest";
     private static final String MANUAL_CONFIRMED = "manualConfirmed";
+
+    @Override
+    public void generateNodeId() {
+        RAtomicLong atomicLong = redisson.getAtomicLong(NODE_ID);
+        this.nodeId = atomicLong.incrementAndGet();
+    }
 
     @Override
     public void heartbeat() {
@@ -42,7 +49,7 @@ public class MyClusterController extends DefaultClusterController {
     }
 
     @Override
-    public boolean isNodeAlive(String nodeId) {
+    public boolean isNodeAlive(Long nodeId) {
         RLock lock = redisson.getLock(NODE_HEARTBEAT + ":" + nodeId);
         return lock.isLocked();
     }

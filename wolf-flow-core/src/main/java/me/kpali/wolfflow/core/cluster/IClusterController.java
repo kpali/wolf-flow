@@ -17,11 +17,16 @@ public interface IClusterController {
     void startup();
 
     /**
+     * 生成节点ID
+     */
+    void generateNodeId();
+
+    /**
      * 获取当前节点ID
      *
      * @return 节点ID
      */
-    String getNodeId();
+    Long getNodeId();
 
     /**
      * 发送当前节点心跳
@@ -34,7 +39,7 @@ public interface IClusterController {
      * @param nodeId
      * @return
      */
-    boolean isNodeAlive(String nodeId);
+    boolean isNodeAlive(Long nodeId);
 
     /**
      * 加锁，如果暂时无法加锁，则当前线程休眠，直到加锁成功

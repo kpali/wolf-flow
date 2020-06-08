@@ -22,22 +22,18 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 @Component
 public class DefaultClusterController implements IClusterController {
-    public DefaultClusterController() {
-        this.nodeId = UUID.randomUUID().toString();
-    }
-
     private static final Logger log = LoggerFactory.getLogger(DefaultClusterController.class);
 
     @Autowired
     private ClusterConfig clusterConfig;
 
-    private String nodeId;
+    protected Long nodeId;
     private final Object lock = new Object();
     private Map<String, Lock> lockMap = new HashMap<>();
     private Queue<TaskFlowExecRequest> taskFlowExecRequest = new LinkedList<>();
     private Set<Long> taskFlowStopRequest = new HashSet<>();
     private Map<Long, ManualConfirmed> manualConfirmedMap = new HashMap<>();
-    private Map<String, Date> heartbeatMap = new HashMap<>();
+    private Map<Long, Date> heartbeatMap = new HashMap<>();
 
     private boolean started = false;
 
@@ -50,6 +46,7 @@ public class DefaultClusterController implements IClusterController {
                 this.clusterConfig.getNodeHeartbeatInterval(),
                 this.clusterConfig.getNodeHeartbeatDuration());
         this.started = true;
+        this.generateNodeId();
         this.startNodeHeartbeat();
     }
 
@@ -79,7 +76,12 @@ public class DefaultClusterController implements IClusterController {
     }
 
     @Override
-    public String getNodeId() {
+    public void generateNodeId() {
+        this.nodeId = 1L;
+    }
+
+    @Override
+    public Long getNodeId() {
         return this.nodeId;
     }
 
@@ -94,7 +96,7 @@ public class DefaultClusterController implements IClusterController {
     }
 
     @Override
-    public boolean isNodeAlive(String nodeId) {
+    public boolean isNodeAlive(Long nodeId) {
         synchronized (lock) {
             if (this.heartbeatMap.containsKey(nodeId)) {
                 Date heartbeatExpireDate = this.heartbeatMap.get(nodeId);

@@ -21,6 +21,8 @@ import me.kpali.wolfflow.core.model.*;
 import me.kpali.wolfflow.core.querier.ITaskFlowQuerier;
 import me.kpali.wolfflow.core.scheduler.ITaskFlowScheduler;
 import me.kpali.wolfflow.core.scheduler.impl.quartz.MyDynamicScheduler;
+import me.kpali.wolfflow.core.util.IdGenerator;
+import me.kpali.wolfflow.core.util.SnowFlake;
 import org.quartz.JobKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,7 +74,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
     private IClusterController clusterController;
 
     @Autowired
-    private SystemTimeUtils systemTimeUtils;
+    private IdGenerator idGenerator;
 
     @Override
     public void startup() {
@@ -312,7 +314,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
         try {
             // 获取任务流
             TaskFlow taskFlow = this.taskFlowQuerier.getTaskFlow(taskFlowId);
-            long taskFlowLogId = systemTimeUtils.getUniqueTimeStamp();
+            long taskFlowLogId = idGenerator.nextId();
             String waitForStatus = isRollback ? TaskFlowStatusEnum.WAIT_FOR_ROLLBACK.getCode() : TaskFlowStatusEnum.WAIT_FOR_EXECUTE.getCode();
             String failureStatus = isRollback ? TaskFlowStatusEnum.ROLLBACK_FAILURE.getCode() : TaskFlowStatusEnum.EXECUTE_FAILURE.getCode();
 
@@ -403,7 +405,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                 if (taskFlowLog != null && this.taskFlowLogger.isInProgress(taskFlowLog)) {
                     // 检查任务流所在节点是否存活
                     TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(taskFlowLog.getContext());
-                    String nodeId = taskFlowContextWrapper.getValue(ContextKey.EXECUTED_BY_NODE, String.class);
+                    Long nodeId = taskFlowContextWrapper.getValue(ContextKey.EXECUTED_BY_NODE, Long.class);
                     if (this.clusterController.isNodeAlive(nodeId)) {
                         // 任务流所在节点存活，则发送停止请求
                         if (!this.clusterController.stopRequestContains(taskFlowLogId)) {

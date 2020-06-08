@@ -23,6 +23,7 @@ public class DefaultClusterControllerTest extends BaseTest {
 
     @Test
     public void testGetNodeId() {
+        this.clusterController.generateNodeId();
         assertNotNull(this.clusterController.getNodeId());
     }
 
