@@ -1,5 +1,6 @@
 package me.kpali.wolfflow.core.cluster;
 
+import me.kpali.wolfflow.core.model.ManualConfirmed;
 import me.kpali.wolfflow.core.model.TaskFlowExecRequest;
 
 import java.util.concurrent.TimeUnit;
@@ -109,22 +110,22 @@ public interface IClusterController {
     void stopRequestRemove(Long taskFlowLogId);
 
     /**
-     * 新增手工任务确认
+     * 新增手工确认信息
      *
-     * @param taskLogId
+     * @param manualConfirmed
      */
-    void manualConfirmedAdd(Long taskLogId);
+    void manualConfirmedAdd(ManualConfirmed manualConfirmed);
 
     /**
-     * 查询手工任务是否确认
+     * 获取手工确认信息
      *
      * @param taskLogId
      * @return
      */
-    Boolean manualConfirmedContains(Long taskLogId);
+    ManualConfirmed manualConfirmedGet(Long taskLogId);
 
     /**
-     * 删除手工任务确认
+     * 删除手工确认信息
      *
      * @param taskLogId
      */

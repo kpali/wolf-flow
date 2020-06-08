@@ -2,11 +2,9 @@ package me.kpali.wolfflow.sample.cluster.taskflow;
 
 import me.kpali.wolfflow.core.cluster.impl.DefaultClusterController;
 import me.kpali.wolfflow.core.config.ClusterConfig;
+import me.kpali.wolfflow.core.model.ManualConfirmed;
 import me.kpali.wolfflow.core.model.TaskFlowExecRequest;
-import org.redisson.api.RLock;
-import org.redisson.api.RQueue;
-import org.redisson.api.RSet;
-import org.redisson.api.RedissonClient;
+import org.redisson.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -110,20 +108,20 @@ public class MyClusterController extends DefaultClusterController {
     }
 
     @Override
-    public void manualConfirmedAdd(Long taskLogId) {
-        RSet<Long> set = redisson.getSet(MANUAL_CONFIRMED);
-        set.add(taskLogId);
+    public void manualConfirmedAdd(ManualConfirmed manualConfirmed) {
+        RMap<Long, ManualConfirmed> map = redisson.getMap(MANUAL_CONFIRMED);
+        map.put(manualConfirmed.getTaskLogId(), manualConfirmed);
     }
 
     @Override
-    public Boolean manualConfirmedContains(Long taskLogId) {
-        RSet<Long> set = redisson.getSet(MANUAL_CONFIRMED);
-        return set.contains(taskLogId);
+    public ManualConfirmed manualConfirmedGet(Long taskLogId) {
+        RMap<Long, ManualConfirmed> map = redisson.getMap(MANUAL_CONFIRMED);
+        return map.get(taskLogId);
     }
 
     @Override
     public void manualConfirmedRemove(Long taskLogId) {
-        RSet<Long> set = redisson.getSet(MANUAL_CONFIRMED);
-        set.remove(taskLogId);
+        RMap<Long, ManualConfirmed> map = redisson.getMap(MANUAL_CONFIRMED);
+        map.remove(taskLogId);
     }
 }

@@ -36,9 +36,14 @@ public class ManualTask extends Task {
                     throw new TaskInterruptedException("任务被终止执行");
                 }
                 // 检查手工确认结果
-                if (clusterController.manualConfirmedContains(taskLogId)) {
+                ManualConfirmed manualConfirmed = clusterController.manualConfirmedGet(taskLogId);
+                if (manualConfirmed != null) {
                     clusterController.manualConfirmedRemove(taskLogId);
-                    break;
+                    if (manualConfirmed.getSuccess()) {
+                        break;
+                    } else {
+                        throw new TaskExecuteException(manualConfirmed.getMessage());
+                    }
                 }
             }
         } catch (TaskInterruptedException e) {
@@ -68,9 +73,14 @@ public class ManualTask extends Task {
                     throw new TaskInterruptedException("任务被终止回滚");
                 }
                 // 检查手工确认结果
-                if (clusterController.manualConfirmedContains(taskLogId)) {
+                ManualConfirmed manualConfirmed = clusterController.manualConfirmedGet(taskLogId);
+                if (manualConfirmed != null) {
                     clusterController.manualConfirmedRemove(taskLogId);
-                    break;
+                    if (manualConfirmed.getSuccess()) {
+                        break;
+                    } else {
+                        throw new TaskRollbackException(manualConfirmed.getMessage());
+                    }
                 }
             }
         } catch (TaskInterruptedException e) {

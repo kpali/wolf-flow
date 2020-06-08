@@ -2,6 +2,7 @@ package me.kpali.wolfflow.core.cluster.impl;
 
 import me.kpali.wolfflow.core.BaseTest;
 import me.kpali.wolfflow.core.cluster.IClusterController;
+import me.kpali.wolfflow.core.model.ManualConfirmed;
 import me.kpali.wolfflow.core.model.TaskFlowExecRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.testng.annotations.BeforeClass;
@@ -77,11 +78,11 @@ public class DefaultClusterControllerTest extends BaseTest {
     @Test
     public void testManualConfirmed() {
         Long taskLogId = 1L;
-        this.clusterController.manualConfirmedAdd(taskLogId);
-        boolean isContains = this.clusterController.manualConfirmedContains(taskLogId);
-        assertEquals(isContains, true);
+        this.clusterController.manualConfirmedAdd(new ManualConfirmed(taskLogId, true, null));
+        ManualConfirmed manualConfirmed = this.clusterController.manualConfirmedGet(taskLogId);
+        assertNotNull(manualConfirmed);
         this.clusterController.manualConfirmedRemove(taskLogId);
-        isContains = this.clusterController.manualConfirmedContains(taskLogId);
-        assertFalse(isContains);
+        manualConfirmed = this.clusterController.manualConfirmedGet(taskLogId);
+        assertNull(manualConfirmed);
     }
 }

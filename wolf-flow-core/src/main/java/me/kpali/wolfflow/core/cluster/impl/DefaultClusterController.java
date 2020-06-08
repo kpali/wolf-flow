@@ -3,6 +3,7 @@ package me.kpali.wolfflow.core.cluster.impl;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import me.kpali.wolfflow.core.cluster.IClusterController;
 import me.kpali.wolfflow.core.config.ClusterConfig;
+import me.kpali.wolfflow.core.model.ManualConfirmed;
 import me.kpali.wolfflow.core.model.TaskFlowExecRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +36,7 @@ public class DefaultClusterController implements IClusterController {
     private Map<String, Lock> lockMap = new HashMap<>();
     private Queue<TaskFlowExecRequest> taskFlowExecRequest = new LinkedList<>();
     private Set<Long> taskFlowStopRequest = new HashSet<>();
-    private Set<Long> taskManualConfirmed = new HashSet<>();
+    private Map<Long, ManualConfirmed> manualConfirmedMap = new HashMap<>();
     private Map<String, Date> heartbeatMap = new HashMap<>();
 
     private boolean started = false;
@@ -183,23 +184,25 @@ public class DefaultClusterController implements IClusterController {
     }
 
     @Override
-    public void manualConfirmedAdd(Long taskLogId) {
+    public void manualConfirmedAdd(ManualConfirmed manualConfirmed) {
         synchronized (lock) {
-            taskManualConfirmed.add(taskLogId);
+            if (manualConfirmed != null) {
+                manualConfirmedMap.put(manualConfirmed.getTaskLogId(), manualConfirmed);
+            }
         }
     }
 
     @Override
-    public Boolean manualConfirmedContains(Long taskLogId) {
+    public ManualConfirmed manualConfirmedGet(Long taskLogId) {
         synchronized (lock) {
-            return taskManualConfirmed.contains(taskLogId);
+            return manualConfirmedMap.get(taskLogId);
         }
     }
 
     @Override
     public void manualConfirmedRemove(Long taskLogId) {
         synchronized (lock) {
-            taskManualConfirmed.remove(taskLogId);
+            manualConfirmedMap.remove(taskLogId);
         }
     }
 }

@@ -263,7 +263,7 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
             }
             TaskLog manualTaskLog = taskLogger.get(taskFlowLogId, 12L);
             if (manualTaskLog != null && TaskStatusEnum.MANUAL_CONFIRM.getCode().equals(manualTaskLog.getStatus())) {
-                clusterController.manualConfirmedAdd(manualTaskLog.getLogId());
+                clusterController.manualConfirmedAdd(new ManualConfirmed(manualTaskLog.getLogId(), true, null));
                 break;
             }
         }
@@ -286,7 +286,7 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
             }
             TaskLog manualTaskLog = taskLogger.get(taskFlowLogId, 12L);
             if (manualTaskLog != null && TaskStatusEnum.MANUAL_CONFIRM.getCode().equals(manualTaskLog.getStatus())) {
-                clusterController.manualConfirmedAdd(manualTaskLog.getLogId());
+                clusterController.manualConfirmedAdd(new ManualConfirmed(manualTaskLog.getLogId(), true, null));
                 break;
             }
         }
