@@ -39,7 +39,9 @@ public class MyClusterController extends DefaultClusterController {
     @Override
     public void generateNodeId() {
         RAtomicLong atomicLong = redisson.getAtomicLong(NODE_ID);
-        this.nodeId = atomicLong.incrementAndGet();
+        Long id = atomicLong.incrementAndGet();
+        // 当前分布式ID生成算法最大只支持32个节点
+        this.nodeId = id % 32;
     }
 
     @Override

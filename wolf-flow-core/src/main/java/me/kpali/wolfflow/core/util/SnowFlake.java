@@ -14,8 +14,8 @@ public class SnowFlake {
     /**
      * 每一部分占用的位数
      */
-    private final static long SEQUENCE_BIT = 12; //序列号占用的位数
-    private final static long MACHINE_BIT = 10;   //机器标识占用的位数
+    private final static long SEQUENCE_BIT = 8; //序列号占用的位数
+    private final static long MACHINE_BIT = 5;   //机器标识占用的位数
 
     /**
      * 每一部分的最大值
