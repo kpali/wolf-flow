@@ -3,6 +3,7 @@ package me.kpali.wolfflow.core.cluster.impl;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import me.kpali.wolfflow.core.cluster.IClusterController;
 import me.kpali.wolfflow.core.config.ClusterConfig;
+import me.kpali.wolfflow.core.exception.GenerateNodeIdException;
 import me.kpali.wolfflow.core.model.ManualConfirmed;
 import me.kpali.wolfflow.core.model.TaskFlowExecRequest;
 import org.slf4j.Logger;
@@ -46,7 +47,12 @@ public class DefaultClusterController implements IClusterController {
                 this.clusterConfig.getNodeHeartbeatInterval(),
                 this.clusterConfig.getNodeHeartbeatDuration());
         this.started = true;
-        this.generateNodeId();
+        try {
+            this.generateNodeId();
+        } catch (GenerateNodeIdException e) {
+            log.error(e.getMessage(), e);
+            System.exit(1);
+        }
         this.startNodeHeartbeat();
     }
 
@@ -76,7 +82,7 @@ public class DefaultClusterController implements IClusterController {
     }
 
     @Override
-    public void generateNodeId() {
+    public void generateNodeId() throws GenerateNodeIdException {
         this.nodeId = 1L;
     }
 

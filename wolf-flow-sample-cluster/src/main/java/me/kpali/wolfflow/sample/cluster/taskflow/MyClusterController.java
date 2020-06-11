@@ -2,6 +2,8 @@ package me.kpali.wolfflow.sample.cluster.taskflow;
 
 import me.kpali.wolfflow.core.cluster.impl.DefaultClusterController;
 import me.kpali.wolfflow.core.config.ClusterConfig;
+import me.kpali.wolfflow.core.exception.GenerateNodeIdException;
+import me.kpali.wolfflow.core.model.ClusterConstants;
 import me.kpali.wolfflow.core.model.ManualConfirmed;
 import me.kpali.wolfflow.core.model.TaskFlowExecRequest;
 import org.redisson.api.*;
@@ -37,11 +39,29 @@ public class MyClusterController extends DefaultClusterController {
     private static final String MANUAL_CONFIRMED = "manualConfirmed";
 
     @Override
-    public void generateNodeId() {
-        RAtomicLong atomicLong = redisson.getAtomicLong(NODE_ID);
-        Long id = atomicLong.incrementAndGet();
-        // 当前分布式ID生成算法最大只支持32个节点
-        this.nodeId = id % 32;
+    public void generateNodeId() throws GenerateNodeIdException {
+        try {
+            this.lock(ClusterConstants.GENERATE_NODE_ID_LOCK,
+                    ClusterConstants.GENERATE_NODE_ID_LOCK_LEASE_TIME, TimeUnit.SECONDS);
+            RAtomicLong atomicLong = redisson.getAtomicLong(NODE_ID);
+            // 当前分布式ID生成算法默认最大支持32个节点
+            int maxNodeNum = 32;
+            for (int i = 0; i < maxNodeNum; i++) {
+                long id = atomicLong.incrementAndGet() % maxNodeNum;
+                if (!this.isNodeAlive(id)) {
+                    // ID没有被占用
+                    this.nodeId = id;
+                    return;
+                }
+            }
+            throw new GenerateNodeIdException("生成节点ID失败，已达最大节点数！");
+        } finally {
+            try {
+                this.unlock(ClusterConstants.GENERATE_NODE_ID_LOCK);
+            } catch (Exception e) {
+                log.warn(e.getMessage(), e);
+            }
+        }
     }
 
     @Override

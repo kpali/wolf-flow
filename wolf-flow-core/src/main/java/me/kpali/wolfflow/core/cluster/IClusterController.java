@@ -1,5 +1,6 @@
 package me.kpali.wolfflow.core.cluster;
 
+import me.kpali.wolfflow.core.exception.GenerateNodeIdException;
 import me.kpali.wolfflow.core.model.ManualConfirmed;
 import me.kpali.wolfflow.core.model.TaskFlowExecRequest;
 
@@ -19,7 +20,7 @@ public interface IClusterController {
     /**
      * 生成节点ID
      */
-    void generateNodeId();
+    void generateNodeId() throws GenerateNodeIdException;
 
     /**
      * 获取当前节点ID
