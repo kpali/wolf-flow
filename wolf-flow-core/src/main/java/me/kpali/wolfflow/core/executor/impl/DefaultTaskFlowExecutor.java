@@ -335,6 +335,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                     throw new TryLockException("获取任务日志记录锁失败！");
                 }
                 // 复制一份回滚前的任务状态（日志）
+                Date now = new Date();
                 for (Task task : taskFlow.getTaskList()) {
                     boolean needRollback = false;
                     for (Task rollbackTask : rollbackTaskFlow.getTaskList()) {
@@ -352,6 +353,8 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                     taskLog.setLogId(taskLogId);
                     taskLog.setTaskFlowLogId(taskFlowLogId);
                     taskLog.setRollback(true);
+                    taskLog.setCreationTime(now);
+                    taskLog.setUpdateTime(now);
                     this.taskLogger.add(taskLog);
                     if (needRollback) {
                         // 要回滚的任务，初始化上下文
