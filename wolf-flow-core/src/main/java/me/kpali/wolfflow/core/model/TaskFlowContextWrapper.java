@@ -48,21 +48,71 @@ public class TaskFlowContextWrapper extends ContextWrapper {
         }
     }
 
-    public Object getParam(String name) {
+    public Object getParam(String key) {
         Map<String, Object> params = this.getParams();
         if (params == null) {
             return null;
         }
-        return params.get(name);
+        return params.get(key);
     }
 
-    public synchronized void putParam(String name, Object param) {
+    public synchronized void putParam(String key, Object value) {
         Map<String, Object> params = this.getParams();
         if (params == null) {
             params = new HashMap<>();
             this.context.put(ContextKey.PARAMS, params);
         }
-        params.put(name, param);
+        params.put(key, value);
+    }
+
+    public ParamsWrapper getParamsWrapper() {
+        Map<String, Object> params = this.getParams();
+        if (params == null) {
+            return null;
+        }
+        return new ParamsWrapper(params);
+    }
+
+    public Map<String, Object> getDeliveryContext() {
+        Object deliveryContextObj = this.context.get(ContextKey.DELIVERY_CONTEXT);
+        if (deliveryContextObj == null) {
+            return null;
+        }
+        return (Map<String, Object>) deliveryContextObj;
+    }
+
+    public synchronized void setDeliveryContext(Map<String, Object> deliveryContext) {
+        Object deliveryContextObj = this.context.get(ContextKey.DELIVERY_CONTEXT);
+        if (deliveryContextObj == null) {
+            this.context.put(ContextKey.DELIVERY_CONTEXT, deliveryContext);
+        } else {
+            deliveryContextObj = deliveryContext;
+        }
+    }
+
+    public Object getDeliveryContext(String key) {
+        Map<String, Object> deliveryContext = this.getDeliveryContext();
+        if (deliveryContext == null) {
+            return null;
+        }
+        return deliveryContext.get(key);
+    }
+
+    public synchronized void putDeliveryContext(String key, Object value) {
+        Map<String, Object> deliveryContext = this.getDeliveryContext();
+        if (deliveryContext == null) {
+            deliveryContext = new HashMap<>();
+            this.context.put(ContextKey.DELIVERY_CONTEXT, deliveryContext);
+        }
+        deliveryContext.put(key, value);
+    }
+
+    public DeliveryContextWrapper getDeliveryContextWrapper() {
+        Map<String, Object> deliveryContext = this.getDeliveryContext();
+        if (deliveryContext == null) {
+            return null;
+        }
+        return new DeliveryContextWrapper(deliveryContext);
     }
 
     public Map<String, Map<String, Object>> getTaskContexts() {
@@ -111,4 +161,3 @@ public class TaskFlowContextWrapper extends ContextWrapper {
         taskContexts.put(taskId, taskContext);
     }
 }
-

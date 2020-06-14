@@ -22,7 +22,6 @@ import me.kpali.wolfflow.core.querier.ITaskFlowQuerier;
 import me.kpali.wolfflow.core.scheduler.ITaskFlowScheduler;
 import me.kpali.wolfflow.core.scheduler.impl.quartz.MyDynamicScheduler;
 import me.kpali.wolfflow.core.util.IdGenerator;
-import me.kpali.wolfflow.core.util.SnowFlake;
 import org.quartz.JobKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -349,6 +348,12 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                 if (lastTaskFlowLog != null) {
                     if (this.taskFlowLogger.isInProgress(lastTaskFlowLog)) {
                         throw new TaskFlowTriggerException("不允许同时多次执行！");
+                    }
+                    // 分段执行时，导入上一次的投递上下文
+                    if ((fromTaskId != null || toTaskId != null) && isRollback.equals(lastTaskFlowLog.getRollback())) {
+                        if (lastTaskFlowLog.getContext() != null && lastTaskFlowLog.getContext().containsKey(ContextKey.DELIVERY_CONTEXT)) {
+                            taskFlowContextWrapper.put(ContextKey.DELIVERY_CONTEXT, lastTaskFlowLog.getContext().get(ContextKey.DELIVERY_CONTEXT));
+                        }
                     }
                 }
 
