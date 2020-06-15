@@ -3,7 +3,7 @@ package me.kpali.wolfflow.core.model;
 import java.util.Map;
 
 /**
- * 投递上下文包装类
+ * 传递上下文包装类
  *
  * @author kpali
  */

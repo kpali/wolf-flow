@@ -349,7 +349,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                     if (this.taskFlowLogger.isInProgress(lastTaskFlowLog)) {
                         throw new TaskFlowTriggerException("不允许同时多次执行！");
                     }
-                    // 分段执行时，导入上一次的投递上下文
+                    // 分段执行时，导入上一次的传递上下文
                     if ((fromTaskId != null || toTaskId != null) && isRollback.equals(lastTaskFlowLog.getRollback())) {
                         if (lastTaskFlowLog.getContext() != null && lastTaskFlowLog.getContext().containsKey(ContextKey.DELIVERY_CONTEXT)) {
                             taskFlowContextWrapper.put(ContextKey.DELIVERY_CONTEXT, lastTaskFlowLog.getContext().get(ContextKey.DELIVERY_CONTEXT));
