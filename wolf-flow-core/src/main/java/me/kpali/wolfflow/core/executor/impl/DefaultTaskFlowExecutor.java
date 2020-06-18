@@ -123,15 +123,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                         taskLog.setTaskFlowLogId(taskFlowLogId);
                         this.taskLogger.add(taskLog);
                         // 任务上下文
-                        Map<String, Object> lastTaskFlowContext = taskLog.getContext();
-                        if (lastTaskFlowContext == null) {
-                            continue;
-                        }
-                        TaskFlowContextWrapper lastTaskFlowContextWrapper = new TaskFlowContextWrapper(lastTaskFlowContext);
-                        if (lastTaskFlowContextWrapper.getTaskContexts() == null) {
-                            continue;
-                        }
-                        Map<String, Object> lastTaskContext = lastTaskFlowContextWrapper.getTaskContext(task.getId().toString());
+                        Map<String, Object> lastTaskContext = taskLog.getContext();
                         if (lastTaskContext == null) {
                             continue;
                         }
@@ -371,20 +363,16 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                         taskContextWrapper.put(ContextKey.PARENT_TASK_ID_LIST, parentTaskIdList);
                         TaskLog lastExecuteLog = this.taskLogger.getLastExecuteLog(task.getId());
                         if (lastExecuteLog != null) {
-                            taskContextWrapper.put(ContextKey.TASK_LAST_EXECUTE_LOG_ID, lastExecuteLog.getLogId());
+                            TaskContextWrapper lastTaskContextWrapper = new TaskContextWrapper(lastExecuteLog.getContext());
+                            Long realLastExecuteLogId = lastTaskContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
+                            if (realLastExecuteLogId != null) {
+                                taskContextWrapper.put(ContextKey.TASK_LAST_EXECUTE_LOG_ID, realLastExecuteLogId);
+                            }
                         }
                         taskFlowContextWrapper.putTaskContext(task.getId().toString(), taskContextWrapper.getContext());
                     } else {
                         // 不需要回滚的任务，导入任务上下文到本次任务流上下文
-                        Map<String, Object> lastTaskFlowContext = taskLog.getContext();
-                        if (lastTaskFlowContext == null) {
-                            continue;
-                        }
-                        TaskFlowContextWrapper lastTaskFlowContextWrapper = new TaskFlowContextWrapper(lastTaskFlowContext);
-                        if (lastTaskFlowContextWrapper.getTaskContexts() == null) {
-                            continue;
-                        }
-                        Map<String, Object> lastTaskContext = lastTaskFlowContextWrapper.getTaskContext(task.getId().toString());
+                        Map<String, Object> lastTaskContext = taskLog.getContext();
                         if (lastTaskContext == null) {
                             continue;
                         }

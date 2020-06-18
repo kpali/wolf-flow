@@ -16,7 +16,7 @@ public class ContextWrapper {
     }
 
     public ContextWrapper(Map<String, Object> context) {
-        this.context = context;
+        this.context = (context == null ? new HashMap<>() : context);
     }
 
     protected Map<String, Object> context;
