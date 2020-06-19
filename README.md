@@ -147,13 +147,30 @@ public void test() {
 
 ### 上下文（Context）
 
-上下文是执行期间任务流内共享的环境变量，任务中可以直接访问和修改上下文。上下文主要分为任务流上下文和任务上下文，结构大致如下：
+上下文是运行期间任务流内传播的元数据或环境变量，任务中可以直接访问和修改上下文。上下文主要分为：
+
+- 任务流上下文：主要用于存储任务流相关的元数据或环境变量。
+
+- 参数：主要用于存储触发任务流时调用方指定携带的参数。
+
+- 任务上下文：主要用于存储任务相关的元数据或环境变量。
+
+- 传递上下文：主要用于存储任务之间需要传递的数据，由任务自主存取和传递。在任务流分段执行时，传递上下文会被复制到新的上下文中，以保证之前的任务希望传递的上下文能够被之后的任务获取到。
+
+结构大致如下：
 
 ``` json
 {
+    // 任务流上下文
     "taskFlowId" : 100,
     "logId" : 10000,
     "..." : "...",
+    // 参数
+    "params" : {
+        "..." : "...",
+        "..." : "..."
+    },
+    // 任务上下文
     "taskContexts" : {
         "1" : {
             "logId" : 10001,
@@ -168,6 +185,11 @@ public void test() {
             ],
             "..." : "..."
         }
+    },
+    // 传递上下文
+    "deliveryContext" : {
+        "..." : "...",
+        "..." : "..."
     }
 }
 ```
@@ -195,6 +217,10 @@ public void test() {
 ### 集群模式
 
 ![集群模式](docs/集群模式.jpg)
+
+集群支持的最大节点数默认为32个，这是由于分布式 ID 生成算法采用的是 `Snake Flow` 算法，并且机器标识位默认设置为5位，2^5=32。
+
+可根据实际场景修改算法的机器标识位数，来增加集群支持的最大节点数。
 
 ### 任务流执行
 
@@ -247,3 +273,23 @@ public void test() {
     }
 ```
 
+## 参数配置
+
+### application.properties
+
+| 参数                                           | 默认值 | 说明                                         |
+| ---------------------------------------------- | ------ | -------------------------------------------- |
+| wolf-flow.scheduler.exec-request-scan-interval | 1      | 任务流执行请求扫描间隔，单位秒               |
+| wolf-flow.scheduler.cron-scan-interval         | 10     | 定时任务流扫描间隔，单位秒                   |
+| wolf-flow.scheduler.cron-scan-wait-time        | 10     | 定时任务流扫描尝试获取锁最大等待时间，单位秒 |
+| wolf-flow.scheduler.cron-scan-lease-time       | 60     | 定时任务流扫描获取锁后自动解锁时间，单位秒   |
+| wolf-flow.scheduler.core-pool-size             | 10     | 任务流调度器线程池核心线程数                 |
+| wolf-flow.scheduler.maximum-pool-size          | 10     | 任务流调度器线程池最大线程数                 |
+| wolf-flow.executor.core-pool-size              | 3      | 任务流执行器线程池核心线程数                 |
+| wolf-flow.executor.maximum-pool-size           | 3      | 任务流执行器线程池最大线程数                 |
+| wolf-flow.cluster.node-heartbeat-interval      | 30     | 节点发送心跳间隔时间，单位秒                 |
+| wolf-flow.cluster.node-heartbeat-duration      | 90     | 节点心跳有效期，单位秒                       |
+
+### quartz.properties
+
+Quartz 框架的配置文件，任务流的定时调度使用 Quartz 实现，详见 Quartz 官方文档。
