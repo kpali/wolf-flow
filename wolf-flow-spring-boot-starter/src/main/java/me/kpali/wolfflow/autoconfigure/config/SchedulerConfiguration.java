@@ -16,8 +16,8 @@ public class SchedulerConfiguration {
     public SchedulerConfig getSchedulerConfig(SchedulerProperties schedulerProperties) {
         Integer execRequestScanInterval = schedulerProperties.getExecRequestScanInterval();
         Integer cronScanInterval = schedulerProperties.getCronScanInterval();
-        Integer cronScanLockWaitTime = schedulerProperties.getCronScanWaitTime();
-        Integer cronScanLockLeaseTime = schedulerProperties.getCronScanLeaseTime();
+        Integer cronScanLockWaitTime = schedulerProperties.getCronScanLockWaitTime();
+        Integer cronScanLockLeaseTime = schedulerProperties.getCronScanLockLeaseTime();
         Integer corePoolSize = schedulerProperties.getCorePoolSize();
         Integer maximumPoolSize = schedulerProperties.getMaximumPoolSize();
         SchedulerConfig schedulerConfig = new SchedulerConfig();

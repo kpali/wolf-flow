@@ -11,8 +11,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class SchedulerProperties {
     private Integer execRequestScanInterval = 1;
     private Integer cronScanInterval = 10;
-    private Integer cronScanWaitTime = 10;
-    private Integer cronScanLeaseTime = 60;
+    private Integer cronScanLockWaitTime = 10;
+    private Integer cronScanLockLeaseTime = 60;
     private Integer corePoolSize = 10;
     private Integer maximumPoolSize = 10;
 
@@ -32,20 +32,20 @@ public class SchedulerProperties {
         this.cronScanInterval = cronScanInterval;
     }
 
-    public Integer getCronScanWaitTime() {
-        return cronScanWaitTime;
+    public Integer getCronScanLockWaitTime() {
+        return cronScanLockWaitTime;
     }
 
-    public void setCronScanWaitTime(Integer cronScanWaitTime) {
-        this.cronScanWaitTime = cronScanWaitTime;
+    public void setCronScanLockWaitTime(Integer cronScanLockWaitTime) {
+        this.cronScanLockWaitTime = cronScanLockWaitTime;
     }
 
-    public Integer getCronScanLeaseTime() {
-        return cronScanLeaseTime;
+    public Integer getCronScanLockLeaseTime() {
+        return cronScanLockLeaseTime;
     }
 
-    public void setCronScanLeaseTime(Integer cronScanLeaseTime) {
-        this.cronScanLeaseTime = cronScanLeaseTime;
+    public void setCronScanLockLeaseTime(Integer cronScanLockLeaseTime) {
+        this.cronScanLockLeaseTime = cronScanLockLeaseTime;
     }
 
     public Integer getCorePoolSize() {
