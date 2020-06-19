@@ -1,7 +1,7 @@
 package me.kpali.wolfflow.core.model;
 
 import java.io.Serializable;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 任务状态
@@ -13,7 +13,7 @@ public class TaskStatus implements Serializable {
 
     private Task task;
     private Long taskFlowId;
-    private Map<String, Object> context;
+    private ConcurrentHashMap<String, Object> context;
     private String status;
     private String message;
 
@@ -33,11 +33,11 @@ public class TaskStatus implements Serializable {
         this.taskFlowId = taskFlowId;
     }
 
-    public Map<String, Object> getContext() {
+    public ConcurrentHashMap<String, Object> getContext() {
         return context;
     }
 
-    public void setContext(Map<String, Object> context) {
+    public void setContext(ConcurrentHashMap<String, Object> context) {
         this.context = context;
     }
 

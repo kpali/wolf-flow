@@ -1,6 +1,6 @@
 package me.kpali.wolfflow.core.model;
 
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 任务流上下文参数包装类
@@ -12,7 +12,7 @@ public class ParamsWrapper extends ContextWrapper {
         super();
     }
 
-    public ParamsWrapper(Map<String, Object> context) {
+    public ParamsWrapper(ConcurrentHashMap<String, Object> context) {
         super(context);
     }
 }

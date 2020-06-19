@@ -1,9 +1,8 @@
 package me.kpali.wolfflow.core.model;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 上下文包装类
@@ -12,20 +11,20 @@ import java.util.Map;
  */
 public class ContextWrapper {
     public ContextWrapper() {
-        this.context = new HashMap<>();
+        this.context = new ConcurrentHashMap<>();
     }
 
-    public ContextWrapper(Map<String, Object> context) {
-        this.context = (context == null ? new HashMap<>() : context);
+    public ContextWrapper(ConcurrentHashMap<String, Object> context) {
+        this.context = (context == null ? new ConcurrentHashMap<>() : context);
     }
 
-    protected Map<String, Object> context;
+    protected ConcurrentHashMap<String, Object> context;
 
-    public Map<String, Object> getContext() {
+    public ConcurrentHashMap<String, Object> getContext() {
         return context;
     }
 
-    public void setContext(Map<String, Object> context) {
+    public void setContext(ConcurrentHashMap<String, Object> context) {
         this.context = context;
     }
 

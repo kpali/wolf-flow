@@ -10,7 +10,7 @@ import me.kpali.wolfflow.core.model.TaskContextWrapper;
 import me.kpali.wolfflow.core.model.TaskFlowContextWrapper;
 import me.kpali.wolfflow.sample.cluster.util.SpringContextUtil;
 
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 自定义任务，覆写父类的方法，实现自定义任务的执行内容
@@ -22,11 +22,11 @@ public class MyTask extends Task {
     private boolean requiredToStop = false;
 
     @Override
-    public void execute(Map<String, Object> context) throws TaskExecuteException, TaskInterruptedException {
+    public void execute(ConcurrentHashMap<String, Object> context) throws TaskExecuteException, TaskInterruptedException {
         try {
             ITaskLogger taskLogger = SpringContextUtil.getBean(ITaskLogger.class);
             TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
-            Map<String, Object> taskContext = taskFlowContextWrapper.getTaskContext(this.getId().toString());
+            ConcurrentHashMap<String, Object> taskContext = taskFlowContextWrapper.getTaskContext(this.getId().toString());
             TaskContextWrapper taskContextWrapper = new TaskContextWrapper(taskContext);
             Long taskLogId = taskContextWrapper.getValue(ContextKey.TASK_LOG_ID, Long.class);
             String taskLogFileId = taskContextWrapper.getValue(ContextKey.TASK_LOG_FILE_ID, String.class);
@@ -55,7 +55,7 @@ public class MyTask extends Task {
     }
 
     @Override
-    public void stop(Map<String, Object> context) throws TaskStopException {
+    public void stop(ConcurrentHashMap<String, Object> context) throws TaskStopException {
         this.requiredToStop = true;
     }
 }

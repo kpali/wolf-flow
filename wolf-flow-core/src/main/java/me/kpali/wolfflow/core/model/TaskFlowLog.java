@@ -2,7 +2,7 @@ package me.kpali.wolfflow.core.model;
 
 import java.io.Serializable;
 import java.util.Date;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 任务流日志
@@ -15,7 +15,7 @@ public class TaskFlowLog implements Serializable {
     private Long logId;
     private Long taskFlowId;
     private TaskFlow taskFlow;
-    private Map<String, Object> context;
+    private ConcurrentHashMap<String, Object> context;
     private String status;
     private String message;
     private boolean rollback;
@@ -46,11 +46,11 @@ public class TaskFlowLog implements Serializable {
         this.taskFlow = taskFlow;
     }
 
-    public Map<String, Object> getContext() {
+    public ConcurrentHashMap<String, Object> getContext() {
         return context;
     }
 
-    public void setContext(Map<String, Object> context) {
+    public void setContext(ConcurrentHashMap<String, Object> context) {
         this.context = context;
     }
 

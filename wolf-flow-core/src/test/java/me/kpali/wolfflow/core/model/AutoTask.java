@@ -7,20 +7,20 @@ import me.kpali.wolfflow.core.exception.TaskStopException;
 import me.kpali.wolfflow.core.logger.ITaskLogger;
 import me.kpali.wolfflow.core.util.SpringContextUtil;
 
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class AutoTask extends Task {
     private boolean requiredToStop = false;
 
     @Override
-    public void execute(Map<String, Object> context) throws TaskExecuteException, TaskInterruptedException {
+    public void execute(ConcurrentHashMap<String, Object> context) throws TaskExecuteException, TaskInterruptedException {
         if (context == null) {
             throw new IllegalArgumentException();
         }
         try {
             ITaskLogger taskLogger = SpringContextUtil.getBean(ITaskLogger.class);
             TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
-            Map<String, Object> taskContext = taskFlowContextWrapper.getTaskContext(this.getId().toString());
+            ConcurrentHashMap<String, Object> taskContext = taskFlowContextWrapper.getTaskContext(this.getId().toString());
             TaskContextWrapper taskContextWrapper = new TaskContextWrapper(taskContext);
             Long taskLogId = taskContextWrapper.getValue(ContextKey.TASK_LOG_ID, Long.class);
             String taskLogFileId = taskContextWrapper.getValue(ContextKey.TASK_LOG_FILE_ID, String.class);
@@ -49,11 +49,11 @@ public class AutoTask extends Task {
     }
 
     @Override
-    public void rollback(Map<String, Object> context) throws TaskRollbackException, TaskInterruptedException {
+    public void rollback(ConcurrentHashMap<String, Object> context) throws TaskRollbackException, TaskInterruptedException {
         try {
             ITaskLogger taskLogger = SpringContextUtil.getBean(ITaskLogger.class);
             TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
-            Map<String, Object> taskContext = taskFlowContextWrapper.getTaskContext(this.getId().toString());
+            ConcurrentHashMap<String, Object> taskContext = taskFlowContextWrapper.getTaskContext(this.getId().toString());
             TaskContextWrapper taskContextWrapper = new TaskContextWrapper(taskContext);
             Long taskLogId = taskContextWrapper.getValue(ContextKey.TASK_LOG_ID, Long.class);
             String taskLogFileId = taskContextWrapper.getValue(ContextKey.TASK_LOG_FILE_ID, String.class);
@@ -82,7 +82,7 @@ public class AutoTask extends Task {
     }
 
     @Override
-    public void stop(Map<String, Object> context) throws TaskStopException {
+    public void stop(ConcurrentHashMap<String, Object> context) throws TaskStopException {
         this.requiredToStop = true;
     }
 }

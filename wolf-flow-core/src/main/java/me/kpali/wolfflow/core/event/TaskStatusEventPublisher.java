@@ -10,7 +10,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -39,7 +39,7 @@ public class TaskStatusEventPublisher {
      * @param message
      * @param record
      */
-    public void publishEvent(Task task, Long taskFlowId, Map<String, Object> context, String status, String message, boolean record) throws TryLockException, TaskLogException {
+    public void publishEvent(Task task, Long taskFlowId, ConcurrentHashMap<String, Object> context, String status, String message, boolean record) throws TryLockException, TaskLogException {
         TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
         TaskContextWrapper taskContextWrapper = taskFlowContextWrapper.getTaskContextWrapper(task.getId().toString());
 

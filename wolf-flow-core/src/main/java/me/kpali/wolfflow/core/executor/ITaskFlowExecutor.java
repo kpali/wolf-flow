@@ -5,7 +5,7 @@ import me.kpali.wolfflow.core.exception.TaskFlowInterruptedException;
 import me.kpali.wolfflow.core.exception.TaskFlowRollbackException;
 import me.kpali.wolfflow.core.model.TaskFlow;
 
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 任务流执行器接口
@@ -20,7 +20,7 @@ public interface ITaskFlowExecutor {
      * @param context
      * @throws TaskFlowExecuteException
      */
-    void beforeExecute(TaskFlow taskFlow, Map<String, Object> context) throws TaskFlowExecuteException;
+    void beforeExecute(TaskFlow taskFlow, ConcurrentHashMap<String, Object> context) throws TaskFlowExecuteException;
 
     /**
      * 任务流执行
@@ -30,7 +30,7 @@ public interface ITaskFlowExecutor {
      * @throws TaskFlowExecuteException
      * @throws TaskFlowInterruptedException
      */
-    void execute(TaskFlow taskFlow, Map<String, Object> context) throws TaskFlowExecuteException, TaskFlowInterruptedException;
+    void execute(TaskFlow taskFlow, ConcurrentHashMap<String, Object> context) throws TaskFlowExecuteException, TaskFlowInterruptedException;
 
     /**
      * 任务流执行后置处理
@@ -39,7 +39,7 @@ public interface ITaskFlowExecutor {
      * @param context
      * @throws TaskFlowExecuteException
      */
-    void afterExecute(TaskFlow taskFlow, Map<String, Object> context) throws TaskFlowExecuteException;
+    void afterExecute(TaskFlow taskFlow, ConcurrentHashMap<String, Object> context) throws TaskFlowExecuteException;
 
     /**
      * 任务流回滚前置处理
@@ -48,7 +48,7 @@ public interface ITaskFlowExecutor {
      * @param context
      * @throws TaskFlowExecuteException
      */
-    void beforeRollback(TaskFlow taskFlow, Map<String, Object> context) throws TaskFlowRollbackException;
+    void beforeRollback(TaskFlow taskFlow, ConcurrentHashMap<String, Object> context) throws TaskFlowRollbackException;
 
     /**
      * 任务流回滚
@@ -58,7 +58,7 @@ public interface ITaskFlowExecutor {
      * @throws TaskFlowExecuteException
      * @throws TaskFlowInterruptedException
      */
-    void rollback(TaskFlow taskFlow, Map<String, Object> context) throws TaskFlowRollbackException, TaskFlowInterruptedException;
+    void rollback(TaskFlow taskFlow, ConcurrentHashMap<String, Object> context) throws TaskFlowRollbackException, TaskFlowInterruptedException;
 
     /**
      * 任务流执行后置处理
@@ -67,5 +67,5 @@ public interface ITaskFlowExecutor {
      * @param context
      * @throws TaskFlowExecuteException
      */
-    void afterRollback(TaskFlow taskFlow, Map<String, Object> context) throws TaskFlowRollbackException;
+    void afterRollback(TaskFlow taskFlow, ConcurrentHashMap<String, Object> context) throws TaskFlowRollbackException;
 }

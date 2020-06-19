@@ -94,17 +94,17 @@ public class MyTaskFlowQuerier extends DefaultTaskFlowQuerier {
  */
 public class MyTask extends Task {
     @Override
-    public void execute(Map<String, Object> context) throws TaskExecuteException, TaskInterruptedException {
+    public void execute(ConcurrentHashMap<String, Object> context) throws TaskExecuteException, TaskInterruptedException {
         // TODO 执行任务
     }
     
     @Override
-    public void rollback(Map<String, Object> context) throws TaskRollbackException, TaskInterruptedException {
+    public void rollback(ConcurrentHashMap<String, Object> context) throws TaskRollbackException, TaskInterruptedException {
         // TODO 回滚任务
     }
     
     @Override
-    public void stop(Map<String, Object> context) throws TaskStopException {
+    public void stop(ConcurrentHashMap<String, Object> context) throws TaskStopException {
         // TODO 停止任务
     }
 }
@@ -118,7 +118,7 @@ ITaskFlowScheduler taskFlowScheduler;
 
 public void test() {
     long taskFlowId = 1;
-    Map<String, Object> params = null;
+    ConcurrentHashMap<String, Object> params = null;
     long taskFlowLogId = taskFlowScheduler.execute(taskFlowId, params);
 }
 ```

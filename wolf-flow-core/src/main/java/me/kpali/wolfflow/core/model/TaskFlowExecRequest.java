@@ -1,7 +1,7 @@
 package me.kpali.wolfflow.core.model;
 
 import java.io.Serializable;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 任务流执行请求
@@ -14,13 +14,13 @@ public class TaskFlowExecRequest implements Serializable {
     public TaskFlowExecRequest() {
     }
 
-    public TaskFlowExecRequest(Long taskFlowId, Map<String, Object> context) {
+    public TaskFlowExecRequest(Long taskFlowId, ConcurrentHashMap<String, Object> context) {
         this.taskFlowId = taskFlowId;
         this.context = context;
     }
 
     private Long taskFlowId;
-    private Map<String, Object> context;
+    private ConcurrentHashMap<String, Object> context;
 
     public Long getTaskFlowId() {
         return taskFlowId;
@@ -30,11 +30,11 @@ public class TaskFlowExecRequest implements Serializable {
         this.taskFlowId = taskFlowId;
     }
 
-    public Map<String, Object> getContext() {
+    public ConcurrentHashMap<String, Object> getContext() {
         return context;
     }
 
-    public void setContext(Map<String, Object> context) {
+    public void setContext(ConcurrentHashMap<String, Object> context) {
         this.context = context;
     }
 }

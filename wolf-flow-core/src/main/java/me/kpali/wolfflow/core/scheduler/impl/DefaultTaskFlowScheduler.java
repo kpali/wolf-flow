@@ -110,7 +110,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                     if (request != null) {
                         Long taskFlowId = request.getTaskFlowId();
                         TaskFlow taskFlow = this.taskFlowQuerier.getTaskFlow(taskFlowId);
-                        Map<String, Object> context = request.getContext();
+                        ConcurrentHashMap<String, Object> context = request.getContext();
                         TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
                         Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
                         Boolean isRollback = taskFlowContextWrapper.getValue(ContextKey.IS_ROLLBACK, Boolean.class);
@@ -274,27 +274,27 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
     }
 
     @Override
-    public long execute(Long taskFlowId, Map<String, Object> params) throws TaskFlowTriggerException {
+    public long execute(Long taskFlowId, ConcurrentHashMap<String, Object> params) throws TaskFlowTriggerException {
         return this.trigger(taskFlowId, false, null, null, params);
     }
 
     @Override
-    public long execute(Long taskFlowId, Long taskId, Map<String, Object> params) throws TaskFlowTriggerException {
+    public long execute(Long taskFlowId, Long taskId, ConcurrentHashMap<String, Object> params) throws TaskFlowTriggerException {
         return this.trigger(taskFlowId, false, taskId, taskId, params);
     }
 
     @Override
-    public long executeFrom(Long taskFlowId, Long fromTaskId, Map<String, Object> params) throws TaskFlowTriggerException {
+    public long executeFrom(Long taskFlowId, Long fromTaskId, ConcurrentHashMap<String, Object> params) throws TaskFlowTriggerException {
         return this.trigger(taskFlowId, false, fromTaskId, null, params);
     }
 
     @Override
-    public long executeTo(Long taskFlowId, Long toTaskId, Map<String, Object> params) throws TaskFlowTriggerException {
+    public long executeTo(Long taskFlowId, Long toTaskId, ConcurrentHashMap<String, Object> params) throws TaskFlowTriggerException {
         return this.trigger(taskFlowId, false, null, toTaskId, params);
     }
 
     @Override
-    public long rollback(Long taskFlowId, Map<String, Object> params) throws TaskFlowTriggerException {
+    public long rollback(Long taskFlowId, ConcurrentHashMap<String, Object> params) throws TaskFlowTriggerException {
         return this.trigger(taskFlowId, true, null, null, params);
     }
 
@@ -309,7 +309,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
      * @return
      * @throws TaskFlowTriggerException
      */
-    private long trigger(Long taskFlowId, Boolean isRollback, Long fromTaskId, Long toTaskId, Map<String, Object> params) throws TaskFlowTriggerException {
+    private long trigger(Long taskFlowId, Boolean isRollback, Long fromTaskId, Long toTaskId, ConcurrentHashMap<String, Object> params) throws TaskFlowTriggerException {
         try {
             // 获取任务流
             TaskFlow taskFlow = this.taskFlowQuerier.getTaskFlow(taskFlowId);

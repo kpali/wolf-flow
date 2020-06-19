@@ -2,6 +2,7 @@ package me.kpali.wolfflow.core.cluster.impl;
 
 import me.kpali.wolfflow.core.BaseTest;
 import me.kpali.wolfflow.core.cluster.IClusterController;
+import me.kpali.wolfflow.core.exception.GenerateNodeIdException;
 import me.kpali.wolfflow.core.model.ManualConfirmed;
 import me.kpali.wolfflow.core.model.TaskFlowExecRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +23,7 @@ public class DefaultClusterControllerTest extends BaseTest {
     }
 
     @Test
-    public void testGetNodeId() {
+    public void testGetNodeId() throws GenerateNodeIdException {
         this.clusterController.generateNodeId();
         assertNotNull(this.clusterController.getNodeId());
     }

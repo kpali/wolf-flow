@@ -7,7 +7,7 @@ import me.kpali.wolfflow.core.exception.TaskRollbackException;
 import me.kpali.wolfflow.core.exception.TaskStopException;
 import me.kpali.wolfflow.core.util.SpringContextUtil;
 
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ManualTask extends Task {
     public ManualTask() {
@@ -17,11 +17,11 @@ public class ManualTask extends Task {
     private boolean requiredToStop = false;
 
     @Override
-    public void execute(Map<String, Object> context) throws TaskExecuteException, TaskInterruptedException {
+    public void execute(ConcurrentHashMap<String, Object> context) throws TaskExecuteException, TaskInterruptedException {
         try {
             IClusterController clusterController = SpringContextUtil.getBean(IClusterController.class);
             TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
-            Map<String, Object> taskContext = taskFlowContextWrapper.getTaskContext(this.getId().toString());
+            ConcurrentHashMap<String, Object> taskContext = taskFlowContextWrapper.getTaskContext(this.getId().toString());
             TaskContextWrapper taskContextWrapper = new TaskContextWrapper(taskContext);
             Long taskLogId = taskContextWrapper.getValue(ContextKey.TASK_LOG_ID, Long.class);
 
@@ -54,11 +54,11 @@ public class ManualTask extends Task {
     }
 
     @Override
-    public void rollback(Map<String, Object> context) throws TaskRollbackException, TaskInterruptedException {
+    public void rollback(ConcurrentHashMap<String, Object> context) throws TaskRollbackException, TaskInterruptedException {
         try {
             IClusterController clusterController = SpringContextUtil.getBean(IClusterController.class);
             TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
-            Map<String, Object> taskContext = taskFlowContextWrapper.getTaskContext(this.getId().toString());
+            ConcurrentHashMap<String, Object> taskContext = taskFlowContextWrapper.getTaskContext(this.getId().toString());
             TaskContextWrapper taskContextWrapper = new TaskContextWrapper(taskContext);
             Long taskLogId = taskContextWrapper.getValue(ContextKey.TASK_LOG_ID, Long.class);
 
@@ -91,7 +91,7 @@ public class ManualTask extends Task {
     }
 
     @Override
-    public void stop(Map<String, Object> context) throws TaskStopException {
+    public void stop(ConcurrentHashMap<String, Object> context) throws TaskStopException {
         this.requiredToStop = true;
     }
 }

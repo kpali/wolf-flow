@@ -3,7 +3,7 @@ package me.kpali.wolfflow.core.scheduler;
 import me.kpali.wolfflow.core.exception.TaskFlowStopException;
 import me.kpali.wolfflow.core.exception.TaskFlowTriggerException;
 
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 任务流调度器
@@ -24,7 +24,7 @@ public interface ITaskFlowScheduler {
      * @return taskFlowLogId
      * @throws TaskFlowTriggerException
      */
-    long execute(Long taskFlowId, Map<String, Object> params) throws TaskFlowTriggerException;
+    long execute(Long taskFlowId, ConcurrentHashMap<String, Object> params) throws TaskFlowTriggerException;
 
     /**
      * 执行任务流，执行指定任务
@@ -35,7 +35,7 @@ public interface ITaskFlowScheduler {
      * @return taskFlowLogId
      * @throws TaskFlowTriggerException
      */
-    long execute(Long taskFlowId, Long taskId, Map<String, Object> params) throws TaskFlowTriggerException;
+    long execute(Long taskFlowId, Long taskId, ConcurrentHashMap<String, Object> params) throws TaskFlowTriggerException;
 
     /**
      * 执行任务流，从指定任务开始
@@ -46,7 +46,7 @@ public interface ITaskFlowScheduler {
      * @return taskFlowLogId
      * @throws TaskFlowTriggerException
      */
-    long executeFrom(Long taskFlowId, Long fromTaskId, Map<String, Object> params) throws TaskFlowTriggerException;
+    long executeFrom(Long taskFlowId, Long fromTaskId, ConcurrentHashMap<String, Object> params) throws TaskFlowTriggerException;
 
     /**
      * 执行任务流，到指定任务结束
@@ -57,7 +57,7 @@ public interface ITaskFlowScheduler {
      * @return taskFlowLogId
      * @throws TaskFlowTriggerException
      */
-    long executeTo(Long taskFlowId, Long toTaskId, Map<String, Object> params) throws TaskFlowTriggerException;
+    long executeTo(Long taskFlowId, Long toTaskId, ConcurrentHashMap<String, Object> params) throws TaskFlowTriggerException;
 
     /**
      * 回滚任务流
@@ -67,7 +67,7 @@ public interface ITaskFlowScheduler {
      * @return taskFlowLogId
      * @throws TaskFlowTriggerException
      */
-    long rollback(Long taskFlowId, Map<String, Object> params) throws TaskFlowTriggerException;
+    long rollback(Long taskFlowId, ConcurrentHashMap<String, Object> params) throws TaskFlowTriggerException;
 
     /**
      * 停止任务流

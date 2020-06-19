@@ -44,7 +44,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     private IdGenerator idGenerator;
 
     @Override
-    public void beforeExecute(TaskFlow taskFlow, Map<String, Object> context) throws TaskFlowExecuteException {
+    public void beforeExecute(TaskFlow taskFlow, ConcurrentHashMap<String, Object> context) throws TaskFlowExecuteException {
         TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
         Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
         try {
@@ -123,7 +123,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                         taskLog.setTaskFlowLogId(taskFlowLogId);
                         this.taskLogger.add(taskLog);
                         // 任务上下文
-                        Map<String, Object> lastTaskContext = taskLog.getContext();
+                        ConcurrentHashMap<String, Object> lastTaskContext = taskLog.getContext();
                         if (lastTaskContext == null) {
                             continue;
                         }
@@ -146,7 +146,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     }
 
     @Override
-    public void execute(TaskFlow taskFlow, Map<String, Object> context) throws TaskFlowExecuteException, TaskFlowInterruptedException {
+    public void execute(TaskFlow taskFlow, ConcurrentHashMap<String, Object> context) throws TaskFlowExecuteException, TaskFlowInterruptedException {
         TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
         Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
         TaskFlow executeTaskFlow = taskFlowContextWrapper.getValue(ContextKey.EXECUTE_TASK_FLOW, TaskFlow.class);
@@ -299,12 +299,12 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     }
 
     @Override
-    public void afterExecute(TaskFlow taskFlow, Map<String, Object> context) throws TaskFlowExecuteException {
+    public void afterExecute(TaskFlow taskFlow, ConcurrentHashMap<String, Object> context) throws TaskFlowExecuteException {
         // 不做任何操作
     }
 
     @Override
-    public void beforeRollback(TaskFlow taskFlow, Map<String, Object> context) throws TaskFlowRollbackException {
+    public void beforeRollback(TaskFlow taskFlow, ConcurrentHashMap<String, Object> context) throws TaskFlowRollbackException {
         TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
         Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
         try {
@@ -372,7 +372,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                         taskFlowContextWrapper.putTaskContext(task.getId().toString(), taskContextWrapper.getContext());
                     } else {
                         // 不需要回滚的任务，导入任务上下文到本次任务流上下文
-                        Map<String, Object> lastTaskContext = taskLog.getContext();
+                        ConcurrentHashMap<String, Object> lastTaskContext = taskLog.getContext();
                         if (lastTaskContext == null) {
                             continue;
                         }
@@ -395,7 +395,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     }
 
     @Override
-    public void rollback(TaskFlow taskFlow, Map<String, Object> context) throws TaskFlowRollbackException, TaskFlowInterruptedException {
+    public void rollback(TaskFlow taskFlow, ConcurrentHashMap<String, Object> context) throws TaskFlowRollbackException, TaskFlowInterruptedException {
         TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
         Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
         TaskFlow rollbackTaskFlow = taskFlowContextWrapper.getValue(ContextKey.ROLLBACK_TASK_FLOW, TaskFlow.class);
@@ -476,8 +476,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                                 List<Long> parentTaskIds = idToParentTaskIdsMap.get(task.getId());
                                 for (Long parentTaskId : parentTaskIds) {
                                     TaskLog parentTaskStatus = this.taskLogger.getTaskStatus(parentTaskId);
-                                    if (this.taskLogger.canRollback(parentTaskStatus)
-                                            && !TaskStatusEnum.ROLLBACK_SUCCESS.getCode().equals(parentTaskStatus.getStatus())) {
+                                    if (this.taskLogger.canRollback(parentTaskStatus)) {
                                         throw new TaskRollbackException("父任务必须先回滚成功");
                                     }
                                 }
@@ -547,7 +546,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     }
 
     @Override
-    public void afterRollback(TaskFlow taskFlow, Map<String, Object> context) throws TaskFlowRollbackException {
+    public void afterRollback(TaskFlow taskFlow, ConcurrentHashMap<String, Object> context) throws TaskFlowRollbackException {
         // 不做任何操作
     }
 

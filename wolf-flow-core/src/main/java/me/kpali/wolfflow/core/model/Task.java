@@ -6,7 +6,7 @@ import me.kpali.wolfflow.core.exception.TaskRollbackException;
 import me.kpali.wolfflow.core.exception.TaskStopException;
 
 import java.io.Serializable;
-import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 任务
@@ -38,39 +38,39 @@ public class Task implements Serializable {
         this.manual = manual;
     }
 
-    public void executePreCheck(Map<String, Object> context) throws TaskExecuteException {
+    public void executePreCheck(ConcurrentHashMap<String, Object> context) throws TaskExecuteException {
         // 不作任何操作
     }
 
-    public void beforeExecute(Map<String, Object> context) throws TaskExecuteException {
+    public void beforeExecute(ConcurrentHashMap<String, Object> context) throws TaskExecuteException {
         // 不做任何操作
     }
 
-    public void execute(Map<String, Object> context) throws TaskExecuteException, TaskInterruptedException {
+    public void execute(ConcurrentHashMap<String, Object> context) throws TaskExecuteException, TaskInterruptedException {
         // 不做任何操作
     }
 
-    public void afterExecute(Map<String, Object> context) throws TaskExecuteException {
+    public void afterExecute(ConcurrentHashMap<String, Object> context) throws TaskExecuteException {
         // 不做任何操作
     }
 
-    public void beforeRollback(Map<String, Object> context) throws TaskRollbackException {
+    public void beforeRollback(ConcurrentHashMap<String, Object> context) throws TaskRollbackException {
         // 不做任何操作
     }
 
-    public void rollbackPreCheck(Map<String, Object> context) throws TaskRollbackException {
+    public void rollbackPreCheck(ConcurrentHashMap<String, Object> context) throws TaskRollbackException {
         // 不作任何操作
     }
 
-    public void rollback(Map<String, Object> context) throws TaskRollbackException, TaskInterruptedException {
+    public void rollback(ConcurrentHashMap<String, Object> context) throws TaskRollbackException, TaskInterruptedException {
         // 不做任何操作
     }
 
-    public void afterRollback(Map<String, Object> context) throws TaskRollbackException {
+    public void afterRollback(ConcurrentHashMap<String, Object> context) throws TaskRollbackException {
         // 不做任何操作
     }
 
-    public void stop(Map<String, Object> context) throws TaskStopException {
+    public void stop(ConcurrentHashMap<String, Object> context) throws TaskStopException {
         // 不做任何操作
     }
 }
