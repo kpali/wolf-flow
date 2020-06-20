@@ -11,9 +11,9 @@ import me.kpali.wolfflow.core.executor.ITaskFlowExecutor;
 import me.kpali.wolfflow.core.logger.ITaskLogger;
 import me.kpali.wolfflow.core.model.*;
 import me.kpali.wolfflow.core.util.IdGenerator;
+import me.kpali.wolfflow.core.util.TaskFlowUtils;
 import me.kpali.wolfflow.core.util.context.TaskContextWrapper;
 import me.kpali.wolfflow.core.util.context.TaskFlowContextWrapper;
-import me.kpali.wolfflow.core.util.TaskFlowUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -242,12 +242,16 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                                 idToTaskStatusMap.put(task.getId(), TaskStatusEnum.EXECUTE_SUCCESS.getCode());
                                 this.taskStatusEventPublisher.publishEvent(task, executeTaskFlow.getId(), context, TaskStatusEnum.EXECUTE_SUCCESS.getCode(), null, true);
                             } catch (Exception e) {
-                                log.error("任务执行失败！任务ID：" + task.getId() + " 异常信息：" + e.getMessage(), e);
+                                String msg = e.getMessage();
+                                if (msg == null) {
+                                    msg = e.toString();
+                                }
+                                log.error("任务执行失败！任务ID：" + task.getId() + " 异常信息：" + msg, e);
                                 idToTaskStatusMap.put(task.getId(), TaskStatusEnum.EXECUTE_FAILURE.getCode());
                                 try {
-                                    this.taskStatusEventPublisher.publishEvent(task, executeTaskFlow.getId(), context, TaskStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage(), true);
+                                    this.taskStatusEventPublisher.publishEvent(task, executeTaskFlow.getId(), context, TaskStatusEnum.EXECUTE_FAILURE.getCode(), msg, true);
                                 } catch (Exception e1) {
-                                    log.error("发布任务状态变更事件失败！" + e.getMessage(), e);
+                                    log.error("发布任务状态变更事件失败！" + e1.getMessage(), e1);
                                 }
                             }
                         });
@@ -493,12 +497,16 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                                 idToTaskStatusMap.put(task.getId(), TaskStatusEnum.ROLLBACK_SUCCESS.getCode());
                                 this.taskStatusEventPublisher.publishEvent(task, rollbackTaskFlow.getId(), context, TaskStatusEnum.ROLLBACK_SUCCESS.getCode(), null, true);
                             } catch (Exception e) {
-                                log.error("任务回滚失败！任务ID：" + task.getId() + " 异常信息：" + e.getMessage(), e);
+                                String msg = e.getMessage();
+                                if (msg == null) {
+                                    msg = e.toString();
+                                }
+                                log.error("任务回滚失败！任务ID：" + task.getId() + " 异常信息：" + msg, e);
                                 idToTaskStatusMap.put(task.getId(), TaskStatusEnum.ROLLBACK_FAILURE.getCode());
                                 try {
-                                    this.taskStatusEventPublisher.publishEvent(task, rollbackTaskFlow.getId(), context, TaskStatusEnum.ROLLBACK_FAILURE.getCode(), e.getMessage(), true);
+                                    this.taskStatusEventPublisher.publishEvent(task, rollbackTaskFlow.getId(), context, TaskStatusEnum.ROLLBACK_FAILURE.getCode(), msg, true);
                                 } catch (Exception e1) {
-                                    log.error("发布任务状态变更事件失败！" + e.getMessage(), e);
+                                    log.error("发布任务状态变更事件失败！" + e1.getMessage(), e1);
                                 }
                             }
                         });

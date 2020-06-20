@@ -146,11 +146,15 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                                     // 任务流执行成功
                                     this.taskFlowStatusEventPublisher.publishEvent(taskFlow, context, TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode(), null, true);
                                 } catch (Exception e) {
-                                    log.error("任务流执行失败！任务流ID：" + taskFlow.getId() + " 异常信息：" + e.getMessage(), e);
+                                    String msg = e.getMessage();
+                                    if (msg == null) {
+                                        msg = e.toString();
+                                    }
+                                    log.error("任务流执行失败！任务流ID：" + taskFlow.getId() + " 异常信息：" + msg, e);
                                     try {
-                                        this.taskFlowStatusEventPublisher.publishEvent(taskFlow, context, TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), e.getMessage(), true);
+                                        this.taskFlowStatusEventPublisher.publishEvent(taskFlow, context, TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), msg, true);
                                     } catch (Exception e1) {
-                                        log.error("发布任务流状态变更事件失败！" + e.getMessage(), e);
+                                        log.error("发布任务流状态变更事件失败！" + e1.getMessage(), e1);
                                     }
                                 }
                             });
@@ -166,11 +170,15 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                                     // 任务流回滚成功
                                     this.taskFlowStatusEventPublisher.publishEvent(taskFlow, context, TaskFlowStatusEnum.ROLLBACK_SUCCESS.getCode(), null, true);
                                 } catch (Exception e) {
-                                    log.error("任务流回滚失败！任务流ID：" + taskFlow.getId() + " 异常信息：" + e.getMessage(), e);
+                                    String msg = e.getMessage();
+                                    if (msg == null) {
+                                        msg = e.toString();
+                                    }
+                                    log.error("任务流回滚失败！任务流ID：" + taskFlow.getId() + " 异常信息：" + msg, e);
                                     try {
-                                        this.taskFlowStatusEventPublisher.publishEvent(taskFlow, context, TaskFlowStatusEnum.ROLLBACK_FAILURE.getCode(), e.getMessage(), true);
+                                        this.taskFlowStatusEventPublisher.publishEvent(taskFlow, context, TaskFlowStatusEnum.ROLLBACK_FAILURE.getCode(), msg, true);
                                     } catch (Exception e1) {
-                                        log.error("发布任务流状态变更事件失败！" + e.getMessage(), e);
+                                        log.error("发布任务流状态变更事件失败！" + e1.getMessage(), e1);
                                     }
                                 }
                             });
