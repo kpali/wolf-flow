@@ -2,6 +2,7 @@ package me.kpali.wolfflow.core.scheduler.impl;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import me.kpali.wolfflow.core.cluster.IClusterController;
+import me.kpali.wolfflow.core.config.ClusterConfig;
 import me.kpali.wolfflow.core.config.SchedulerConfig;
 import me.kpali.wolfflow.core.enums.TaskFlowScheduleStatusEnum;
 import me.kpali.wolfflow.core.enums.TaskFlowStatusEnum;
@@ -22,6 +23,7 @@ import me.kpali.wolfflow.core.querier.ITaskFlowQuerier;
 import me.kpali.wolfflow.core.scheduler.ITaskFlowScheduler;
 import me.kpali.wolfflow.core.scheduler.impl.quartz.MyDynamicScheduler;
 import me.kpali.wolfflow.core.util.IdGenerator;
+import me.kpali.wolfflow.core.util.context.TaskFlowContextWrapper;
 import org.quartz.JobKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +44,9 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
 
     @Autowired
     private SchedulerConfig schedulerConfig;
+
+    @Autowired
+    private ClusterConfig clusterConfig;
 
     @Autowired
     private TaskFlowStatusEventPublisher taskFlowStatusEventPublisher;
@@ -337,8 +342,8 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
             try {
                 locked = this.clusterController.tryLock(
                         ClusterConstants.TASK_FLOW_LOG_LOCK,
-                        ClusterConstants.LOG_LOCK_WAIT_TIME,
-                        ClusterConstants.LOG_LOCK_LEASE_TIME,
+                        clusterConfig.getTaskFlowLogLockWaitTime(),
+                        clusterConfig.getTaskFlowLogLockLeaseTime(),
                         TimeUnit.SECONDS);
                 if (!locked) {
                     throw new TryLockException("获取任务流日志记录锁失败！");
@@ -400,8 +405,8 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
             try {
                 taskFlowLogLocked = this.clusterController.tryLock(
                         ClusterConstants.TASK_FLOW_LOG_LOCK,
-                        ClusterConstants.LOG_LOCK_WAIT_TIME,
-                        ClusterConstants.LOG_LOCK_LEASE_TIME,
+                        clusterConfig.getTaskFlowLogLockWaitTime(),
+                        clusterConfig.getTaskFlowLogLockLeaseTime(),
                         TimeUnit.SECONDS);
                 if (!taskFlowLogLocked) {
                     throw new TryLockException("获取任务流日志记录锁失败！");
@@ -426,8 +431,8 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                         try {
                             taskLogLocked = this.clusterController.tryLock(
                                     ClusterConstants.TASK_LOG_LOCK,
-                                    ClusterConstants.LOG_LOCK_WAIT_TIME,
-                                    ClusterConstants.LOG_LOCK_LEASE_TIME,
+                                    clusterConfig.getTaskLogLockWaitTime(),
+                                    clusterConfig.getTaskLogLockLeaseTime(),
                                     TimeUnit.SECONDS);
                             if (!taskLogLocked) {
                                 throw new TryLockException("获取任务日志记录锁失败！");

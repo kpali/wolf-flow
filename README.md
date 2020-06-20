@@ -277,18 +277,23 @@ public void test() {
 
 ### application.properties
 
-| 参数                                           | 默认值 | 说明                                         |
-| ---------------------------------------------- | ------ | -------------------------------------------- |
-| wolf-flow.scheduler.exec-request-scan-interval | 1      | 任务流执行请求扫描间隔，单位秒               |
-| wolf-flow.scheduler.cron-scan-interval         | 10     | 定时任务流扫描间隔，单位秒                   |
-| wolf-flow.scheduler.cron-scan-wait-time        | 10     | 定时任务流扫描尝试获取锁最大等待时间，单位秒 |
-| wolf-flow.scheduler.cron-scan-lease-time       | 60     | 定时任务流扫描获取锁后自动解锁时间，单位秒   |
-| wolf-flow.scheduler.core-pool-size             | 10     | 任务流调度器线程池核心线程数                 |
-| wolf-flow.scheduler.maximum-pool-size          | 10     | 任务流调度器线程池最大线程数                 |
-| wolf-flow.executor.core-pool-size              | 3      | 任务流执行器线程池核心线程数                 |
-| wolf-flow.executor.maximum-pool-size           | 3      | 任务流执行器线程池最大线程数                 |
-| wolf-flow.cluster.node-heartbeat-interval      | 30     | 节点发送心跳间隔时间，单位秒                 |
-| wolf-flow.cluster.node-heartbeat-duration      | 90     | 节点心跳有效期，单位秒                       |
+| 参数                                               | 默认值 | 说明                                         |
+| -------------------------------------------------- | ------ | -------------------------------------------- |
+| wolf-flow.scheduler.exec-request-scan-interval     | 1      | 任务流执行请求扫描间隔，单位秒               |
+| wolf-flow.scheduler.cron-scan-interval             | 10     | 定时任务流扫描间隔，单位秒                   |
+| wolf-flow.scheduler.cron-scan-wait-time            | 10     | 定时任务流扫描尝试获取锁最大等待时间，单位秒 |
+| wolf-flow.scheduler.cron-scan-lease-time           | 60     | 定时任务流扫描获取锁后自动解锁时间，单位秒   |
+| wolf-flow.scheduler.core-pool-size                 | 10     | 任务流调度器线程池核心线程数                 |
+| wolf-flow.scheduler.maximum-pool-size              | 10     | 任务流调度器线程池最大线程数                 |
+| wolf-flow.executor.core-pool-size                  | 3      | 任务流执行器线程池核心线程数                 |
+| wolf-flow.executor.maximum-pool-size               | 3      | 任务流执行器线程池最大线程数                 |
+| wolf-flow.cluster.node-heartbeat-interval          | 30     | 节点发送心跳间隔时间，单位秒                 |
+| wolf-flow.cluster.node-heartbeat-duration          | 90     | 节点心跳有效期，单位秒                       |
+| wolf-flow.cluster.generate-node-id-lock-lease-time | 60     | 生成节点ID获取锁后自动解锁时间，单位秒       |
+| wolf-flow.cluster.task-flow-log-lock-wait-time     | 10     | 任务流日志记录获取锁最大等待时间，单位秒     |
+| wolf-flow.cluster.task-flow-log-lock-lease-time    | 15     | 任务流日志记录获取锁后自动解锁时间，单位秒   |
+| wolf-flow.cluster.task-log-lock-wait-time          | 10     | 任务日志记录获取锁最大等待时间，单位秒       |
+| wolf-flow.cluster.task-log-lock-lease-time         | 15     | 任务日志记录获取锁后自动解锁时间，单位秒     |
 
 ### quartz.properties
 

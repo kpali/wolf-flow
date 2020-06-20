@@ -6,6 +6,8 @@ import me.kpali.wolfflow.core.exception.TaskRollbackException;
 import me.kpali.wolfflow.core.exception.TaskStopException;
 import me.kpali.wolfflow.core.logger.ITaskLogger;
 import me.kpali.wolfflow.core.util.SpringContextUtil;
+import me.kpali.wolfflow.core.util.context.TaskContextWrapper;
+import me.kpali.wolfflow.core.util.context.TaskFlowContextWrapper;
 
 import java.util.concurrent.ConcurrentHashMap;
 

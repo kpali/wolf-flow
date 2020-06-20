@@ -42,7 +42,7 @@ public class MyClusterController extends DefaultClusterController {
     public void generateNodeId() throws GenerateNodeIdException {
         try {
             this.lock(ClusterConstants.GENERATE_NODE_ID_LOCK,
-                    ClusterConstants.GENERATE_NODE_ID_LOCK_LEASE_TIME, TimeUnit.SECONDS);
+                    clusterConfig.getGenerateNodeIdLockLeaseTime(), TimeUnit.SECONDS);
             RAtomicLong atomicLong = redisson.getAtomicLong(NODE_ID);
             // 当前分布式ID生成算法默认最大支持32个节点
             int maxNodeNum = 32;

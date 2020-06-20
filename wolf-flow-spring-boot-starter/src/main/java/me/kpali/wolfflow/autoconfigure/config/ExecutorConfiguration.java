@@ -14,11 +14,9 @@ import org.springframework.context.annotation.ComponentScan;
 public class ExecutorConfiguration {
     @Bean
     public ExecutorConfig getExecutorConfig(ExecutorProperties executorProperties) {
-        Integer corePoolSize = executorProperties.getCorePoolSize();
-        Integer maximumPoolSize = executorProperties.getMaximumPoolSize();
         ExecutorConfig executorConfig = new ExecutorConfig();
-        executorConfig.setCorePoolSize(corePoolSize);
-        executorConfig.setMaximumPoolSize(maximumPoolSize);
+        executorConfig.setCorePoolSize(executorProperties.getCorePoolSize());
+        executorConfig.setMaximumPoolSize(executorProperties.getMaximumPoolSize());
         return executorConfig;
     }
 }

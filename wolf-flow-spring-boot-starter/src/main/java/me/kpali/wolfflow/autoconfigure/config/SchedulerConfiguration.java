@@ -14,19 +14,13 @@ import org.springframework.context.annotation.ComponentScan;
 public class SchedulerConfiguration {
     @Bean
     public SchedulerConfig getSchedulerConfig(SchedulerProperties schedulerProperties) {
-        Integer execRequestScanInterval = schedulerProperties.getExecRequestScanInterval();
-        Integer cronScanInterval = schedulerProperties.getCronScanInterval();
-        Integer cronScanLockWaitTime = schedulerProperties.getCronScanLockWaitTime();
-        Integer cronScanLockLeaseTime = schedulerProperties.getCronScanLockLeaseTime();
-        Integer corePoolSize = schedulerProperties.getCorePoolSize();
-        Integer maximumPoolSize = schedulerProperties.getMaximumPoolSize();
         SchedulerConfig schedulerConfig = new SchedulerConfig();
-        schedulerConfig.setExecRequestScanInterval(execRequestScanInterval);
-        schedulerConfig.setCronScanInterval(cronScanInterval);
-        schedulerConfig.setCronScanLockWaitTime(cronScanLockWaitTime);
-        schedulerConfig.setCronScanLockLeaseTime(cronScanLockLeaseTime);
-        schedulerConfig.setCorePoolSize(corePoolSize);
-        schedulerConfig.setMaximumPoolSize(maximumPoolSize);
+        schedulerConfig.setExecRequestScanInterval(schedulerProperties.getExecRequestScanInterval());
+        schedulerConfig.setCronScanInterval(schedulerProperties.getCronScanInterval());
+        schedulerConfig.setCronScanLockWaitTime(schedulerProperties.getCronScanLockWaitTime());
+        schedulerConfig.setCronScanLockLeaseTime(schedulerProperties.getCronScanLockLeaseTime());
+        schedulerConfig.setCorePoolSize(schedulerProperties.getCorePoolSize());
+        schedulerConfig.setMaximumPoolSize(schedulerProperties.getMaximumPoolSize());
         return schedulerConfig;
     }
 }

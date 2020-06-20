@@ -18,11 +18,11 @@ public class SchedulerConfig {
      */
     private Integer cronScanInterval;
     /**
-     * 定时任务流扫描尝试加锁最大等待时间，单位秒
+     * 定时任务流扫描尝试获取锁最大等待时间，单位秒
      */
     private Integer cronScanLockWaitTime;
     /**
-     * 定时任务流扫描加锁后自动解锁时间，单位秒
+     * 定时任务流扫描获取锁后自动解锁时间，单位秒
      */
     private Integer cronScanLockLeaseTime;
     /**

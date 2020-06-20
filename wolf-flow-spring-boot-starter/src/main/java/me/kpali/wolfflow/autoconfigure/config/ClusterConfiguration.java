@@ -14,11 +14,14 @@ import org.springframework.context.annotation.ComponentScan;
 public class ClusterConfiguration {
     @Bean
     public ClusterConfig getClusterConfig(ClusterProperties clusterProperties) {
-        Integer nodeHeartbeatInterval = clusterProperties.getNodeHeartbeatInterval();
-        Integer nodeHeartbeatDuration = clusterProperties.getNodeHeartbeatDuration();
         ClusterConfig clusterConfig = new ClusterConfig();
-        clusterConfig.setNodeHeartbeatInterval(nodeHeartbeatInterval);
-        clusterConfig.setNodeHeartbeatDuration(nodeHeartbeatDuration);
+        clusterConfig.setNodeHeartbeatInterval(clusterProperties.getNodeHeartbeatInterval());
+        clusterConfig.setNodeHeartbeatDuration(clusterProperties.getNodeHeartbeatDuration());
+        clusterConfig.setGenerateNodeIdLockLeaseTime(clusterProperties.getGenerateNodeIdLockLeaseTime());
+        clusterConfig.setTaskFlowLogLockWaitTime(clusterProperties.getTaskFlowLogLockWaitTime());
+        clusterConfig.setTaskFlowLogLockLeaseTime(clusterProperties.getTaskFlowLogLockLeaseTime());
+        clusterConfig.setTaskLogLockWaitTime(clusterProperties.getTaskLogLockWaitTime());
+        clusterConfig.setTaskLogLockLeaseTime(clusterProperties.getTaskLogLockLeaseTime());
         return clusterConfig;
     }
 }

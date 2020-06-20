@@ -1,4 +1,6 @@
-package me.kpali.wolfflow.core.model;
+package me.kpali.wolfflow.core.util.context;
+
+import me.kpali.wolfflow.core.model.ContextKey;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

@@ -33,6 +33,11 @@ public class BaseTest extends AbstractTestNGSpringContextTests {
     public void init() {
         this.clusterConfig.setNodeHeartbeatInterval(30);
         this.clusterConfig.setNodeHeartbeatDuration(90);
+        this.clusterConfig.setGenerateNodeIdLockLeaseTime(60);
+        this.clusterConfig.setTaskFlowLogLockWaitTime(10);
+        this.clusterConfig.setTaskFlowLogLockLeaseTime(15);
+        this.clusterConfig.setTaskLogLockWaitTime(10);
+        this.clusterConfig.setTaskLogLockLeaseTime(15);
 
         this.schedulerConfig.setExecRequestScanInterval(1);
         this.schedulerConfig.setCronScanInterval(10);

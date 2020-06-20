@@ -1,10 +1,12 @@
 package me.kpali.wolfflow.core.event;
 
 import me.kpali.wolfflow.core.cluster.IClusterController;
+import me.kpali.wolfflow.core.config.ClusterConfig;
 import me.kpali.wolfflow.core.exception.TaskFlowLogException;
 import me.kpali.wolfflow.core.exception.TryLockException;
 import me.kpali.wolfflow.core.logger.ITaskFlowLogger;
 import me.kpali.wolfflow.core.model.*;
+import me.kpali.wolfflow.core.util.context.TaskFlowContextWrapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
@@ -22,6 +24,9 @@ import java.util.concurrent.TimeUnit;
 public class TaskFlowStatusEventPublisher {
     @Autowired
     private ApplicationEventPublisher eventPublisher;
+
+    @Autowired
+    private ClusterConfig clusterConfig;
 
     @Autowired
     private IClusterController clusterController;
@@ -51,8 +56,8 @@ public class TaskFlowStatusEventPublisher {
             try {
                 locked = this.clusterController.tryLock(
                         ClusterConstants.TASK_FLOW_LOG_LOCK,
-                        ClusterConstants.LOG_LOCK_WAIT_TIME,
-                        ClusterConstants.LOG_LOCK_LEASE_TIME,
+                        clusterConfig.getTaskFlowLogLockWaitTime(),
+                        clusterConfig.getTaskFlowLogLockLeaseTime(),
                         TimeUnit.SECONDS);
                 if (!locked) {
                     throw new TryLockException("获取任务流日志记录锁失败！");
