@@ -11,7 +11,7 @@
     <groupId>me.kpali</groupId>
     <artifactId>wolf-flow-sample</artifactId>
     <version>1.0.0</version>
-    <name>wolf-flow-sample</name>
+    <name>wolf-flow-sample ${project.version}</name>
     <description>Wolf flow Sample</description>
 
     <dependencies>

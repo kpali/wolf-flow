@@ -5,11 +5,10 @@
     <parent>
         <groupId>me.kpali</groupId>
         <artifactId>wolf-flow</artifactId>
-        <version>2.0.0</version>
+        <version>${revision}</version>
     </parent>
     <artifactId>wolf-flow-core</artifactId>
-    <version>2.0.0</version>
-    <name>wolf-flow-core</name>
+    <name>wolf-flow-core ${project.version}</name>
 
     <properties>
         <jackson.version>2.10.1</jackson.version>
