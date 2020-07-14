@@ -46,7 +46,7 @@ public interface ITaskFlowExecutor {
      *
      * @param taskFlow
      * @param context
-     * @throws TaskFlowExecuteException
+     * @throws TaskFlowRollbackException
      */
     void beforeRollback(TaskFlow taskFlow, ConcurrentHashMap<String, Object> context) throws TaskFlowRollbackException;
 
@@ -55,7 +55,7 @@ public interface ITaskFlowExecutor {
      *
      * @param taskFlow
      * @param context
-     * @throws TaskFlowExecuteException
+     * @throws TaskFlowRollbackException
      * @throws TaskFlowInterruptedException
      */
     void rollback(TaskFlow taskFlow, ConcurrentHashMap<String, Object> context) throws TaskFlowRollbackException, TaskFlowInterruptedException;
@@ -65,7 +65,7 @@ public interface ITaskFlowExecutor {
      *
      * @param taskFlow
      * @param context
-     * @throws TaskFlowExecuteException
+     * @throws TaskFlowRollbackException
      */
     void afterRollback(TaskFlow taskFlow, ConcurrentHashMap<String, Object> context) throws TaskFlowRollbackException;
 }
