@@ -32,7 +32,7 @@ wolf-flow 是一个简单的、支持有向无环图（DAG）的轻量级作业�
 <dependency>
     <groupId>me.kpali</groupId>
     <artifactId>wolf-flow-spring-boot-starter</artifactId>
-    <version>2.0.0</version>
+    <version>2.0.1</version>
 </dependency>
 ```
 
