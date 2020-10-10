@@ -11,4 +11,5 @@ script:
   - mvn test -B
 
 after_success:
+  - cd wolf-flow-core
   - bash <(curl -s https://codecov.io/bash)
