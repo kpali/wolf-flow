@@ -3,10 +3,12 @@ language: java
 jdk:
   - openjdk8
 
-install: true
+install:
+  - mvn clean install -Dmaven.javadoc.skip=true -Dmaven.javadoc.skip=true -B -V
 
 script:
-  - mvn clean install -Dmaven.javadoc.skip=false -Dmaven.javadoc.skip=true -B -V
+  - cd wolf-flow-core
+  - mvn test -B
 
 after_success:
   - bash <(curl -s https://codecov.io/bash)
