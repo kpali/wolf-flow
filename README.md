@@ -1,5 +1,7 @@
 # wolFFlow
 
+![GitHub](https://img.shields.io/github/license/kpali/wolf-flow)![build-status](https://travis-ci.org/kpali/wolf-flow.svg)![Codecov](https://img.shields.io/codecov/c/gh/kpali/wolf-flow)
+
 ## 简介
 
 wolf-flow 是一个简单的、支持有向无环图（DAG）的轻量级作业调度引擎。
