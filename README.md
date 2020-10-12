@@ -1,6 +1,6 @@
 # wolFFlow
 
-![GitHub](https://img.shields.io/github/license/kpali/wolf-flow)![build-status](https://travis-ci.org/kpali/wolf-flow.svg)![Codecov](https://img.shields.io/codecov/c/gh/kpali/wolf-flow)
+![License](https://img.shields.io/github/license/kpali/wolf-flow) ![Build Status](https://travis-ci.org/kpali/wolf-flow.svg) ![Codecov](https://img.shields.io/codecov/c/gh/kpali/wolf-flow)
 
 ## 简介
 
