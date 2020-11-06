@@ -14,8 +14,6 @@
         <jackson.version>2.10.1</jackson.version>
         <quartz.version>2.3.0</quartz.version>
         <guava.version>20.0</guava.version>
-        <testng.version>7.1.0</testng.version>
-        <jmockit.version>1.49</jmockit.version>
     </properties>
 
     <dependencies>
@@ -57,18 +55,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.testng</groupId>
-            <artifactId>testng</artifactId>
-            <version>${testng.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jmockit</groupId>
-            <artifactId>jmockit</artifactId>
-            <version>${jmockit.version}</version>
-            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.junit.vintage</groupId>
+                    <artifactId>junit-vintage-engine</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.jacoco</groupId>
@@ -120,7 +112,7 @@
                 <version>${maven-surefire-plugin.version}</version> <!-- or some other version -->
                 <configuration>
                     <argLine>
-                        -javaagent:${settings.localRepository}/org/jmockit/jmockit/${jmockit.version}/jmockit-${jmockit.version}.jar ${jacocoArgLine}
+                        ${jacocoArgLine}
                     </argLine>
                 </configuration>
             </plugin>

@@ -1,2 +1,2 @@
 singleServerConfig:
-  address: "redis://192.168.232.170:6379"
+  address: "redis://192.168.232.171:6379"

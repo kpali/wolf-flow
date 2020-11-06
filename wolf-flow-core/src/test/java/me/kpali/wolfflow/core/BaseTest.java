@@ -4,19 +4,16 @@ import me.kpali.wolfflow.core.config.ClusterConfig;
 import me.kpali.wolfflow.core.config.ExecutorConfig;
 import me.kpali.wolfflow.core.config.SchedulerConfig;
 import me.kpali.wolfflow.core.launcher.Launcher;
-import me.kpali.wolfflow.core.listener.TaskFlowEventListener;
-import me.kpali.wolfflow.core.util.SpringContextUtil;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.testng.AbstractTestNGSpringContextTests;
-import org.testng.annotations.BeforeClass;
 
-@SpringBootTest(classes = {
-        WolfFlowCoreApplication.class,
-        SpringContextUtil.class,
-        TaskFlowEventListener.class
-})
-public class BaseTest extends AbstractTestNGSpringContextTests {
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@SpringBootTest
+public class BaseTest {
     @Autowired
     ClusterConfig clusterConfig;
 
@@ -29,7 +26,8 @@ public class BaseTest extends AbstractTestNGSpringContextTests {
     @Autowired
     Launcher launcher;
 
-    @BeforeClass
+    @Order(0)
+    @Test
     public void init() {
         this.clusterConfig.setNodeHeartbeatInterval(30);
         this.clusterConfig.setNodeHeartbeatDuration(90);

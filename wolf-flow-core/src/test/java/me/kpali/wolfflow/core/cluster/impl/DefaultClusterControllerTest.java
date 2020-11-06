@@ -5,22 +5,18 @@ import me.kpali.wolfflow.core.cluster.IClusterController;
 import me.kpali.wolfflow.core.exception.GenerateNodeIdException;
 import me.kpali.wolfflow.core.model.ManualConfirmed;
 import me.kpali.wolfflow.core.model.TaskFlowExecRequest;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.Test;
 
 import java.util.concurrent.TimeUnit;
 
-import static org.testng.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class DefaultClusterControllerTest extends BaseTest {
 
     @Autowired
     IClusterController clusterController;
-
-    @BeforeClass
-    public void setUp() {
-    }
 
     @Test
     public void testGetNodeId() throws GenerateNodeIdException {
@@ -28,12 +24,14 @@ public class DefaultClusterControllerTest extends BaseTest {
         assertNotNull(this.clusterController.getNodeId());
     }
 
+    @Order(1)
     @Test
     public void testHeartbeat() {
         this.clusterController.heartbeat();
     }
 
-    @Test(dependsOnMethods = {"testHeartbeat"})
+    @Order(2)
+    @Test
     public void testIsNodeAlive() {
         assertTrue(this.clusterController.isNodeAlive(this.clusterController.getNodeId()));
     }

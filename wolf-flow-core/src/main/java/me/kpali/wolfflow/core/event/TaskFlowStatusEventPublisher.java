@@ -52,10 +52,11 @@ public class TaskFlowStatusEventPublisher {
         taskFlowStatus.setStatus(status);
         taskFlowStatus.setMessage(message);
         if (record) {
+            String taskFlowLogLock = ClusterConstants.getTaskFlowLogLock(taskFlow.getId());
             boolean locked = false;
             try {
                 locked = this.clusterController.tryLock(
-                        ClusterConstants.TASK_FLOW_LOG_LOCK,
+                        taskFlowLogLock,
                         clusterConfig.getTaskFlowLogLockWaitTime(),
                         clusterConfig.getTaskFlowLogLockLeaseTime(),
                         TimeUnit.SECONDS);
@@ -87,7 +88,7 @@ public class TaskFlowStatusEventPublisher {
                 }
             } finally {
                 if (locked) {
-                    this.clusterController.unlock(ClusterConstants.TASK_FLOW_LOG_LOCK);
+                    this.clusterController.unlock(taskFlowLogLock);
                 }
             }
         }
