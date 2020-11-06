@@ -111,6 +111,13 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
             while (true) {
                 try {
                     Thread.sleep(this.schedulerConfig.getExecRequestScanInterval() * 1000);
+                    // 判断当前执行的线程数是否已达到最大线程数，是则不接收新的执行请求
+                    ThreadPoolExecutor threadPoolExecutor = (this.threadPool != null) ? (ThreadPoolExecutor) this.threadPool : null;
+                    if (threadPoolExecutor != null && threadPoolExecutor.getActiveCount() >= threadPoolExecutor.getMaximumPoolSize()) {
+                        log.debug("正在执行的线程数已达到调度器线程池的最大线程数，暂停接收新的任务流执行请求");
+                        continue;
+                    }
+                    // 接收执行请求
                     TaskFlowExecRequest request = this.clusterController.execRequestPoll();
                     if (request != null) {
                         Long taskFlowId = request.getTaskFlowId();
