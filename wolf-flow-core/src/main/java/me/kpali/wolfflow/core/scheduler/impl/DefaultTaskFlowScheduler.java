@@ -19,6 +19,7 @@ import me.kpali.wolfflow.core.executor.ITaskFlowExecutor;
 import me.kpali.wolfflow.core.logger.ITaskFlowLogger;
 import me.kpali.wolfflow.core.logger.ITaskLogger;
 import me.kpali.wolfflow.core.model.*;
+import me.kpali.wolfflow.core.monitor.IMonitor;
 import me.kpali.wolfflow.core.querier.ITaskFlowQuerier;
 import me.kpali.wolfflow.core.scheduler.ITaskFlowScheduler;
 import me.kpali.wolfflow.core.scheduler.impl.quartz.MyDynamicScheduler;
@@ -58,12 +59,12 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
     private ScheduleStatusEventPublisher scheduleStatusEventPublisher;
 
     private boolean started = false;
-    private final Object lock = new Object();
 
     @Autowired
     private ITaskFlowQuerier taskFlowQuerier;
 
-    private ExecutorService threadPool;
+    private final ThreadFactory schedulerThreadFactory = new ThreadFactoryBuilder().setNameFormat("task-flow-scheduler-pool-%d").build();
+    private ExecutorService schedulerThreadPool;
 
     @Autowired
     private ITaskFlowExecutor taskFlowExecutor;
@@ -79,6 +80,9 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
 
     @Autowired
     private IdGenerator idGenerator;
+
+    @Autowired
+    private IMonitor monitor;
 
     @Override
     public void startup() {
@@ -112,7 +116,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                 try {
                     Thread.sleep(this.schedulerConfig.getExecRequestScanInterval() * 1000);
                     // 判断当前执行的线程数是否已达到最大线程数，是则不接收新的执行请求
-                    ThreadPoolExecutor threadPoolExecutor = (this.threadPool != null) ? (ThreadPoolExecutor) this.threadPool : null;
+                    ThreadPoolExecutor threadPoolExecutor = (this.schedulerThreadPool != null) ? (ThreadPoolExecutor) this.schedulerThreadPool : null;
                     if (threadPoolExecutor != null && threadPoolExecutor.getActiveCount() >= threadPoolExecutor.getMaximumPoolSize()) {
                         log.debug("正在执行的线程数已达到调度器线程池的最大线程数，暂停接收新的任务流执行请求");
                         continue;
@@ -131,19 +135,24 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                         // 任务流上下文写入当前节点ID
                         taskFlowContextWrapper.put(ContextKey.EXECUTED_BY_NODE, this.clusterController.getNodeId());
                         // 任务流执行
-                        if (this.threadPool == null) {
-                            synchronized (this.lock) {
-                                if (this.threadPool == null) {
+                        if (this.schedulerThreadPool == null) {
+                            synchronized (this.schedulerThreadFactory) {
+                                if (this.schedulerThreadPool == null) {
                                     // 初始化线程池
-                                    ThreadFactory triggerThreadFactory = new ThreadFactoryBuilder().setNameFormat("schedulerExecutor-pool-%d").build();
-                                    this.threadPool = new ThreadPoolExecutor(this.schedulerConfig.getCorePoolSize(), this.schedulerConfig.getMaximumPoolSize(), 60, TimeUnit.SECONDS,
-                                            new LinkedBlockingQueue<Runnable>(1024), triggerThreadFactory, new ThreadPoolExecutor.AbortPolicy());
+                                    this.schedulerThreadPool = new ThreadPoolExecutor(
+                                            this.schedulerConfig.getCorePoolSize(),
+                                            this.schedulerConfig.getMaximumPoolSize(),
+                                            60, TimeUnit.SECONDS,
+                                            new LinkedBlockingQueue<Runnable>(1024),
+                                            this.schedulerThreadFactory,
+                                            new ThreadPoolExecutor.AbortPolicy());
+                                    this.monitor.monitor(this.schedulerThreadPool, "task-flow-scheduler");
                                 }
                             }
                         }
                         if (!isRollback) {
                             // 任务流执行
-                            this.threadPool.execute(() -> {
+                            this.schedulerThreadPool.execute(() -> {
                                 try {
                                     // 任务流执行中
                                     this.taskFlowStatusEventPublisher.publishEvent(taskFlow, context, TaskFlowStatusEnum.EXECUTING.getCode(), null, true);
@@ -167,7 +176,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                             });
                         } else {
                             // 任务流回滚
-                            this.threadPool.execute(() -> {
+                            this.schedulerThreadPool.execute(() -> {
                                 try {
                                     // 任务流回滚中
                                     this.taskFlowStatusEventPublisher.publishEvent(taskFlow, context, TaskFlowStatusEnum.ROLLING_BACK.getCode(), null, true);

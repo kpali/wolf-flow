@@ -22,7 +22,7 @@ wolf-flow 是一个简单的、支持有向无环图（DAG）的轻量级作业�
 
 支持集群：默认只支持单机，可以通过自定义实现集群控制器接口，如借助 Redis 或 ZooKeeper 实现分布式锁和分布式队列等来支持集群。
 
-支持任务状态监控：支持实时监控任务流以及任务的状态，默认是存储在内存中，可以通过自定义实现日志器接口，将数据持久化到数据库。同时任务流和任务的状态变化时会发布事件，可以通过监听器订阅相应的事件来进行监控。
+支持监控：支持实时监控任务流以及任务的状态，主要有三种方法。1）日志，默认是存储在内存中，可以通过自定义实现日志器接口，将数据持久化到数据库。2）指标，集成了Micrometer-Prometheus，监控任务流调度/执行线程池，和JVM各项指标。3）事件，任务流和任务的状态变化时会发布事件，可以通过监听器订阅相应的事件来进行监控。
 
 支持任务实时日志：支持实时查询任务滚动日志，默认是存储在内存中，可以通过自定义实现日志器接口，将数据持久化到数据库。
 
@@ -34,7 +34,7 @@ wolf-flow 是一个简单的、支持有向无环图（DAG）的轻量级作业�
 <dependency>
     <groupId>me.kpali</groupId>
     <artifactId>wolf-flow-spring-boot-starter</artifactId>
-    <version>2.0.1</version>
+    <version>2.1.0</version>
 </dependency>
 ```
 
@@ -42,8 +42,9 @@ wolf-flow 是一个简单的、支持有向无环图（DAG）的轻量级作业�
 
 ```
 org.quartz.scheduler.instanceName = MyScheduler
-org.quartz.threadPool.threadCount = 3
+org.quartz.threadPool.threadCount = 10
 org.quartz.jobStore.class = org.quartz.simpl.RAMJobStore
+org.quartz.jobStore.misfireThreshold = 60000
 ```
 
 ### 3. 启动任务流相关的后台线程
@@ -215,6 +216,7 @@ public void test() {
 3. 集群控制器：提供节点心跳发送、分布式锁，分布式队列、集合等操作，用于协调集群各节点有序、安全地执行操作。
 4. 任务流执行器：接收任务流执行请求，并通过算法依序执行任务流（有向无环图）中的任务。
 5. 日志器：提供任务流和任务的日志记录和查询，包括状态的记录和查询。
+6. 监控器：提供指标采集和指标发布，用于监控。
 
 ### 集群模式
 
@@ -287,8 +289,8 @@ public void test() {
 | wolf-flow.scheduler.cron-scan-lease-time           | 60     | 定时任务流扫描获取锁后自动解锁时间，单位秒   |
 | wolf-flow.scheduler.core-pool-size                 | 10     | 任务流调度器线程池核心线程数                 |
 | wolf-flow.scheduler.maximum-pool-size              | 10     | 任务流调度器线程池最大线程数                 |
-| wolf-flow.executor.core-pool-size                  | 3      | 任务流执行器线程池核心线程数                 |
-| wolf-flow.executor.maximum-pool-size               | 3      | 任务流执行器线程池最大线程数                 |
+| wolf-flow.executor.core-pool-size                  | 30     | 任务流执行器线程池核心线程数                 |
+| wolf-flow.executor.maximum-pool-size               | 30     | 任务流执行器线程池最大线程数                 |
 | wolf-flow.cluster.node-heartbeat-interval          | 30     | 节点发送心跳间隔时间，单位秒                 |
 | wolf-flow.cluster.node-heartbeat-duration          | 90     | 节点心跳有效期，单位秒                       |
 | wolf-flow.cluster.generate-node-id-lock-lease-time | 60     | 生成节点ID获取锁后自动解锁时间，单位秒       |

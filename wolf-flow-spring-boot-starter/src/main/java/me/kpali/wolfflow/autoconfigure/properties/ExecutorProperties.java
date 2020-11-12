@@ -9,8 +9,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  */
 @ConfigurationProperties(prefix = "wolf-flow.executor")
 public class ExecutorProperties {
-    private Integer corePoolSize = 3;
-    private Integer maximumPoolSize = 3;
+    private Integer corePoolSize = 30;
+    private Integer maximumPoolSize = 30;
 
     public Integer getCorePoolSize() {
         return corePoolSize;

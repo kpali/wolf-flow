@@ -44,8 +44,8 @@ public class BaseTest {
         this.schedulerConfig.setCorePoolSize(10);
         this.schedulerConfig.setMaximumPoolSize(10);
 
-        this.executorConfig.setCorePoolSize(3);
-        this.executorConfig.setMaximumPoolSize(3);
+        this.executorConfig.setCorePoolSize(30);
+        this.executorConfig.setMaximumPoolSize(30);
 
         this.launcher.startup();
     }

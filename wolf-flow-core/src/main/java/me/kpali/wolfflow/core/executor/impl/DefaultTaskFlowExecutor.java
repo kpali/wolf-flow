@@ -2,7 +2,6 @@ package me.kpali.wolfflow.core.executor.impl;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import me.kpali.wolfflow.core.cluster.IClusterController;
-import me.kpali.wolfflow.core.config.ClusterConfig;
 import me.kpali.wolfflow.core.config.ExecutorConfig;
 import me.kpali.wolfflow.core.enums.TaskStatusEnum;
 import me.kpali.wolfflow.core.event.TaskStatusEventPublisher;
@@ -10,6 +9,7 @@ import me.kpali.wolfflow.core.exception.*;
 import me.kpali.wolfflow.core.executor.ITaskFlowExecutor;
 import me.kpali.wolfflow.core.logger.ITaskLogger;
 import me.kpali.wolfflow.core.model.*;
+import me.kpali.wolfflow.core.monitor.IMonitor;
 import me.kpali.wolfflow.core.util.IdGenerator;
 import me.kpali.wolfflow.core.util.TaskFlowUtils;
 import me.kpali.wolfflow.core.util.context.TaskContextWrapper;
@@ -34,8 +34,8 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     @Autowired
     private ExecutorConfig executorConfig;
 
-    @Autowired
-    private ClusterConfig clusterConfig;
+    private final ThreadFactory executorThreadFactory = new ThreadFactoryBuilder().setNameFormat("task-flow-executor-pool-%d").build();
+    private ExecutorService executorThreadPool;
 
     @Autowired
     private TaskStatusEventPublisher taskStatusEventPublisher;
@@ -48,6 +48,9 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
 
     @Autowired
     private IdGenerator idGenerator;
+
+    @Autowired
+    private IMonitor monitor;
 
     @Override
     public void beforeExecute(TaskFlow taskFlow, ConcurrentHashMap<String, Object> context) throws TaskFlowExecuteException {
@@ -142,12 +145,21 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
         Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
         TaskFlow executeTaskFlow = taskFlowContextWrapper.getValue(ContextKey.EXECUTE_TASK_FLOW, TaskFlow.class);
         try {
-            // 初始化线程池
-            ThreadFactory executorThreadFactory = new ThreadFactoryBuilder()
-                    .setNameFormat("taskFlowExecutor-pool-%d").build();
-            ExecutorService executorThreadPool = new ThreadPoolExecutor(this.executorConfig.getCorePoolSize(), this.executorConfig.getMaximumPoolSize(),
-                    0L, TimeUnit.MILLISECONDS,
-                    new LinkedBlockingQueue<Runnable>(1024), executorThreadFactory, new ThreadPoolExecutor.AbortPolicy());
+            if (this.executorThreadPool == null) {
+                synchronized (this.executorThreadFactory) {
+                    if (this.executorThreadPool == null) {
+                        // 初始化线程池
+                        this.executorThreadPool = new ThreadPoolExecutor(
+                                this.executorConfig.getCorePoolSize(),
+                                this.executorConfig.getMaximumPoolSize(),
+                                0L, TimeUnit.MILLISECONDS,
+                                new LinkedBlockingQueue<Runnable>(1024),
+                                this.executorThreadFactory,
+                                new ThreadPoolExecutor.AbortPolicy());
+                        this.monitor.monitor(this.executorThreadPool, "task-flow-executor");
+                    }
+                }
+            }
             // 任务表、父任务表和子任务表
             Map<Long, Task> idToTaskMap = new HashMap<>();
             Map<Long, List<Long>> idToParentTaskIdsMap = new HashMap<>();
