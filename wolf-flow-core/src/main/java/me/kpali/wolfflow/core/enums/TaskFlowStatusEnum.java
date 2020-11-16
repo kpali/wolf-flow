@@ -7,17 +7,17 @@ package me.kpali.wolfflow.core.enums;
  */
 public enum TaskFlowStatusEnum {
 
-    WAIT_FOR_EXECUTE("WAIT_FOR_EXECUTE", "等待执行"),
-    EXECUTING("EXECUTING", "执行中"),
-    EXECUTE_SUCCESS("EXECUTE_SUCCESS", "执行成功"),
-    EXECUTE_FAILURE("EXECUTE_FAILURE", "执行失败"),
+    WAIT_FOR_EXECUTE("WAIT_FOR_EXECUTE", "Wait for execute"),
+    EXECUTING("EXECUTING", "Executing"),
+    EXECUTE_SUCCESS("EXECUTE_SUCCESS", "Execute success"),
+    EXECUTE_FAILURE("EXECUTE_FAILURE", "Execute failure"),
 
-    STOPPING("STOPPING", "停止中"),
+    STOPPING("STOPPING", "Stopping"),
 
-    WAIT_FOR_ROLLBACK("WAIT_FOR_ROLLBACK", "等待回滚"),
-    ROLLING_BACK("ROLLING_BACK", "回滚中"),
-    ROLLBACK_SUCCESS("ROLLBACK_SUCCESS", "回滚成功"),
-    ROLLBACK_FAILURE("ROLLBACK_FAILURE", "回滚失败");
+    WAIT_FOR_ROLLBACK("WAIT_FOR_ROLLBACK", "Wait for rollback"),
+    ROLLING_BACK("ROLLING_BACK", "Rolling back"),
+    ROLLBACK_SUCCESS("ROLLBACK_SUCCESS", "Rollback success"),
+    ROLLBACK_FAILURE("ROLLBACK_FAILURE", "Rollback failure");
 
     private String code;
     private String name;

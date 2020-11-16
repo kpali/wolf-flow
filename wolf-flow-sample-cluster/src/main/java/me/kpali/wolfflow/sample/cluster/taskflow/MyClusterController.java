@@ -54,7 +54,7 @@ public class MyClusterController extends DefaultClusterController {
                     return;
                 }
             }
-            throw new GenerateNodeIdException("生成节点ID失败，已达最大节点数！");
+            throw new GenerateNodeIdException("Failed to generate node id, maximum node numbers has been reached!");
         } finally {
             try {
                 this.unlock(ClusterConstants.GENERATE_NODE_ID_LOCK);
@@ -95,7 +95,7 @@ public class MyClusterController extends DefaultClusterController {
         try {
             res = lock.tryLock(waitTime, leaseTime, unit);
         } catch (Exception e) {
-            log.error("尝试获取锁异常：" + e.getMessage(), e);
+            log.error("Try lock [" + name + "] failed: " + e.getMessage(), e);
         }
         return res;
     }

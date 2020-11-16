@@ -65,7 +65,7 @@ public class TaskStatusEventPublisher {
                         clusterConfig.getTaskLogLockLeaseTime(),
                         TimeUnit.SECONDS);
                 if (!locked) {
-                    throw new TryLockException("获取任务日志记录锁失败！");
+                    throw new TryLockException("Acquire the task log lock failed!");
                 }
                 Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
                 boolean isRollback = taskFlowContextWrapper.getValue(ContextKey.IS_ROLLBACK, Boolean.class);

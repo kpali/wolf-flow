@@ -30,7 +30,7 @@ public class MyDynamicScheduler {
 
     public void start() throws Exception {
         Assert.notNull(scheduler, "quartz scheduler is null");
-        log.info("Quartz 调度器初始化完成");
+        log.info("Quartz scheduler initialization completed.");
     }
 
     public void destroy() throws Exception {
@@ -50,14 +50,14 @@ public class MyDynamicScheduler {
             Class<? extends Job> jobClass_ = MyQuartzJobBean.class;
             JobDetail jobDetail = JobBuilder.newJob(jobClass_).withIdentity(jobKey).usingJobData(new JobDataMap(jobDataMap)).build();
             Date date = scheduler.scheduleJob(jobDetail, cronTrigger);
-            log.info("Quartz 新增任务成功 -> jobName:{}, jobGroup:{}, cronExpression:{}", jobName, jobGroup, cronExpression);
+            log.info("Quartz schedule job success -> jobName:{}, jobGroup:{}, cronExpression:{}", jobName, jobGroup, cronExpression);
         }
     }
 
     public static void removeJob(String jobName, String jobGroup) throws SchedulerException {
         JobKey jobKey = new JobKey(jobName, jobGroup);
         scheduler.deleteJob(jobKey);
-        log.info("Quartz 删除任务成功 -> jobName:{}, jobGroup:{}", jobName, jobGroup);
+        log.info("Quartz delete job success -> jobName:{}, jobGroup:{}", jobName, jobGroup);
     }
 
     public static void updateJobCron(String jobName, String jobGroup, String cronExpression, Map<String, Object> jobDataMap) throws SchedulerException {
@@ -69,7 +69,7 @@ public class MyDynamicScheduler {
                 CronScheduleBuilder cronScheduleBuilder = CronScheduleBuilder.cronSchedule(cronExpression).withMisfireHandlingInstructionDoNothing();
                 oldTrigger = (CronTrigger) oldTrigger.getTriggerBuilder().withIdentity(triggerKey).usingJobData(new JobDataMap(jobDataMap)).withSchedule(cronScheduleBuilder).build();
                 scheduler.rescheduleJob(triggerKey, oldTrigger);
-                log.info("Quartz 更新任务成功 -> jobName:{}, jobGroup:{}, cronExpression:{}", jobName, jobGroup, cronExpression);
+                log.info("Quartz reschedule job success -> jobName:{}, jobGroup:{}, cronExpression:{}", jobName, jobGroup, cronExpression);
             }
         }
     }

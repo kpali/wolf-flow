@@ -30,15 +30,15 @@ public class MyTask extends Task {
             TaskContextWrapper taskContextWrapper = new TaskContextWrapper(taskContext);
             Long taskLogId = taskContextWrapper.getValue(ContextKey.TASK_LOG_ID, Long.class);
             String taskLogFileId = taskContextWrapper.getValue(ContextKey.TASK_LOG_FILE_ID, String.class);
-            taskLogger.log(taskLogFileId, "任务开始执行", false);
-            taskLogger.log(taskLogFileId, "日志第二行\r日志第三行\n日志第四行\r\n日志第五行", false);
+            taskLogger.log(taskLogFileId, "Task executing...", false);
+            taskLogger.log(taskLogFileId, "Second line...\rThird line...\nFourth line...\r\nFifth line...", false);
             int totalTime = 0;
             int timeout = 2000;
             while (totalTime < timeout) {
                 try {
                     if (requiredToStop) {
-                        taskLogger.log(taskLogFileId, "任务被终止执行", true);
-                        throw new TaskInterruptedException("任务被终止执行");
+                        taskLogger.log(taskLogFileId, "Task execution is terminated", true);
+                        throw new TaskInterruptedException("Task execution is terminated");
                     }
                     Thread.sleep(1000);
                     totalTime += 1000;
@@ -46,7 +46,7 @@ public class MyTask extends Task {
                     e.printStackTrace();
                 }
             }
-            taskLogger.log(taskLogFileId, "任务执行完成", true);
+            taskLogger.log(taskLogFileId, "Task execution finished", true);
         } catch (TaskInterruptedException e) {
             throw e;
         } catch (Exception e) {

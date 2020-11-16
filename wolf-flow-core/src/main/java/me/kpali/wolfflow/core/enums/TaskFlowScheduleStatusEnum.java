@@ -7,9 +7,9 @@ package me.kpali.wolfflow.core.enums;
  */
 public enum TaskFlowScheduleStatusEnum {
 
-    JOIN("JOIN", "加入调度"),
-    UPDATE("UPDATE", "更新调度"),
-    FAIL("FAIL", "调度失败");
+    JOIN("JOIN", "Join"),
+    UPDATE("UPDATE", "Update"),
+    FAIL("FAIL", "Fail");
 
     private String code;
     private String name;

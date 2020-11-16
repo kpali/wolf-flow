@@ -35,7 +35,7 @@ public class ManualTask extends Task {
                 }
                 // 检查是否收到停止任务指令
                 if (requiredToStop) {
-                    throw new TaskInterruptedException("任务被终止执行");
+                    throw new TaskInterruptedException("Task execution is terminated");
                 }
                 // 检查手工确认结果
                 ManualConfirmed manualConfirmed = clusterController.manualConfirmedGet(taskLogId);
@@ -72,7 +72,7 @@ public class ManualTask extends Task {
                 }
                 // 检查是否收到停止任务指令
                 if (requiredToStop) {
-                    throw new TaskInterruptedException("任务被终止回滚");
+                    throw new TaskInterruptedException("Task rollback is terminated");
                 }
                 // 检查手工确认结果
                 ManualConfirmed manualConfirmed = clusterController.manualConfirmedGet(taskLogId);

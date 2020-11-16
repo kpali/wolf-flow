@@ -29,19 +29,19 @@ public class WolfFlowSampleClusterApplicationTests {
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             long taskFlowLogId1 = taskFlowScheduler.executeTo(100L, 5L, null);
-            System.out.println(">>>>>>>>>> 任务流日志ID：" + taskFlowLogId1);
+            System.out.println(">>>>>>>>>> Task flow log id: " + taskFlowLogId1);
             Thread.sleep(3 * 1000);
             //taskFlowScheduler.stop(taskFlowLogId1);
             this.waitDoneAndPrintLog(taskFlowLogId1);
             List<TaskLog> taskStatusList1 = taskLogger.listTaskStatus(100L);
-            System.out.println(">>>>>>>>>> 执行完成，当前各任务状态：");
+            System.out.println(">>>>>>>>>> Finished, status of tasks: ");
             System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(taskStatusList1));
 
             long taskFlowLogId2 = taskFlowScheduler.executeTo(100L, 6L, null);
-            System.out.println(">>>>>>>>>> 任务流日志ID：" + taskFlowLogId2);
+            System.out.println(">>>>>>>>>> Task flow log id: " + taskFlowLogId2);
             this.waitDoneAndPrintLog(taskFlowLogId2);
             List<TaskLog> taskStatusList2  = taskLogger.listTaskStatus(100L);
-            System.out.println(">>>>>>>>>> 执行完成，当前各任务状态：");
+            System.out.println(">>>>>>>>>> Finished, status of tasks: ");
             System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(taskStatusList2));
         } catch (Exception e) {
             e.printStackTrace();
@@ -61,7 +61,7 @@ public class WolfFlowSampleClusterApplicationTests {
                 for (TaskLog taskLog : taskLogList) {
                     TaskLogResult taskLogResult = taskLogger.query(taskLog.getLogFileId(), 1);
                     if (taskLogResult != null) {
-                        System.out.println(">>>>>>>>>> 任务[" + taskLog.getTaskId() + "]日志内容：");
+                        System.out.println(">>>>>>>>>> Task [" + taskLog.getTaskId() + "] log contents: ");
                         System.out.println(taskLogResult.getLogContent());
                     }
                 }

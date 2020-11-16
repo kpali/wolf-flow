@@ -43,7 +43,7 @@ public class DefaultClusterController implements IClusterController {
         if (this.started) {
             return;
         }
-        log.info("集群控制器启动，节点发送心跳间隔时间：{}秒，节点心跳有效期：{}秒",
+        log.info("Starting cluster controller, nodeHeartbeatInterval: {}s, nodeHeartbeatDuration: {}s",
                 this.clusterConfig.getNodeHeartbeatInterval(),
                 this.clusterConfig.getNodeHeartbeatDuration());
         this.started = true;
@@ -66,16 +66,16 @@ public class DefaultClusterController implements IClusterController {
                 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<Runnable>(1024), heartbeatThreadFactory, new ThreadPoolExecutor.AbortPolicy());
 
-        log.info("节点心跳线程启动");
+        log.info("Starting node heartbeat thread...");
         heartbeatThreadPool.execute(() -> {
             while (true) {
                 try {
-                    log.info("发送节点心跳，当前节点ID：{}", this.getNodeId());
+                    log.info("Sending heartbeat, node id: {}", this.getNodeId());
                     Integer heartbeatIntervalInMilliseconds = this.clusterConfig.getNodeHeartbeatInterval() * 1000;
                     this.heartbeat();
                     Thread.sleep(heartbeatIntervalInMilliseconds);
                 } catch (Exception e) {
-                    log.error("发送节点心跳异常！" + e.getMessage(), e);
+                    log.error("Failed to send heartbeat: " + e.getMessage(), e);
                 }
             }
         });

@@ -297,7 +297,7 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
     }
 
     private void waitDoneAndPrintLog(long taskFlowId, long taskFlowLogId) throws TaskFlowLogException, TaskLogException {
-        System.out.println(">>>>>>>>>> 任务流日志ID：" + taskFlowLogId);
+        System.out.println(">>>>>>>>>> Task flow log id: " + taskFlowLogId);
         while (true) {
             try {
                 Thread.sleep(500);
@@ -310,7 +310,7 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
                 for (TaskLog taskLog : taskLogList) {
                     TaskLogResult taskLogResult = taskLogger.query(taskLog.getLogFileId(), 1);
                     if (taskLogResult != null) {
-                        System.out.println(">>>>>>>>>> 任务[" + taskLog.getTaskId() + "]日志内容：");
+                        System.out.println(">>>>>>>>>> Task [" + taskLog.getTaskId() + "] log contents: ");
                         System.out.println(taskLogResult.getLogContent());
                     }
                 }
@@ -319,7 +319,7 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
         }
         ObjectMapper objectMapper = new ObjectMapper();
         List<TaskLog> taskStatusList = taskLogger.listTaskStatus(taskFlowId);
-        System.out.println(">>>>>>>>>> 执行完成，当前各任务状态：");
+        System.out.println(">>>>>>>>>> Finished, status of tasks: ");
         try {
             System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(taskStatusList));
         } catch (JsonProcessingException e) {

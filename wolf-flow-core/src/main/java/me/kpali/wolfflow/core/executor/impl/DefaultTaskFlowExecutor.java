@@ -229,7 +229,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                                 for (Long parentTaskId : parentTaskIds) {
                                     TaskLog parentTaskStatus = this.taskLogger.getTaskStatus(parentTaskId);
                                     if (parentTaskStatus == null || !TaskStatusEnum.EXECUTE_SUCCESS.getCode().equals(parentTaskStatus.getStatus())) {
-                                        throw new TaskExecuteException("父任务必须先执行成功");
+                                        throw new TaskExecuteException("Parent task must execute successfully first");
                                     }
                                 }
                                 this.taskStatusEventPublisher.publishEvent(task, executeTaskFlow.getId(), context, statusCode, null, true);
@@ -243,12 +243,12 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                                 if (msg == null) {
                                     msg = e.toString();
                                 }
-                                log.error("任务执行失败！任务ID：" + task.getId() + " 异常信息：" + msg, e);
+                                log.error("Task [" + task.getId() + "] execution failed! cause: " + msg, e);
                                 idToTaskStatusMap.put(task.getId(), TaskStatusEnum.EXECUTE_FAILURE.getCode());
                                 try {
                                     this.taskStatusEventPublisher.publishEvent(task, executeTaskFlow.getId(), context, TaskStatusEnum.EXECUTE_FAILURE.getCode(), msg, true);
                                 } catch (Exception e1) {
-                                    log.error("发布任务状态变更事件失败！" + e1.getMessage(), e1);
+                                    log.error("Failed to publish task status event! " + e1.getMessage(), e1);
                                 }
                             }
                         });
@@ -260,7 +260,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                             this.taskStatusEventPublisher.publishEvent(task, executeTaskFlow.getId(), context, TaskStatusEnum.STOPPING.getCode(), null, true);
                             task.stop(context);
                         } catch (TaskStopException e) {
-                            log.error("任务终止失败！任务ID：" + task.getId() + " 异常信息：" + e.getMessage(), e);
+                            log.error("Stop task [" + task.getId() + "] failed! cause: " + e.getMessage(), e);
                         }
                     } else if (TaskStatusEnum.EXECUTE_SUCCESS.getCode().equals(taskStatus)) {
                         // 执行成功，将子任务的入度减1，如果子任务入度为0，则将子任务状态设置为等待执行并加入状态检查，最后将此任务移除状态检查
@@ -292,9 +292,9 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                 }
             }
             if (requireToStop) {
-                throw new TaskFlowInterruptedException("任务流被终止执行");
+                throw new TaskFlowInterruptedException("Task flow execution is terminated");
             } else if (!isSuccess) {
-                throw new TaskFlowExecuteException("一个或多个任务执行失败");
+                throw new TaskFlowExecuteException("One or more tasks execute failed");
             }
         } catch (TaskFlowExecuteException | TaskFlowInterruptedException e) {
             throw e;
@@ -469,7 +469,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                                 for (Long parentTaskId : parentTaskIds) {
                                     TaskLog parentTaskStatus = this.taskLogger.getTaskStatus(parentTaskId);
                                     if (this.taskLogger.canRollback(parentTaskStatus)) {
-                                        throw new TaskRollbackException("父任务必须先回滚成功");
+                                        throw new TaskRollbackException("Parent task must rollback successfully first");
                                     }
                                 }
                                 this.taskStatusEventPublisher.publishEvent(task, rollbackTaskFlow.getId(), context, statusCode, null, true);
@@ -483,12 +483,12 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                                 if (msg == null) {
                                     msg = e.toString();
                                 }
-                                log.error("任务回滚失败！任务ID：" + task.getId() + " 异常信息：" + msg, e);
+                                log.error("Task [" + task.getId() + "] rollback failed! cause: " + msg, e);
                                 idToTaskStatusMap.put(task.getId(), TaskStatusEnum.ROLLBACK_FAILURE.getCode());
                                 try {
                                     this.taskStatusEventPublisher.publishEvent(task, rollbackTaskFlow.getId(), context, TaskStatusEnum.ROLLBACK_FAILURE.getCode(), msg, true);
                                 } catch (Exception e1) {
-                                    log.error("发布任务状态变更事件失败！" + e1.getMessage(), e1);
+                                    log.error("Failed to publish task status event! " + e1.getMessage(), e1);
                                 }
                             }
                         });
@@ -500,7 +500,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                             this.taskStatusEventPublisher.publishEvent(task, rollbackTaskFlow.getId(), context, TaskStatusEnum.STOPPING.getCode(), null, true);
                             task.stop(context);
                         } catch (TaskStopException e) {
-                            log.error("任务终止失败！任务ID：" + task.getId() + " 异常信息：" + e.getMessage(), e);
+                            log.error("Stop task [" + task.getId() + "] failed! cause: " + e.getMessage(), e);
                         }
                     } else if (TaskStatusEnum.ROLLBACK_SUCCESS.getCode().equals(taskStatus)) {
                         // 回滚成功，将子任务的入度减1，如果子任务入度为0，则将子任务状态设置为等待回滚并加入状态检查，最后将此任务移除状态检查
@@ -528,9 +528,9 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                 }
             }
             if (requireToStop) {
-                throw new TaskFlowInterruptedException("任务流被终止回滚");
+                throw new TaskFlowInterruptedException("Task flow rollback is terminated");
             } else if (!isSuccess) {
-                throw new TaskFlowRollbackException("一个或多个任务回滚失败");
+                throw new TaskFlowRollbackException("One or more tasks rollback failed");
             }
         } catch (TaskFlowRollbackException | TaskFlowInterruptedException e) {
             throw e;
@@ -556,10 +556,10 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
         // 检查任务流是否是一个有向无环图
         List<Task> sortedTaskList = TaskFlowUtils.topologicalSort(taskFlow);
         if (sortedTaskList == null) {
-            throw new InvalidTaskFlowException("任务流不是一个有向无环图，请检查是否存在回路！");
+            throw new InvalidTaskFlowException("The task flow is not a directed acyclic graph, And please check if there is a loop.");
         }
         if (taskFlow.getTaskList().size() == 0) {
-            throw new InvalidTaskFlowException("任务流中不存在任何任务！");
+            throw new InvalidTaskFlowException("No tasks in the task flow");
         }
     }
 
@@ -568,10 +568,9 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
      *
      * @param taskFlow
      * @return
-     * @throws TryLockException
      * @throws TaskLogException
      */
-    private TaskFlow excludeSuccessfulTasks(TaskFlow taskFlow) throws TryLockException, TaskLogException {
+    private TaskFlow excludeSuccessfulTasks(TaskFlow taskFlow) throws TaskLogException {
         List<Long> successTaskIdList = new ArrayList<>();
         List<TaskLog> taskStatusList = this.taskLogger.listTaskStatus(taskFlow.getId());
         if (taskStatusList == null || taskStatusList.isEmpty()) {
@@ -608,10 +607,9 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
      *
      * @param taskFlow
      * @return
-     * @throws TryLockException
      * @throws TaskLogException
      */
-    private TaskFlow selectRollbackTasks(TaskFlow taskFlow) throws TryLockException, TaskLogException {
+    private TaskFlow selectRollbackTasks(TaskFlow taskFlow) throws TaskLogException {
         TaskFlow rollbackTaskFlow = new TaskFlow();
         rollbackTaskFlow.setId(taskFlow.getId());
         rollbackTaskFlow.setCron(taskFlow.getCron());

@@ -16,12 +16,12 @@ public class TaskFlowEventListener {
     @EventListener
     public void taskFlowStatusChange(TaskFlowStatusChangeEvent event) {
         // 任务流状态变更监听，状态有[等待执行、执行中、执行成功、执行失败、停止中]等
-        System.out.println(">>>>>>>>>> 任务流[" + event.getTaskFlowStatus().getTaskFlow().getId() + "]状态变更为：" + event.getTaskFlowStatus().getStatus());
+        System.out.println(">>>>>>>>>> Task flow [" + event.getTaskFlowStatus().getTaskFlow().getId() + "] status changed to: " + event.getTaskFlowStatus().getStatus());
     }
 
     @EventListener
     public void taskStatusChange(TaskStatusChangeEvent event) {
         // 任务状态变更监听，状态有[等待执行、执行中、执行成功、执行失败、停止中、跳过]等
-        System.out.println(">>>>>>>>>> 任务[" + event.getTaskStatus().getTask().getId() + "]状态变更为：" + event.getTaskStatus().getStatus());
+        System.out.println(">>>>>>>>>> Task [" + event.getTaskStatus().getTask().getId() + "] status changed to: " + event.getTaskStatus().getStatus());
     }
 }

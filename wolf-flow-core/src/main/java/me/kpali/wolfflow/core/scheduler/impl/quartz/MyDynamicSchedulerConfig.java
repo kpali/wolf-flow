@@ -24,9 +24,7 @@ public class MyDynamicSchedulerConfig {
     @Bean
     public SchedulerFactoryBean getSchedulerFactoryBean() {
         SchedulerFactoryBean schedulerFactory = new SchedulerFactoryBean();
-        //schedulerFactory.setDataSource(dataSource);
         schedulerFactory.setAutoStartup(true);
-        //schedulerFactory.setStartupDelay(20);
         schedulerFactory.setOverwriteExistingJobs(true);
         schedulerFactory.setApplicationContextSchedulerContextKey("applicationContext");
         schedulerFactory.setConfigLocation(new ClassPathResource("quartz.properties"));
@@ -44,19 +42,5 @@ public class MyDynamicSchedulerConfig {
         myDynamicScheduler.setScheduler(scheduler);
         return myDynamicScheduler;
     }
-
-//    @Bean(
-//            initMethod = "start",
-//            destroyMethod = "destroy"
-//    )
-//    public MyDynamicScheduler getMyDynamicScheduler() throws SchedulerException {
-//        Scheduler scheduler = StdSchedulerFactory.getDefaultScheduler();
-//        scheduler.setJobFactory(myJobFactory);
-//        scheduler.startDelayed(20);
-//        scheduler.start();
-//        MyDynamicScheduler myDynamicScheduler = new MyDynamicScheduler();
-//        myDynamicScheduler.setScheduler(scheduler);
-//        return myDynamicScheduler;
-//    }
 
 }
