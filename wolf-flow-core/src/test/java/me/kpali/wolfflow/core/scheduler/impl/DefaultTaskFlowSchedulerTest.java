@@ -16,6 +16,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
@@ -26,6 +28,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.when;
 
 public class DefaultTaskFlowSchedulerTest extends BaseTest {
+    private static final Logger logger = LoggerFactory.getLogger(DefaultTaskFlowSchedulerTest.class);
+    
     @MockBean
     ITaskFlowQuerier taskFlowQuerier;
 
@@ -144,7 +148,7 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
         long taskFlowLogId = this.taskFlowScheduler.rollback(taskFlowId, null);
         this.waitDoneAndPrintLog(taskFlowId, taskFlowLogId);
         TaskFlowLog taskFlowLog = this.taskFlowLogger.get(taskFlowLogId);
-        assertEquals(taskFlowLog.getStatus(), TaskFlowStatusEnum.ROLLBACK_SUCCESS.getCode());
+        assertEquals(TaskFlowStatusEnum.ROLLBACK_SUCCESS.getCode(), taskFlowLog.getStatus());
     }
 
     @Test
@@ -156,13 +160,13 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
         this.waitDoneAndPrintLog(taskFlowId, taskFlowLogId);
 
         TaskFlowLog taskFlowLog = this.taskFlowLogger.get(taskFlowLogId);
-        assertEquals(taskFlowLog.getStatus(), TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode());
+        assertEquals(TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode(), taskFlowLog.getStatus());
 
         List<TaskLog> taskLogList = this.taskLogger.list(taskFlowLogId);
-        assertEquals(taskLogList.size(), 1);
+        assertEquals(1, taskLogList.size());
         TaskLog taskLog = taskLogList.get(0);
-        assertEquals(taskLog.getTask().getId().longValue(), taskId);
-        assertEquals(taskLog.getStatus(), TaskStatusEnum.EXECUTE_SUCCESS.getCode());
+        assertEquals(taskId, taskLog.getTask().getId().longValue());
+        assertEquals(TaskStatusEnum.EXECUTE_SUCCESS.getCode(), taskLog.getStatus());
     }
 
     @Test
@@ -174,12 +178,12 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
         this.waitDoneAndPrintLog(taskFlowId, taskFlowLogId);
 
         TaskFlowLog taskFlowLog = this.taskFlowLogger.get(taskFlowLogId);
-        assertEquals(taskFlowLog.getStatus(), TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode());
+        assertEquals(TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode(), taskFlowLog.getStatus());
 
         List<TaskLog> taskLogList = this.taskLogger.list(taskFlowLogId);
-        assertEquals(taskLogList.size(), 2);
+        assertEquals(2, taskLogList.size());
         for (TaskLog taskLog : taskLogList) {
-            assertEquals(taskLog.getStatus(), TaskStatusEnum.EXECUTE_SUCCESS.getCode());
+            assertEquals(TaskStatusEnum.EXECUTE_SUCCESS.getCode(), taskLog.getStatus());
         }
     }
 
@@ -192,12 +196,12 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
         this.waitDoneAndPrintLog(taskFlowId, taskFlowLogId);
 
         TaskFlowLog taskFlowLog = this.taskFlowLogger.get(taskFlowLogId);
-        assertEquals(taskFlowLog.getStatus(), TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode());
+        assertEquals(TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode(), taskFlowLog.getStatus());
 
         List<TaskLog> taskLogList = this.taskLogger.list(taskFlowLogId);
-        assertEquals(taskLogList.size(), 2);
+        assertEquals(2, taskLogList.size());
         for (TaskLog taskLog : taskLogList) {
-            assertEquals(taskLog.getStatus(), TaskStatusEnum.EXECUTE_SUCCESS.getCode());
+            assertEquals(TaskStatusEnum.EXECUTE_SUCCESS.getCode(), taskLog.getStatus());
         }
     }
 
@@ -208,11 +212,11 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
         long taskFlowLogId = this.taskFlowScheduler.execute(taskFlowId, null);
         this.waitDoneAndPrintLog(taskFlowId, taskFlowLogId);
         TaskFlowLog taskFlowLog = this.taskFlowLogger.get(taskFlowLogId);
-        assertEquals(taskFlowLog.getStatus(), TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode());
+        assertEquals(TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode(), taskFlowLog.getStatus());
         List<TaskLog> taskLogList = this.taskLogger.list(taskFlowLogId);
-        assertEquals(taskLogList.size(), 11);
+        assertEquals(11, taskLogList.size());
         for (TaskLog taskLog : taskLogList) {
-            assertEquals(taskLog.getStatus(), TaskStatusEnum.EXECUTE_SUCCESS.getCode());
+            assertEquals(TaskStatusEnum.EXECUTE_SUCCESS.getCode(), taskLog.getStatus());
         }
     }
 
@@ -232,7 +236,7 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
         this.waitDoneAndPrintLog(taskFlowId, taskFlowLogId);
 
         TaskFlowLog taskFlowLog = this.taskFlowLogger.get(taskFlowLogId);
-        assertEquals(taskFlowLog.getStatus(), TaskFlowStatusEnum.EXECUTE_FAILURE.getCode());
+        assertEquals(TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), taskFlowLog.getStatus());
     }
 
     @Test
@@ -242,7 +246,7 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
         long taskFlowLogId = this.taskFlowScheduler.rollback(taskFlowId, null);
         this.waitDoneAndPrintLog(taskFlowId, taskFlowLogId);
         TaskFlowLog taskFlowLog = this.taskFlowLogger.get(taskFlowLogId);
-        assertEquals(taskFlowLog.getStatus(), TaskFlowStatusEnum.ROLLBACK_SUCCESS.getCode());
+        assertEquals(TaskFlowStatusEnum.ROLLBACK_SUCCESS.getCode(), taskFlowLog.getStatus());
     }
 
     @Test
@@ -261,7 +265,7 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
 
         this.waitDoneAndPrintLog(taskFlowId, taskFlowLogId);
         TaskFlowLog taskFlowLog = this.taskFlowLogger.get(taskFlowLogId);
-        assertEquals(taskFlowLog.getStatus(), TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode());
+        assertEquals(TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode(), taskFlowLog.getStatus());
     }
 
     @Test
@@ -280,11 +284,11 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
 
         this.waitDoneAndPrintLog(taskFlowId, taskFlowLogId);
         TaskFlowLog taskFlowLog = this.taskFlowLogger.get(taskFlowLogId);
-        assertEquals(taskFlowLog.getStatus(), TaskFlowStatusEnum.ROLLBACK_SUCCESS.getCode());
+        assertEquals(TaskFlowStatusEnum.ROLLBACK_SUCCESS.getCode(), taskFlowLog.getStatus());
     }
 
     private void waitDoneAndPrintLog(long taskFlowId, long taskFlowLogId) throws TaskFlowLogException, TaskLogException {
-        System.out.println(">>>>>>>>>> Task flow log id: " + taskFlowLogId);
+        logger.info(">>>>>>>>>> Task flow log id: " + taskFlowLogId);
         while (true) {
             TaskFlowLog taskFlowLog = taskFlowLogger.get(taskFlowLogId);
             if (!taskFlowLogger.isInProgress(taskFlowLog)) {
@@ -292,8 +296,8 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
                 for (TaskLog taskLog : taskLogList) {
                     TaskLogResult taskLogResult = taskLogger.query(taskLog.getLogFileId(), 1);
                     if (taskLogResult != null) {
-                        System.out.println(">>>>>>>>>> Task [" + taskLog.getTaskId() + "] log contents: ");
-                        System.out.println(taskLogResult.getLogContent());
+                        logger.info(">>>>>>>>>> Task [" + taskLog.getTaskId() + "] log contents: ");
+                        logger.info(taskLogResult.getLogContent());
                     }
                 }
                 break;
@@ -301,9 +305,9 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
         }
         ObjectMapper objectMapper = new ObjectMapper();
         List<TaskLog> taskStatusList = taskLogger.listTaskStatus(taskFlowId);
-        System.out.println(">>>>>>>>>> Finished, status of tasks: ");
+        logger.info(">>>>>>>>>> Finished, status of tasks: ");
         try {
-            System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(taskStatusList));
+            logger.info(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(taskStatusList));
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }

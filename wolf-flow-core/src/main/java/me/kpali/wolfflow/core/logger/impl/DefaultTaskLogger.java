@@ -24,7 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 @Component
 public class DefaultTaskLogger implements ITaskLogger {
-    private static final Logger log = LoggerFactory.getLogger(DefaultTaskLogger.class);
+    private static final Logger logger = LoggerFactory.getLogger(DefaultTaskLogger.class);
 
     /**
      *  [任务流日志ID, [任务日志ID, 任务日志]]

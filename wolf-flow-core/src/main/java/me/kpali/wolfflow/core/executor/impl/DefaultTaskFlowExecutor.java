@@ -29,7 +29,7 @@ import java.util.concurrent.*;
  */
 @Component
 public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
-    private static final Logger log = LoggerFactory.getLogger(DefaultTaskFlowExecutor.class);
+    private static final Logger logger = LoggerFactory.getLogger(DefaultTaskFlowExecutor.class);
 
     @Autowired
     private ExecutorConfig executorConfig;
@@ -216,7 +216,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                 try {
                     Thread.sleep(statusCheckInterval);
                 } catch (InterruptedException e) {
-                    log.warn(e.getMessage(), e);
+                    logger.warn(e.getMessage(), e);
                 }
                 requireToStop = this.clusterController.stopRequestContains(taskFlowLogId);
                 for (Long taskId : idToTaskStatusMap.keySet()) {
@@ -248,12 +248,12 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                                 if (msg == null) {
                                     msg = e.toString();
                                 }
-                                log.error("Task [" + task.getId() + "] execution failed! cause: " + msg, e);
+                                logger.error("Task [" + task.getId() + "] execution failed! cause: " + msg, e);
                                 idToTaskStatusMap.put(task.getId(), TaskStatusEnum.EXECUTE_FAILURE.getCode());
                                 try {
                                     this.taskStatusEventPublisher.publishEvent(task, executeTaskFlow.getId(), context, TaskStatusEnum.EXECUTE_FAILURE.getCode(), msg, true);
                                 } catch (Exception e1) {
-                                    log.error("Failed to publish task status event! " + e1.getMessage(), e1);
+                                    logger.error("Failed to publish task status event! " + e1.getMessage(), e1);
                                 }
                             }
                         });
@@ -266,7 +266,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                             this.taskStatusEventPublisher.publishEvent(task, executeTaskFlow.getId(), context, TaskStatusEnum.STOPPING.getCode(), null, true);
                             task.stop(context);
                         } catch (TaskStopException e) {
-                            log.error("Stop task [" + task.getId() + "] failed! cause: " + e.getMessage(), e);
+                            logger.error("Stop task [" + task.getId() + "] failed! cause: " + e.getMessage(), e);
                         }
                     } else if (TaskStatusEnum.EXECUTE_SUCCESS.getCode().equals(taskStatus)) {
                         decreaseStatusCheckTime();
@@ -462,7 +462,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                 try {
                     Thread.sleep(statusCheckInterval);
                 } catch (InterruptedException e) {
-                    log.warn(e.getMessage(), e);
+                    logger.warn(e.getMessage(), e);
                 }
                 requireToStop = this.clusterController.stopRequestContains(taskFlowLogId);
                 for (Long taskId : idToTaskStatusMap.keySet()) {
@@ -494,12 +494,12 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                                 if (msg == null) {
                                     msg = e.toString();
                                 }
-                                log.error("Task [" + task.getId() + "] rollback failed! cause: " + msg, e);
+                                logger.error("Task [" + task.getId() + "] rollback failed! cause: " + msg, e);
                                 idToTaskStatusMap.put(task.getId(), TaskStatusEnum.ROLLBACK_FAILURE.getCode());
                                 try {
                                     this.taskStatusEventPublisher.publishEvent(task, rollbackTaskFlow.getId(), context, TaskStatusEnum.ROLLBACK_FAILURE.getCode(), msg, true);
                                 } catch (Exception e1) {
-                                    log.error("Failed to publish task status event! " + e1.getMessage(), e1);
+                                    logger.error("Failed to publish task status event! " + e1.getMessage(), e1);
                                 }
                             }
                         });
@@ -512,7 +512,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                             this.taskStatusEventPublisher.publishEvent(task, rollbackTaskFlow.getId(), context, TaskStatusEnum.STOPPING.getCode(), null, true);
                             task.stop(context);
                         } catch (TaskStopException e) {
-                            log.error("Stop task [" + task.getId() + "] failed! cause: " + e.getMessage(), e);
+                            logger.error("Stop task [" + task.getId() + "] failed! cause: " + e.getMessage(), e);
                         }
                     } else if (TaskStatusEnum.ROLLBACK_SUCCESS.getCode().equals(taskStatus)) {
                         decreaseStatusCheckTime();

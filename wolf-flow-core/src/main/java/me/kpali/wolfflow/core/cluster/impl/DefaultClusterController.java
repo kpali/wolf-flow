@@ -23,7 +23,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 @Component
 public class DefaultClusterController implements IClusterController {
-    private static final Logger log = LoggerFactory.getLogger(DefaultClusterController.class);
+    private static final Logger logger = LoggerFactory.getLogger(DefaultClusterController.class);
 
     @Autowired
     private ClusterConfig clusterConfig;
@@ -43,14 +43,14 @@ public class DefaultClusterController implements IClusterController {
         if (this.started) {
             return;
         }
-        log.info("Starting cluster controller, nodeHeartbeatInterval: {}s, nodeHeartbeatDuration: {}s",
+        logger.info("Starting cluster controller, nodeHeartbeatInterval: {}s, nodeHeartbeatDuration: {}s",
                 this.clusterConfig.getNodeHeartbeatInterval(),
                 this.clusterConfig.getNodeHeartbeatDuration());
         this.started = true;
         try {
             this.generateNodeId();
         } catch (GenerateNodeIdException e) {
-            log.error(e.getMessage(), e);
+            logger.error(e.getMessage(), e);
             System.exit(1);
         }
         this.startNodeHeartbeat();
@@ -66,16 +66,16 @@ public class DefaultClusterController implements IClusterController {
                 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<Runnable>(1024), heartbeatThreadFactory, new ThreadPoolExecutor.AbortPolicy());
 
-        log.info("Starting node heartbeat thread...");
+        logger.info("Starting node heartbeat thread...");
         heartbeatThreadPool.execute(() -> {
             while (true) {
                 try {
-                    log.info("Sending heartbeat, node id: {}", this.getNodeId());
+                    logger.info("Sending heartbeat, node id: {}", this.getNodeId());
                     Integer heartbeatIntervalInMilliseconds = this.clusterConfig.getNodeHeartbeatInterval() * 1000;
                     this.heartbeat();
                     Thread.sleep(heartbeatIntervalInMilliseconds);
                 } catch (Exception e) {
-                    log.error("Failed to send heartbeat: " + e.getMessage(), e);
+                    logger.error("Failed to send heartbeat: " + e.getMessage(), e);
                 }
             }
         });
@@ -145,7 +145,7 @@ public class DefaultClusterController implements IClusterController {
         try {
             res = rLock.tryLock(waitTime, unit);
         } catch (InterruptedException e) {
-            log.warn(e.getMessage(), e);
+            logger.warn(e.getMessage(), e);
         }
         return res;
     }

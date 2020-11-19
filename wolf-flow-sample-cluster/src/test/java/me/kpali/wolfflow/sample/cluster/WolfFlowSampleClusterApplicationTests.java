@@ -10,6 +10,8 @@ import me.kpali.wolfflow.core.model.TaskLog;
 import me.kpali.wolfflow.core.model.TaskLogResult;
 import me.kpali.wolfflow.core.scheduler.ITaskFlowScheduler;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
@@ -17,6 +19,8 @@ import java.util.List;
 
 @SpringBootTest
 public class WolfFlowSampleClusterApplicationTests {
+    private static final Logger logger = LoggerFactory.getLogger(WolfFlowSampleClusterApplicationTests.class);
+    
     @Autowired
     ITaskFlowScheduler taskFlowScheduler;
     @Autowired
@@ -29,20 +33,20 @@ public class WolfFlowSampleClusterApplicationTests {
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             long taskFlowLogId1 = taskFlowScheduler.executeTo(100L, 5L, null);
-            System.out.println(">>>>>>>>>> Task flow log id: " + taskFlowLogId1);
+            logger.info(">>>>>>>>>> Task flow log id: " + taskFlowLogId1);
             //Thread.sleep(1000);
             //taskFlowScheduler.stop(taskFlowLogId1);
             this.waitDoneAndPrintLog(taskFlowLogId1);
             List<TaskLog> taskStatusList1 = taskLogger.listTaskStatus(100L);
-            System.out.println(">>>>>>>>>> Finished, status of tasks: ");
-            System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(taskStatusList1));
+            logger.info(">>>>>>>>>> Finished, status of tasks: ");
+            logger.info(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(taskStatusList1));
 
             long taskFlowLogId2 = taskFlowScheduler.executeTo(100L, 6L, null);
-            System.out.println(">>>>>>>>>> Task flow log id: " + taskFlowLogId2);
+            logger.info(">>>>>>>>>> Task flow log id: " + taskFlowLogId2);
             this.waitDoneAndPrintLog(taskFlowLogId2);
             List<TaskLog> taskStatusList2  = taskLogger.listTaskStatus(100L);
-            System.out.println(">>>>>>>>>> Finished, status of tasks: ");
-            System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(taskStatusList2));
+            logger.info(">>>>>>>>>> Finished, status of tasks: ");
+            logger.info(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(taskStatusList2));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -56,8 +60,8 @@ public class WolfFlowSampleClusterApplicationTests {
                 for (TaskLog taskLog : taskLogList) {
                     TaskLogResult taskLogResult = taskLogger.query(taskLog.getLogFileId(), 1);
                     if (taskLogResult != null) {
-                        System.out.println(">>>>>>>>>> Task [" + taskLog.getTaskId() + "] log contents: ");
-                        System.out.println(taskLogResult.getLogContent());
+                        logger.info(">>>>>>>>>> Task [" + taskLog.getTaskId() + "] log contents: ");
+                        logger.info(taskLogResult.getLogContent());
                     }
                 }
                 break;

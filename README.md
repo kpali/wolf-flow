@@ -273,7 +273,7 @@ public void test() {
     public void taskFlowStatusChange(TaskFlowStatusChangeEvent event) {
         Long taskFlowId = event.getTaskFlowStatus().getTaskFlow().getId();
         String status = event.getTaskFlowStatus().getStatus();
-        System.out.println(">>>>>>>>> 任务流[" + taskFlowId + "]状态变更为：" + status);
+        logger.info(">>>>>>>>>> Task flow [{}] status changed to: {}", taskFlowId, status);
     }
 ```
 

@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 @Primary
 @Component
 public class MyClusterController extends DefaultClusterController {
-    private static final Logger log = LoggerFactory.getLogger(MyClusterController.class);
+    private static final Logger logger = LoggerFactory.getLogger(MyClusterController.class);
 
     @Autowired
     private RedissonClient redisson;
@@ -59,7 +59,7 @@ public class MyClusterController extends DefaultClusterController {
             try {
                 this.unlock(ClusterConstants.GENERATE_NODE_ID_LOCK);
             } catch (Exception e) {
-                log.warn(e.getMessage(), e);
+                logger.warn(e.getMessage(), e);
             }
         }
     }
@@ -95,7 +95,7 @@ public class MyClusterController extends DefaultClusterController {
         try {
             res = lock.tryLock(waitTime, leaseTime, unit);
         } catch (Exception e) {
-            log.error("Try lock [" + name + "] failed: " + e.getMessage(), e);
+            logger.error("Try lock [" + name + "] failed: " + e.getMessage(), e);
         }
         return res;
     }

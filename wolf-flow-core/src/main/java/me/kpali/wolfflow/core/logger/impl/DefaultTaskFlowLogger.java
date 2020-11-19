@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
  */
 @Component
 public class DefaultTaskFlowLogger implements ITaskFlowLogger {
-    private static final Logger log = LoggerFactory.getLogger(DefaultTaskFlowLogger.class);
+    private static final Logger logger = LoggerFactory.getLogger(DefaultTaskFlowLogger.class);
 
     private Map<Long, TaskFlowLog> taskFlowLogId_to_taskFlowLog = new ConcurrentHashMap<>();
     private ObjectMapper objectMapper = new ObjectMapper();

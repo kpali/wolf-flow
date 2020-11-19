@@ -41,7 +41,7 @@ import java.util.concurrent.*;
  */
 @Component
 public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
-    private static final Logger log = LoggerFactory.getLogger(DefaultTaskFlowScheduler.class);
+    private static final Logger logger = LoggerFactory.getLogger(DefaultTaskFlowScheduler.class);
 
     @Autowired
     private SchedulerConfig schedulerConfig;
@@ -89,7 +89,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
         if (this.started) {
             return;
         }
-        log.info("Starting task flow scheduler, execRequestScanInterval: {}s, " +
+        logger.info("Starting task flow scheduler, execRequestScanInterval: {}s, " +
                         "cronScanInterval: {}s, cronScanLockWaitTime: {}s, cronScanLockLeaseTime: {}s, " +
                         "corePoolSize: {}, maximumPoolSize: {}",
                 this.schedulerConfig.getExecRequestScanInterval(),
@@ -110,7 +110,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                 0L, TimeUnit.MILLISECONDS,
                 new LinkedBlockingQueue<Runnable>(1024), scanerThreadFactory, new ThreadPoolExecutor.AbortPolicy());
 
-        log.info("Start scanning task flow execute request...");
+        logger.info("Start scanning task flow execute request...");
         scanerThreadPool.execute(() -> {
             while (true) {
                 try {
@@ -118,7 +118,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                     // 判断当前执行的线程数是否已达到最大线程数，是则不接收新的执行请求
                     ThreadPoolExecutor threadPoolExecutor = (this.schedulerThreadPool != null) ? (ThreadPoolExecutor) this.schedulerThreadPool : null;
                     if (threadPoolExecutor != null && threadPoolExecutor.getActiveCount() >= threadPoolExecutor.getMaximumPoolSize()) {
-                        log.debug("Task flow scheduler at full load, stop receiving new requests until there are idle threads.");
+                        logger.debug("Task flow scheduler at full load, stop receiving new requests until there are idle threads.");
                         continue;
                     }
                     // 接收执行请求
@@ -130,7 +130,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                         TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
                         Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
                         Boolean isRollback = taskFlowContextWrapper.getValue(ContextKey.IS_ROLLBACK, Boolean.class);
-                        log.info("New task flow execute request was scanned, id: {}, log id: {}, rollback: {}",
+                        logger.info("New task flow execute request was scanned, id: {}, log id: {}, rollback: {}",
                                 taskFlowId, taskFlowLogId, isRollback);
                         // 任务流上下文写入当前节点ID
                         taskFlowContextWrapper.put(ContextKey.EXECUTED_BY_NODE, this.clusterController.getNodeId());
@@ -166,11 +166,11 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                                     if (msg == null) {
                                         msg = e.toString();
                                     }
-                                    log.error("Task flow [" + taskFlow.getId() + "] execution failed! cause: " + e.getMessage(), e);
+                                    logger.error("Task flow [" + taskFlow.getId() + "] execution failed! cause: " + e.getMessage(), e);
                                     try {
                                         this.taskFlowStatusEventPublisher.publishEvent(taskFlow, context, TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), msg, true);
                                     } catch (Exception e1) {
-                                        log.error("Failed to publish task flow status event! " + e1.getMessage(), e1);
+                                        logger.error("Failed to publish task flow status event! " + e1.getMessage(), e1);
                                     }
                                 }
                             });
@@ -190,23 +190,23 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                                     if (msg == null) {
                                         msg = e.toString();
                                     }
-                                    log.error("Task flow [" + taskFlow.getId() + "] rollback failed! cause: " + msg, e);
+                                    logger.error("Task flow [" + taskFlow.getId() + "] rollback failed! cause: " + msg, e);
                                     try {
                                         this.taskFlowStatusEventPublisher.publishEvent(taskFlow, context, TaskFlowStatusEnum.ROLLBACK_FAILURE.getCode(), msg, true);
                                     } catch (Exception e1) {
-                                        log.error("Failed to publish task flow status event! " + e1.getMessage(), e1);
+                                        logger.error("Failed to publish task flow status event! " + e1.getMessage(), e1);
                                     }
                                 }
                             });
                         }
                     }
                 } catch (Exception e) {
-                    log.error("Failed to scan task flow execute request! " + e.getMessage(), e);
+                    logger.error("Failed to scan task flow execute request! " + e.getMessage(), e);
                 }
             }
         });
 
-        log.info("Start scanning cron task flow...");
+        logger.info("Start scanning cron task flow...");
         scanerThreadPool.execute(() -> {
             while (true) {
                 try {
@@ -220,12 +220,12 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                             TimeUnit.SECONDS);
                     if (res) {
                         // 获取锁成功
-                        log.info("Acquire cron task flow scan lock success");
+                        logger.info("Acquire cron task flow scan lock success");
                         String jobGroup = "DefaultJobGroup";
                         // 定时任务流扫描
                         List<TaskFlow> scannedCronTaskFlowList = this.taskFlowQuerier.listCronTaskFlow();
                         List<TaskFlow> cronTaskFlowList = (scannedCronTaskFlowList == null ? new ArrayList<>() : scannedCronTaskFlowList);
-                        log.info("{} cron task flows were scanned", cronTaskFlowList.size());
+                        logger.info("{} cron task flows were scanned", cronTaskFlowList.size());
                         // 删除无需调度的任务流
                         List<JobKey> removedJobKeyList = new ArrayList<>();
                         Set<JobKey> jobKeySet = MyDynamicScheduler.getJobKeysGroupEquals(jobGroup);
@@ -280,7 +280,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                                     this.scheduleStatusEventPublisher.publishEvent(updateScheduleEvent);
                                 }
                             } catch (Exception e) {
-                                log.error("Failed to scheduling task flow [" + taskFlow.getId() + "], cause: " + e.getMessage());
+                                logger.error("Failed to scheduling task flow [" + taskFlow.getId() + "], cause: " + e.getMessage());
                                 // 任务流调度失败
                                 ScheduleStatusChangeEvent scheduleFailEvent = new ScheduleStatusChangeEvent(
                                         this,
@@ -292,11 +292,11 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                         }
                     } else {
                         // 获取锁失败，清理定时调度列表
-                        log.info("Acquire cron task flow scan lock failed");
+                        logger.info("Acquire cron task flow scan lock failed");
                         MyDynamicScheduler.clear();
                     }
                 } catch (Exception e) {
-                    log.error("Scan cron task flow failed, cause: " + e.getMessage(), e);
+                    logger.error("Scan cron task flow failed, cause: " + e.getMessage(), e);
                 }
             }
         });
