@@ -250,7 +250,7 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
     }
 
     @Test
-    @Order(1)
+    @Order(8)
     public void testExecuteManualTask() throws TaskFlowTriggerException, TaskLogException, TaskFlowLogException {
         long taskFlowId = 2L;
         long taskFlowLogId = this.taskFlowScheduler.execute(taskFlowId, null);
@@ -269,7 +269,7 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
     }
 
     @Test
-    @Order(2)
+    @Order(9)
     public void testRollbackManualTask() throws TaskFlowTriggerException, TaskLogException, TaskFlowLogException {
         long taskFlowId = 2L;
         long taskFlowLogId = this.taskFlowScheduler.rollback(taskFlowId, null);
