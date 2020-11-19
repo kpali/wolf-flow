@@ -30,7 +30,7 @@ public class WolfFlowSampleApplicationTests {
         try {
             long taskFlowLogId1 = taskFlowScheduler.execute(100L, 10L, null);
             System.out.println(">>>>>>>>>> Task flow log id: " + taskFlowLogId1);
-            Thread.sleep(3 * 1000);
+            //Thread.sleep(1000);
             //taskFlowScheduler.stop(taskFlowLogId1);
             this.waitDoneAndPrintLog(taskFlowLogId1);
             List<TaskLog> taskStatusList1 = taskLogger.listTaskStatus(100L);
@@ -50,11 +50,6 @@ public class WolfFlowSampleApplicationTests {
 
     private void waitDoneAndPrintLog(long taskFlowLogId) throws TaskFlowLogException, TaskLogException {
         while (true) {
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
             TaskFlowLog taskFlowLog = taskFlowLogger.get(taskFlowLogId);
             if (!taskFlowLogger.isInProgress(taskFlowLog)) {
                 List<TaskLog> taskLogList = taskLogger.list(taskFlowLogId);

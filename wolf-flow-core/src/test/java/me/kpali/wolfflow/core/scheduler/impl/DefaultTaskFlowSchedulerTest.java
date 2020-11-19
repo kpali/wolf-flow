@@ -12,7 +12,9 @@ import me.kpali.wolfflow.core.logger.ITaskLogger;
 import me.kpali.wolfflow.core.model.*;
 import me.kpali.wolfflow.core.querier.ITaskFlowQuerier;
 import me.kpali.wolfflow.core.scheduler.ITaskFlowScheduler;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -20,8 +22,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.when;
 
 public class DefaultTaskFlowSchedulerTest extends BaseTest {
     @MockBean
@@ -220,11 +222,6 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
         long taskFlowId = 1L;
         long taskFlowLogId = this.taskFlowScheduler.execute(taskFlowId, null);
         while (true) {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
             // 等待执行到任务3后，停止任务流
             TaskLog taskLog = taskLogger.get(taskFlowLogId, 3L);
             if (taskLog != null) {
@@ -255,11 +252,6 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
         long taskFlowLogId = this.taskFlowScheduler.execute(taskFlowId, null);
 
         while (true) {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
             TaskLog manualTaskLog = taskLogger.get(taskFlowLogId, 12L);
             if (manualTaskLog != null && TaskStatusEnum.MANUAL_CONFIRM.getCode().equals(manualTaskLog.getStatus())) {
                 clusterController.manualConfirmedAdd(new ManualConfirmed(manualTaskLog.getLogId(), true, null));
@@ -279,11 +271,6 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
         long taskFlowLogId = this.taskFlowScheduler.rollback(taskFlowId, null);
 
         while (true) {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
             TaskLog manualTaskLog = taskLogger.get(taskFlowLogId, 12L);
             if (manualTaskLog != null && TaskStatusEnum.MANUAL_CONFIRM.getCode().equals(manualTaskLog.getStatus())) {
                 clusterController.manualConfirmedAdd(new ManualConfirmed(manualTaskLog.getLogId(), true, null));
@@ -299,11 +286,6 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
     private void waitDoneAndPrintLog(long taskFlowId, long taskFlowLogId) throws TaskFlowLogException, TaskLogException {
         System.out.println(">>>>>>>>>> Task flow log id: " + taskFlowLogId);
         while (true) {
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
             TaskFlowLog taskFlowLog = taskFlowLogger.get(taskFlowLogId);
             if (!taskFlowLogger.isInProgress(taskFlowLog)) {
                 List<TaskLog> taskLogList = taskLogger.list(taskFlowLogId);

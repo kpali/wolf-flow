@@ -29,7 +29,7 @@ public class ManualTask extends Task {
 
             while (true) {
                 try {
-                    Thread.sleep(5 * 1000L);
+                    Thread.sleep(10);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }
@@ -66,7 +66,7 @@ public class ManualTask extends Task {
 
             while (true) {
                 try {
-                    Thread.sleep(5 * 1000L);
+                    Thread.sleep(10);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 }

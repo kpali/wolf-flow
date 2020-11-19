@@ -28,19 +28,9 @@ public class AutoTask extends Task {
             String taskLogFileId = taskContextWrapper.getValue(ContextKey.TASK_LOG_FILE_ID, String.class);
             taskLogger.log(taskLogFileId, "Task executing...", false);
             taskLogger.log(taskLogFileId, "Second line...\rThird line...\nFourth line...\r\nFifth line...", false);
-            int totalTime = 0;
-            int timeout = 500;
-            while (totalTime < timeout) {
-                try {
-                    if (requiredToStop) {
-                        taskLogger.log(taskLogFileId, "Task execution is terminated", true);
-                        throw new TaskInterruptedException("Task execution is terminated");
-                    }
-                    Thread.sleep(100);
-                    totalTime += 100;
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+            if (requiredToStop) {
+                taskLogger.log(taskLogFileId, "Task execution is terminated", true);
+                throw new TaskInterruptedException("Task execution is terminated");
             }
             taskLogger.log(taskLogFileId, "Task execution finished", true);
         } catch (TaskInterruptedException e) {
@@ -61,19 +51,9 @@ public class AutoTask extends Task {
             String taskLogFileId = taskContextWrapper.getValue(ContextKey.TASK_LOG_FILE_ID, String.class);
             taskLogger.log(taskLogFileId, "Task rolling back...", false);
             taskLogger.log(taskLogFileId, "Second line...\rThird line...\nFourth line...\r\nFifth line...", false);
-            int totalTime = 0;
-            int timeout = 500;
-            while (totalTime < timeout) {
-                try {
-                    if (requiredToStop) {
-                        taskLogger.log(taskLogFileId, "Task execution is terminated", true);
-                        throw new TaskInterruptedException("Task execution is terminated");
-                    }
-                    Thread.sleep(100);
-                    totalTime += 100;
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+            if (requiredToStop) {
+                taskLogger.log(taskLogFileId, "Task execution is terminated", true);
+                throw new TaskInterruptedException("Task execution is terminated");
             }
             taskLogger.log(taskLogFileId, "Task rollback finished", true);
         } catch (TaskInterruptedException e) {

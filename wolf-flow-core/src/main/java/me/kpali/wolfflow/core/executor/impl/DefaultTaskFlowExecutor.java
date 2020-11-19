@@ -52,6 +52,10 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     @Autowired
     private IMonitor monitor;
 
+    private static final long STATUS_CHECK_INTERVAL_MIN = 5;
+    private static final long STATUS_CHECK_INTERVAL_MAX = 5000;
+    private long statusCheckInterval = STATUS_CHECK_INTERVAL_MIN;
+
     @Override
     public void beforeExecute(TaskFlow taskFlow, ConcurrentHashMap<String, Object> context) throws TaskFlowExecuteException {
         TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
@@ -210,7 +214,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
             boolean requireToStop = false;
             while (!idToTaskStatusMap.isEmpty()) {
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(statusCheckInterval);
                 } catch (InterruptedException e) {
                     log.warn(e.getMessage(), e);
                 }
@@ -218,6 +222,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                 for (Long taskId : idToTaskStatusMap.keySet()) {
                     String taskStatus = idToTaskStatusMap.get(taskId);
                     if (TaskStatusEnum.WAIT_FOR_EXECUTE.getCode().equals(taskStatus)) {
+                        decreaseStatusCheckTime();
                         // 等待执行，自动任务状态改为执行中，手工任务状态改为手工确认，并将任务加入线程池
                         Task task = idToTaskMap.get(taskId);
                         String statusCode = task.getManual() ? TaskStatusEnum.MANUAL_CONFIRM.getCode() : TaskStatusEnum.EXECUTING.getCode();
@@ -254,6 +259,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                         });
                     } else if (requireToStop &&
                             (TaskStatusEnum.EXECUTING.getCode().equals(taskStatus) || TaskStatusEnum.MANUAL_CONFIRM.getCode().equals(taskStatus))) {
+                        decreaseStatusCheckTime();
                         Task task = idToTaskMap.get(taskId);
                         idToTaskStatusMap.put(task.getId(), TaskStatusEnum.STOPPING.getCode());
                         try {
@@ -263,6 +269,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                             log.error("Stop task [" + task.getId() + "] failed! cause: " + e.getMessage(), e);
                         }
                     } else if (TaskStatusEnum.EXECUTE_SUCCESS.getCode().equals(taskStatus)) {
+                        decreaseStatusCheckTime();
                         // 执行成功，将子任务的入度减1，如果子任务入度为0，则将子任务状态设置为等待执行并加入状态检查，最后将此任务移除状态检查
                         List<Long> childTaskIds = idToChildTaskIds4ExecMap.get(taskId);
                         for (Long childTaskId : childTaskIds) {
@@ -277,6 +284,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                         }
                         idToTaskStatusMap.remove(taskId);
                     } else if (TaskStatusEnum.EXECUTE_FAILURE.getCode().equals(taskStatus) || TaskStatusEnum.SKIPPED.getCode().equals(taskStatus)) {
+                        decreaseStatusCheckTime();
                         if (TaskStatusEnum.EXECUTE_FAILURE.getCode().equals(taskStatus)) {
                             isSuccess = false;
                         }
@@ -288,6 +296,8 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                             this.taskStatusEventPublisher.publishEvent(childTask, executeTaskFlow.getId(), context, TaskStatusEnum.SKIPPED.getCode(), null, true);
                         }
                         idToTaskStatusMap.remove(taskId);
+                    } else {
+                       increaseStatusCheckTime();
                     }
                 }
             }
@@ -450,7 +460,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
             boolean requireToStop = false;
             while (!idToTaskStatusMap.isEmpty()) {
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(statusCheckInterval);
                 } catch (InterruptedException e) {
                     log.warn(e.getMessage(), e);
                 }
@@ -458,6 +468,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                 for (Long taskId : idToTaskStatusMap.keySet()) {
                     String taskStatus = idToTaskStatusMap.get(taskId);
                     if (TaskStatusEnum.WAIT_FOR_ROLLBACK.getCode().equals(taskStatus)) {
+                        decreaseStatusCheckTime();
                         // 等待回滚，自动任务状态改为回滚中，手工任务状态改为手工确认，并将任务加入线程池
                         Task task = idToTaskMap.get(taskId);
                         String statusCode = task.getManual() ? TaskStatusEnum.MANUAL_CONFIRM.getCode() : TaskStatusEnum.ROLLING_BACK.getCode();
@@ -494,6 +505,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                         });
                     } else if (requireToStop &&
                             (TaskStatusEnum.ROLLING_BACK.getCode().equals(taskStatus) || TaskStatusEnum.MANUAL_CONFIRM.getCode().equals(taskStatus))) {
+                        decreaseStatusCheckTime();
                         Task task = idToTaskMap.get(taskId);
                         idToTaskStatusMap.put(task.getId(), TaskStatusEnum.STOPPING.getCode());
                         try {
@@ -503,6 +515,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                             log.error("Stop task [" + task.getId() + "] failed! cause: " + e.getMessage(), e);
                         }
                     } else if (TaskStatusEnum.ROLLBACK_SUCCESS.getCode().equals(taskStatus)) {
+                        decreaseStatusCheckTime();
                         // 回滚成功，将子任务的入度减1，如果子任务入度为0，则将子任务状态设置为等待回滚并加入状态检查，最后将此任务移除状态检查
                         List<Long> childTaskIds = idToChildTaskIds4ExecMap.get(taskId);
                         for (Long childTaskId : childTaskIds) {
@@ -517,6 +530,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                         }
                         idToTaskStatusMap.remove(taskId);
                     } else if (TaskStatusEnum.ROLLBACK_FAILURE.getCode().equals(taskStatus)) {
+                        decreaseStatusCheckTime();
                         isSuccess = false;
                         // 回滚失败，将此任务及所有子任务移除状态检查
                         idToTaskStatusMap.remove(taskId);
@@ -524,6 +538,8 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                         for (Long childTaskId : allChildTaskIds) {
                             idToTaskStatusMap.remove(childTaskId);
                         }
+                    } else {
+                        increaseStatusCheckTime();
                     }
                 }
             }
@@ -693,5 +709,23 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
             taskIdList.addAll(listChildTaskIdList(childTaskIdList, idToChildTaskIdsMap));
         }
         return taskIdList;
+    }
+
+    /**
+     * 加长状态检查间隔时间
+     */
+    private void increaseStatusCheckTime() {
+        if (statusCheckInterval < STATUS_CHECK_INTERVAL_MAX) {
+            statusCheckInterval *= 10;
+        }
+    }
+
+    /**
+     * 缩短状态检查间隔时间
+     */
+    private void decreaseStatusCheckTime() {
+        if (statusCheckInterval > STATUS_CHECK_INTERVAL_MIN) {
+            statusCheckInterval /= 10;
+        }
     }
 }
