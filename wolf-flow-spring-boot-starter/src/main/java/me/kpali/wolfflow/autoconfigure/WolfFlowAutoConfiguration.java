@@ -26,5 +26,5 @@ import org.springframework.context.annotation.Import;
         MonitorConfiguration.class,
         LauncherConfiguration.class})
 @Configuration
-public class AutoConfiguration {
+public class WolfFlowAutoConfiguration {
 }
