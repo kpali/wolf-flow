@@ -108,9 +108,6 @@ public class DefaultTaskFlowLogger implements ITaskFlowLogger {
             try {
                 String json = objectMapper.writeValueAsString(taskFlowLog);
                 TaskFlowLog taskFlowLogCloned = objectMapper.readValue(json, TaskFlowLog.class);
-                Date now = new Date();
-                taskFlowLogCloned.setCreationTime(now);
-                taskFlowLogCloned.setUpdateTime(now);
                 TaskFlowLog existsTaskFlowLog = taskFlowLogId_to_taskFlowLog.get(taskFlowLogCloned.getLogId());
                 if (existsTaskFlowLog != null) {
                     taskFlowLogCloned.setCreationTime(existsTaskFlowLog.getCreationTime());

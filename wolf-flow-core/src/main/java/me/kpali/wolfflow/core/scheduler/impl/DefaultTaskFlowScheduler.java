@@ -401,6 +401,9 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                 taskFlowLog.setStatus(taskFlowWaitForExecute.getStatus());
                 taskFlowLog.setMessage(taskFlowWaitForExecute.getMessage());
                 taskFlowLog.setRollback(isRollback);
+                Date now = new Date();
+                taskFlowLog.setCreationTime(now);
+                taskFlowLog.setUpdateTime(now);
                 this.taskFlowLogger.add(taskFlowLog);
             } finally {
                 if (locked) {

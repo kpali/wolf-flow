@@ -103,9 +103,6 @@ public class DefaultTaskLogger implements ITaskLogger {
             try {
                 String json = objectMapper.writeValueAsString(taskLog);
                 TaskLog taskLogCloned = objectMapper.readValue(json, TaskLog.class);
-                Date now = new Date();
-                taskLogCloned.setCreationTime(now);
-                taskLogCloned.setUpdateTime(now);
                 Map<Long, TaskLog> taskLogId_to_taskLog = taskFlowLogId_to_taskLogMap.computeIfAbsent(taskLogCloned.getTaskFlowLogId(), k -> new HashMap<>());
                 TaskLog existsTaskLog = taskLogId_to_taskLog.get(taskLogCloned.getLogId());
                 if (existsTaskLog != null) {
