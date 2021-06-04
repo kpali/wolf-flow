@@ -25,7 +25,7 @@ public class ManualTask extends Task {
             TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
             ConcurrentHashMap<String, Object> taskContext = taskFlowContextWrapper.getTaskContext(this.getId().toString());
             TaskContextWrapper taskContextWrapper = new TaskContextWrapper(taskContext);
-            Long taskLogId = taskContextWrapper.getValue(ContextKey.TASK_LOG_ID, Long.class);
+            Long taskLogId = taskContextWrapper.getValue(TaskContextKey.TASK_LOG_ID, Long.class);
 
             while (true) {
                 try {
@@ -62,7 +62,7 @@ public class ManualTask extends Task {
             TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
             ConcurrentHashMap<String, Object> taskContext = taskFlowContextWrapper.getTaskContext(this.getId().toString());
             TaskContextWrapper taskContextWrapper = new TaskContextWrapper(taskContext);
-            Long taskLogId = taskContextWrapper.getValue(ContextKey.TASK_LOG_ID, Long.class);
+            Long taskLogId = taskContextWrapper.getValue(TaskContextKey.TASK_LOG_ID, Long.class);
 
             while (true) {
                 try {

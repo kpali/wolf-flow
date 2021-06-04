@@ -1,6 +1,6 @@
 package me.kpali.wolfflow.core.util.context;
 
-import me.kpali.wolfflow.core.model.ContextKey;
+import me.kpali.wolfflow.core.model.TaskFlowContextKey;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,7 +24,7 @@ public class TaskFlowContextWrapper extends ContextWrapper {
         if (this.getContext() != null) {
             taskFlowContext = new ConcurrentHashMap<>();
             for (String key : this.getContext().keySet()) {
-                if (ContextKey.TASK_CONTEXTS.equals(key)) {
+                if (TaskFlowContextKey.TASK_CONTEXTS.equals(key)) {
                     continue;
                 }
                 taskFlowContext.put(key, this.getContext().get(key));
@@ -34,7 +34,7 @@ public class TaskFlowContextWrapper extends ContextWrapper {
     }
 
     public ConcurrentHashMap<String, Object> getParams() {
-        Object paramsObj = this.context.get(ContextKey.PARAMS);
+        Object paramsObj = this.context.get(TaskFlowContextKey.PARAMS);
         if (paramsObj == null) {
             return null;
         }
@@ -42,9 +42,9 @@ public class TaskFlowContextWrapper extends ContextWrapper {
     }
 
     public synchronized void setParams(ConcurrentHashMap<String, Object> params) {
-        Object paramsObj = this.context.get(ContextKey.PARAMS);
+        Object paramsObj = this.context.get(TaskFlowContextKey.PARAMS);
         if (paramsObj == null) {
-            this.context.put(ContextKey.PARAMS, params);
+            this.context.put(TaskFlowContextKey.PARAMS, params);
         } else {
             paramsObj = params;
         }
@@ -62,7 +62,7 @@ public class TaskFlowContextWrapper extends ContextWrapper {
         ConcurrentHashMap<String, Object> params = this.getParams();
         if (params == null) {
             params = new ConcurrentHashMap<>();
-            this.context.put(ContextKey.PARAMS, params);
+            this.context.put(TaskFlowContextKey.PARAMS, params);
         }
         params.put(key, value);
     }
@@ -76,7 +76,7 @@ public class TaskFlowContextWrapper extends ContextWrapper {
     }
 
     public ConcurrentHashMap<String, Object> getDeliveryContext() {
-        Object deliveryContextObj = this.context.get(ContextKey.DELIVERY_CONTEXT);
+        Object deliveryContextObj = this.context.get(TaskFlowContextKey.DELIVERY_CONTEXT);
         if (deliveryContextObj == null) {
             return null;
         }
@@ -84,9 +84,9 @@ public class TaskFlowContextWrapper extends ContextWrapper {
     }
 
     public synchronized void setDeliveryContext(ConcurrentHashMap<String, Object> deliveryContext) {
-        Object deliveryContextObj = this.context.get(ContextKey.DELIVERY_CONTEXT);
+        Object deliveryContextObj = this.context.get(TaskFlowContextKey.DELIVERY_CONTEXT);
         if (deliveryContextObj == null) {
-            this.context.put(ContextKey.DELIVERY_CONTEXT, deliveryContext);
+            this.context.put(TaskFlowContextKey.DELIVERY_CONTEXT, deliveryContext);
         } else {
             deliveryContextObj = deliveryContext;
         }
@@ -104,7 +104,7 @@ public class TaskFlowContextWrapper extends ContextWrapper {
         ConcurrentHashMap<String, Object> deliveryContext = this.getDeliveryContext();
         if (deliveryContext == null) {
             deliveryContext = new ConcurrentHashMap<>();
-            this.context.put(ContextKey.DELIVERY_CONTEXT, deliveryContext);
+            this.context.put(TaskFlowContextKey.DELIVERY_CONTEXT, deliveryContext);
         }
         deliveryContext.put(key, value);
     }
@@ -118,7 +118,7 @@ public class TaskFlowContextWrapper extends ContextWrapper {
     }
 
     public Map<String, ConcurrentHashMap<String, Object>> getTaskContexts() {
-        Object taskContextObj = this.context.get(ContextKey.TASK_CONTEXTS);
+        Object taskContextObj = this.context.get(TaskFlowContextKey.TASK_CONTEXTS);
         if (taskContextObj == null) {
             return null;
         }
@@ -126,9 +126,9 @@ public class TaskFlowContextWrapper extends ContextWrapper {
     }
 
     public synchronized void setTaskContexts(Map<String, ConcurrentHashMap<String, Object>> taskContexts) {
-        Object taskContextObj = this.context.get(ContextKey.TASK_CONTEXTS);
+        Object taskContextObj = this.context.get(TaskFlowContextKey.TASK_CONTEXTS);
         if (taskContextObj == null) {
-            this.context.put(ContextKey.TASK_CONTEXTS, taskContexts);
+            this.context.put(TaskFlowContextKey.TASK_CONTEXTS, taskContexts);
         } else {
             taskContextObj = taskContexts;
         }
@@ -158,7 +158,7 @@ public class TaskFlowContextWrapper extends ContextWrapper {
         Map<String, ConcurrentHashMap<String, Object>> taskContexts = this.getTaskContexts();
         if (taskContexts == null) {
             taskContexts = new ConcurrentHashMap<>();
-            this.context.put(ContextKey.TASK_CONTEXTS, taskContexts);
+            this.context.put(TaskFlowContextKey.TASK_CONTEXTS, taskContexts);
         }
         taskContexts.put(taskId, taskContext);
     }

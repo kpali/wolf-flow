@@ -4,8 +4,8 @@ import me.kpali.wolfflow.core.exception.TaskExecuteException;
 import me.kpali.wolfflow.core.exception.TaskInterruptedException;
 import me.kpali.wolfflow.core.exception.TaskStopException;
 import me.kpali.wolfflow.core.logger.ITaskLogger;
-import me.kpali.wolfflow.core.model.ContextKey;
 import me.kpali.wolfflow.core.model.Task;
+import me.kpali.wolfflow.core.model.TaskContextKey;
 import me.kpali.wolfflow.core.util.context.TaskContextWrapper;
 import me.kpali.wolfflow.core.util.context.TaskFlowContextWrapper;
 import me.kpali.wolfflow.sample.util.SpringContextUtil;
@@ -28,8 +28,8 @@ public class MyTask extends Task {
             TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
             ConcurrentHashMap<String, Object> taskContext = taskFlowContextWrapper.getTaskContext(this.getId().toString());
             TaskContextWrapper taskContextWrapper = new TaskContextWrapper(taskContext);
-            Long taskLogId = taskContextWrapper.getValue(ContextKey.TASK_LOG_ID, Long.class);
-            String taskLogFileId = taskContextWrapper.getValue(ContextKey.TASK_LOG_FILE_ID, String.class);
+            Long taskLogId = taskContextWrapper.getValue(TaskContextKey.TASK_LOG_ID, Long.class);
+            String taskLogFileId = taskContextWrapper.getValue(TaskContextKey.TASK_LOG_FILE_ID, String.class);
             taskLogger.log(taskLogFileId, "Task executing...", false);
             taskLogger.log(taskLogFileId, "Second line...\rThird line...\nFourth line...\r\nFifth line...", false);
             if (requiredToStop) {

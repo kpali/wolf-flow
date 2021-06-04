@@ -59,13 +59,13 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     @Override
     public void beforeExecute(TaskFlow taskFlow, ConcurrentHashMap<String, Object> context) throws TaskFlowExecuteException {
         TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
-        Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
+        Long taskFlowLogId = taskFlowContextWrapper.getValue(TaskFlowContextKey.LOG_ID, Long.class);
         try {
             this.checkTaskFlow(taskFlow);
 
             // 根据参数“从指定任务开始”和“到指定任务结束”，分析要执行的任务和受影响的任务
-            Long fromTaskId = taskFlowContextWrapper.getValue(ContextKey.FROM_TASK_ID, Long.class);
-            Long toTaskId = taskFlowContextWrapper.getValue(ContextKey.TO_TASK_ID, Long.class);
+            Long fromTaskId = taskFlowContextWrapper.getValue(TaskFlowContextKey.FROM_TASK_ID, Long.class);
+            Long toTaskId = taskFlowContextWrapper.getValue(TaskFlowContextKey.TO_TASK_ID, Long.class);
             TaskFlow executeTaskFlow;
             TaskFlow affectedTaskFlow;
             if (fromTaskId == null && toTaskId == null) {
@@ -87,7 +87,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                 executeTaskFlow = (unsuccessfulTaskFlow == null ? prunedTaskFlow : unsuccessfulTaskFlow);
                 affectedTaskFlow = executeTaskFlow;
             }
-            taskFlowContextWrapper.put(ContextKey.EXECUTE_TASK_FLOW, executeTaskFlow);
+            taskFlowContextWrapper.put(TaskFlowContextKey.EXECUTE_TASK_FLOW, executeTaskFlow);
 
             for (Task task : taskFlow.getTaskList()) {
                 boolean isAffected = false;
@@ -103,16 +103,16 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                     // 初始化上下文
                     TaskContextWrapper taskContextWrapper = new TaskContextWrapper();
                     Long taskLogId = idGenerator.nextId();
-                    taskContextWrapper.put(ContextKey.TASK_LOG_ID, taskLogId);
+                    taskContextWrapper.put(TaskContextKey.TASK_LOG_ID, taskLogId);
                     String logFileId = UUID.randomUUID().toString();
-                    taskContextWrapper.put(ContextKey.TASK_LOG_FILE_ID, logFileId);
+                    taskContextWrapper.put(TaskContextKey.TASK_LOG_FILE_ID, logFileId);
                     List<Long> parentTaskIdList = new ArrayList<>();
                     taskFlow.getLinkList().forEach(link -> {
                         if (link.getTarget().equals(task.getId())) {
                             parentTaskIdList.add(link.getSource());
                         }
                     });
-                    taskContextWrapper.put(ContextKey.PARENT_TASK_ID_LIST, parentTaskIdList);
+                    taskContextWrapper.put(TaskContextKey.PARENT_TASK_ID_LIST, parentTaskIdList);
                     taskFlowContextWrapper.putTaskContext(task.getId().toString(), taskContextWrapper.getContext());
                 } else {
                     // 对于本次执行不受影响的任务，如果已经执行过，则复制一份任务状态（日志），并导入任务上下文到本次任务流上下文
@@ -146,8 +146,8 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     @Override
     public void execute(TaskFlow taskFlow, ConcurrentHashMap<String, Object> context) throws TaskFlowExecuteException, TaskFlowInterruptedException {
         TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
-        Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
-        TaskFlow executeTaskFlow = taskFlowContextWrapper.getValue(ContextKey.EXECUTE_TASK_FLOW, TaskFlow.class);
+        Long taskFlowLogId = taskFlowContextWrapper.getValue(TaskFlowContextKey.LOG_ID, Long.class);
+        TaskFlow executeTaskFlow = taskFlowContextWrapper.getValue(TaskFlowContextKey.EXECUTE_TASK_FLOW, TaskFlow.class);
         try {
             if (this.executorThreadPool == null) {
                 synchronized (this.executorThreadFactory) {
@@ -323,7 +323,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     @Override
     public void beforeRollback(TaskFlow taskFlow, ConcurrentHashMap<String, Object> context) throws TaskFlowRollbackException {
         TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
-        Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
+        Long taskFlowLogId = taskFlowContextWrapper.getValue(TaskFlowContextKey.LOG_ID, Long.class);
         try {
             this.checkTaskFlow(taskFlow);
 
@@ -331,7 +331,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
             TaskFlow rollbackTaskFlow = this.selectRollbackTasks(taskFlow);
             // 反转任务流方向
             TaskFlow reversedTaskFlow = this.reverseTaskFlow(rollbackTaskFlow);
-            taskFlowContextWrapper.put(ContextKey.ROLLBACK_TASK_FLOW, reversedTaskFlow);
+            taskFlowContextWrapper.put(TaskFlowContextKey.ROLLBACK_TASK_FLOW, reversedTaskFlow);
 
             // 复制一份回滚前的任务状态（日志）
             Date now = new Date();
@@ -358,22 +358,22 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                 if (needRollback) {
                     // 要回滚的任务，初始化上下文
                     TaskContextWrapper taskContextWrapper = new TaskContextWrapper();
-                    taskContextWrapper.put(ContextKey.TASK_LOG_ID, taskLogId);
+                    taskContextWrapper.put(TaskContextKey.TASK_LOG_ID, taskLogId);
                     String logFileId = UUID.randomUUID().toString();
-                    taskContextWrapper.put(ContextKey.TASK_LOG_FILE_ID, logFileId);
+                    taskContextWrapper.put(TaskContextKey.TASK_LOG_FILE_ID, logFileId);
                     List<Long> parentTaskIdList = new ArrayList<>();
                     taskFlow.getLinkList().forEach(link -> {
                         if (link.getTarget().equals(task.getId())) {
                             parentTaskIdList.add(link.getSource());
                         }
                     });
-                    taskContextWrapper.put(ContextKey.PARENT_TASK_ID_LIST, parentTaskIdList);
+                    taskContextWrapper.put(TaskContextKey.PARENT_TASK_ID_LIST, parentTaskIdList);
                     TaskLog lastExecuteLog = this.taskLogger.getLastExecuteLog(task.getId());
                     if (lastExecuteLog != null) {
                         TaskContextWrapper lastTaskContextWrapper = new TaskContextWrapper(lastExecuteLog.getContext());
-                        Long realLastExecuteLogId = lastTaskContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
+                        Long realLastExecuteLogId = lastTaskContextWrapper.getValue(TaskContextKey.LOG_ID, Long.class);
                         if (realLastExecuteLogId != null) {
-                            taskContextWrapper.put(ContextKey.TASK_LAST_EXECUTE_LOG_ID, realLastExecuteLogId);
+                            taskContextWrapper.put(TaskContextKey.TASK_LAST_EXECUTE_LOG_ID, realLastExecuteLogId);
                         }
                     }
                     taskFlowContextWrapper.putTaskContext(task.getId().toString(), taskContextWrapper.getContext());
@@ -399,8 +399,8 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
     @Override
     public void rollback(TaskFlow taskFlow, ConcurrentHashMap<String, Object> context) throws TaskFlowRollbackException, TaskFlowInterruptedException {
         TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
-        Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
-        TaskFlow rollbackTaskFlow = taskFlowContextWrapper.getValue(ContextKey.ROLLBACK_TASK_FLOW, TaskFlow.class);
+        Long taskFlowLogId = taskFlowContextWrapper.getValue(TaskFlowContextKey.LOG_ID, Long.class);
+        TaskFlow rollbackTaskFlow = taskFlowContextWrapper.getValue(TaskFlowContextKey.ROLLBACK_TASK_FLOW, TaskFlow.class);
         try {
             // 初始化线程池
             ThreadFactory executorThreadFactory = new ThreadFactoryBuilder()

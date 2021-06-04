@@ -1,8 +1,7 @@
 package me.kpali.wolfflow.core.scheduler.impl.quartz;
 
-import me.kpali.wolfflow.core.exception.InvalidTaskFlowException;
 import me.kpali.wolfflow.core.exception.TaskFlowTriggerException;
-import me.kpali.wolfflow.core.model.ContextKey;
+import me.kpali.wolfflow.core.model.TaskFlowContextKey;
 import me.kpali.wolfflow.core.scheduler.ITaskFlowScheduler;
 import org.quartz.JobDataMap;
 import org.quartz.JobExecutionContext;
@@ -31,8 +30,8 @@ public class MyQuartzJobBean extends QuartzJobBean {
         Long toTaskId = null;
         JobDataMap jobDataMap = context.getMergedJobDataMap();
         if (jobDataMap != null) {
-            fromTaskId = (jobDataMap.get(ContextKey.FROM_TASK_ID) == null ? null : jobDataMap.getLong(ContextKey.FROM_TASK_ID));
-            toTaskId = (jobDataMap.get(ContextKey.TO_TASK_ID) == null ? null : jobDataMap.getLong(ContextKey.TO_TASK_ID));
+            fromTaskId = (jobDataMap.get(TaskFlowContextKey.FROM_TASK_ID) == null ? null : jobDataMap.getLong(TaskFlowContextKey.FROM_TASK_ID));
+            toTaskId = (jobDataMap.get(TaskFlowContextKey.TO_TASK_ID) == null ? null : jobDataMap.getLong(TaskFlowContextKey.TO_TASK_ID));
         }
         try {
             if (fromTaskId != null && fromTaskId.equals(toTaskId)) {

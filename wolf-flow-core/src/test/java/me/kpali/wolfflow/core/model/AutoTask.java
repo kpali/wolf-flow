@@ -24,8 +24,8 @@ public class AutoTask extends Task {
             TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
             ConcurrentHashMap<String, Object> taskContext = taskFlowContextWrapper.getTaskContext(this.getId().toString());
             TaskContextWrapper taskContextWrapper = new TaskContextWrapper(taskContext);
-            Long taskLogId = taskContextWrapper.getValue(ContextKey.TASK_LOG_ID, Long.class);
-            String taskLogFileId = taskContextWrapper.getValue(ContextKey.TASK_LOG_FILE_ID, String.class);
+            Long taskLogId = taskContextWrapper.getValue(TaskContextKey.TASK_LOG_ID, Long.class);
+            String taskLogFileId = taskContextWrapper.getValue(TaskContextKey.TASK_LOG_FILE_ID, String.class);
             taskLogger.log(taskLogFileId, "Task executing...", false);
             taskLogger.log(taskLogFileId, "Second line...\rThird line...\nFourth line...\r\nFifth line...", false);
             if (requiredToStop) {
@@ -47,8 +47,8 @@ public class AutoTask extends Task {
             TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
             ConcurrentHashMap<String, Object> taskContext = taskFlowContextWrapper.getTaskContext(this.getId().toString());
             TaskContextWrapper taskContextWrapper = new TaskContextWrapper(taskContext);
-            Long taskLogId = taskContextWrapper.getValue(ContextKey.TASK_LOG_ID, Long.class);
-            String taskLogFileId = taskContextWrapper.getValue(ContextKey.TASK_LOG_FILE_ID, String.class);
+            Long taskLogId = taskContextWrapper.getValue(TaskContextKey.TASK_LOG_ID, Long.class);
+            String taskLogFileId = taskContextWrapper.getValue(TaskContextKey.TASK_LOG_FILE_ID, String.class);
             taskLogger.log(taskLogFileId, "Task rolling back...", false);
             taskLogger.log(taskLogFileId, "Second line...\rThird line...\nFourth line...\r\nFifth line...", false);
             if (requiredToStop) {

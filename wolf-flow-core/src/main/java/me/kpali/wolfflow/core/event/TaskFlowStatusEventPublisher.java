@@ -63,8 +63,8 @@ public class TaskFlowStatusEventPublisher {
                 if (!locked) {
                     throw new TryLockException("Acquire the task flow log lock failed!");
                 }
-                Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
-                boolean isRollback = taskFlowContextWrapper.getValue(ContextKey.IS_ROLLBACK, Boolean.class);
+                Long taskFlowLogId = taskFlowContextWrapper.getValue(TaskFlowContextKey.LOG_ID, Long.class);
+                boolean isRollback = taskFlowContextWrapper.getValue(TaskFlowContextKey.IS_ROLLBACK, Boolean.class);
                 TaskFlowLog taskFlowLog = this.taskFlowLogger.get(taskFlowLogId);
                 boolean isNewLog = false;
                 Date now = new Date();

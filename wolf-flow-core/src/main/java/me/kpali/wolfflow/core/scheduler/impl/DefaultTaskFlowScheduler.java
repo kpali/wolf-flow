@@ -128,12 +128,12 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                         TaskFlow taskFlow = this.taskFlowQuerier.getTaskFlow(taskFlowId);
                         ConcurrentHashMap<String, Object> context = request.getContext();
                         TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
-                        Long taskFlowLogId = taskFlowContextWrapper.getValue(ContextKey.LOG_ID, Long.class);
-                        Boolean isRollback = taskFlowContextWrapper.getValue(ContextKey.IS_ROLLBACK, Boolean.class);
+                        Long taskFlowLogId = taskFlowContextWrapper.getValue(TaskFlowContextKey.LOG_ID, Long.class);
+                        Boolean isRollback = taskFlowContextWrapper.getValue(TaskFlowContextKey.IS_ROLLBACK, Boolean.class);
                         logger.info("New task flow execute request was scanned, id: {}, log id: {}, rollback: {}",
                                 taskFlowId, taskFlowLogId, isRollback);
                         // 任务流上下文写入当前节点ID
-                        taskFlowContextWrapper.put(ContextKey.EXECUTED_BY_NODE, this.clusterController.getNodeId());
+                        taskFlowContextWrapper.put(TaskFlowContextKey.EXECUTED_BY_NODE, this.clusterController.getNodeId());
                         // 任务流执行
                         if (this.schedulerThreadPool == null) {
                             synchronized (this.schedulerThreadFactory) {
@@ -255,10 +255,10 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                                 }
                                 Map<String, Object> jobDataMap = new HashMap<>();
                                 if (taskFlow.getFromTaskId() != null) {
-                                    jobDataMap.put(ContextKey.FROM_TASK_ID, taskFlow.getFromTaskId());
+                                    jobDataMap.put(TaskFlowContextKey.FROM_TASK_ID, taskFlow.getFromTaskId());
                                 }
                                 if (taskFlow.getToTaskId() != null) {
-                                    jobDataMap.put(ContextKey.TO_TASK_ID, taskFlow.getToTaskId());
+                                    jobDataMap.put(TaskFlowContextKey.TO_TASK_ID, taskFlow.getToTaskId());
                                 }
                                 if (!MyDynamicScheduler.checkExists(name, jobGroup)) {
                                     MyDynamicScheduler.addJob(name, jobGroup, cronExpression, jobDataMap);
@@ -348,18 +348,18 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
 
             // 初始化任务流上下文
             TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper();
-            taskFlowContextWrapper.put(ContextKey.TASK_FLOW_ID, taskFlowId);
-            taskFlowContextWrapper.put(ContextKey.IS_ROLLBACK, isRollback);
+            taskFlowContextWrapper.put(TaskFlowContextKey.TASK_FLOW_ID, taskFlowId);
+            taskFlowContextWrapper.put(TaskFlowContextKey.IS_ROLLBACK, isRollback);
             if (fromTaskId != null) {
-                taskFlowContextWrapper.put(ContextKey.FROM_TASK_ID, fromTaskId);
+                taskFlowContextWrapper.put(TaskFlowContextKey.FROM_TASK_ID, fromTaskId);
             }
             if (toTaskId != null) {
-                taskFlowContextWrapper.put(ContextKey.TO_TASK_ID, toTaskId);
+                taskFlowContextWrapper.put(TaskFlowContextKey.TO_TASK_ID, toTaskId);
             }
             if (params != null) {
                 taskFlowContextWrapper.setParams(params);
             }
-            taskFlowContextWrapper.put(ContextKey.LOG_ID, taskFlowLogId);
+            taskFlowContextWrapper.put(TaskFlowContextKey.LOG_ID, taskFlowLogId);
 
             // 新增任务流日志
             String taskFlowLogLock = ClusterConstants.getTaskFlowLogLock(taskFlowId);
@@ -381,8 +381,8 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                     }
                     // 分段执行时，导入上一次的传递上下文
                     if ((fromTaskId != null || toTaskId != null) && isRollback.equals(lastTaskFlowLog.getRollback())) {
-                        if (lastTaskFlowLog.getContext() != null && lastTaskFlowLog.getContext().containsKey(ContextKey.DELIVERY_CONTEXT)) {
-                            taskFlowContextWrapper.put(ContextKey.DELIVERY_CONTEXT, lastTaskFlowLog.getContext().get(ContextKey.DELIVERY_CONTEXT));
+                        if (lastTaskFlowLog.getContext() != null && lastTaskFlowLog.getContext().containsKey(TaskFlowContextKey.DELIVERY_CONTEXT)) {
+                            taskFlowContextWrapper.put(TaskFlowContextKey.DELIVERY_CONTEXT, lastTaskFlowLog.getContext().get(TaskFlowContextKey.DELIVERY_CONTEXT));
                         }
                     }
                 }
@@ -448,7 +448,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                 if (this.taskFlowLogger.isInProgress(taskFlowLog)) {
                     // 检查任务流所在节点是否存活
                     TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(taskFlowLog.getContext());
-                    Long nodeId = taskFlowContextWrapper.getValue(ContextKey.EXECUTED_BY_NODE, Long.class);
+                    Long nodeId = taskFlowContextWrapper.getValue(TaskFlowContextKey.EXECUTED_BY_NODE, Long.class);
                     if (this.clusterController.isNodeAlive(nodeId)) {
                         // 任务流所在节点存活，则发送停止请求
                         if (!this.clusterController.stopRequestContains(taskFlowLogId)) {
