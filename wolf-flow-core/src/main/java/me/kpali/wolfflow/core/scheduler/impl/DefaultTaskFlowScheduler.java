@@ -130,7 +130,7 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                         TaskFlowContextWrapper taskFlowContextWrapper = new TaskFlowContextWrapper(context);
                         Long taskFlowLogId = taskFlowContextWrapper.getValue(TaskFlowContextKey.LOG_ID, Long.class);
                         Boolean isRollback = taskFlowContextWrapper.getValue(TaskFlowContextKey.IS_ROLLBACK, Boolean.class);
-                        logger.info("New task flow execute request was scanned, id: {}, log id: {}, rollback: {}",
+                        logger.debug("New task flow execute request was scanned, id: {}, log id: {}, rollback: {}",
                                 taskFlowId, taskFlowLogId, isRollback);
                         // 任务流上下文写入当前节点ID
                         taskFlowContextWrapper.put(TaskFlowContextKey.EXECUTED_BY_NODE, this.clusterController.getNodeId());
@@ -220,12 +220,12 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                             TimeUnit.SECONDS);
                     if (res) {
                         // 获取锁成功
-                        logger.info("Acquire cron task flow scan lock success");
+                        logger.debug("Acquire cron task flow scan lock success");
                         String jobGroup = "DefaultJobGroup";
                         // 定时任务流扫描
                         List<TaskFlow> scannedCronTaskFlowList = this.taskFlowQuerier.listCronTaskFlow();
                         List<TaskFlow> cronTaskFlowList = (scannedCronTaskFlowList == null ? new ArrayList<>() : scannedCronTaskFlowList);
-                        logger.info("{} cron task flows were scanned", cronTaskFlowList.size());
+                        logger.debug("{} cron task flows were scanned", cronTaskFlowList.size());
                         // 删除无需调度的任务流
                         List<JobKey> removedJobKeyList = new ArrayList<>();
                         Set<JobKey> jobKeySet = MyDynamicScheduler.getJobKeysGroupEquals(jobGroup);

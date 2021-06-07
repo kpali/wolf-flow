@@ -70,7 +70,7 @@ public class DefaultClusterController implements IClusterController {
         heartbeatThreadPool.execute(() -> {
             while (true) {
                 try {
-                    logger.info("Sending heartbeat, node id: {}", this.getNodeId());
+                    logger.debug("Sending heartbeat, node id: {}", this.getNodeId());
                     Integer heartbeatIntervalInMilliseconds = this.clusterConfig.getNodeHeartbeatInterval() * 1000;
                     this.heartbeat();
                     Thread.sleep(heartbeatIntervalInMilliseconds);
