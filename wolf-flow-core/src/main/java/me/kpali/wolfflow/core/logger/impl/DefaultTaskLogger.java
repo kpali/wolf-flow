@@ -14,7 +14,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * 任务日志器的默认实现
@@ -275,15 +279,19 @@ public class DefaultTaskLogger implements ITaskLogger {
     public boolean isInProgress(TaskLog taskLog) throws TaskLogException {
         return !TaskStatusEnum.EXECUTE_SUCCESS.getCode().equals(taskLog.getStatus())
                 && !TaskStatusEnum.EXECUTE_FAILURE.getCode().equals(taskLog.getStatus())
+                && !TaskStatusEnum.EXECUTE_STOPPED.getCode().equals(taskLog.getStatus())
                 && !TaskStatusEnum.ROLLBACK_SUCCESS.getCode().equals(taskLog.getStatus())
-                && !TaskStatusEnum.ROLLBACK_FAILURE.getCode().equals(taskLog.getStatus());
+                && !TaskStatusEnum.ROLLBACK_FAILURE.getCode().equals(taskLog.getStatus())
+                && !TaskStatusEnum.ROLLBACK_STOPPED.getCode().equals(taskLog.getStatus());
     }
 
     @Override
     public boolean canRollback(TaskLog taskLog) throws TaskLogException {
         return taskLog != null
                 && (TaskStatusEnum.EXECUTE_SUCCESS.getCode().equals(taskLog.getStatus())
-                    || TaskStatusEnum.EXECUTE_FAILURE.getCode().equals(taskLog.getStatus())
-                    || TaskStatusEnum.ROLLBACK_FAILURE.getCode().equals(taskLog.getStatus()));
+                || TaskStatusEnum.EXECUTE_FAILURE.getCode().equals(taskLog.getStatus())
+                || TaskStatusEnum.EXECUTE_STOPPED.getCode().equals(taskLog.getStatus())
+                || TaskStatusEnum.ROLLBACK_FAILURE.getCode().equals(taskLog.getStatus())
+                || TaskStatusEnum.ROLLBACK_STOPPED.getCode().equals(taskLog.getStatus()));
     }
 }

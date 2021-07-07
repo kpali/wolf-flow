@@ -5,10 +5,23 @@ import me.kpali.wolfflow.core.cluster.IClusterController;
 import me.kpali.wolfflow.core.config.ExecutorConfig;
 import me.kpali.wolfflow.core.enums.TaskStatusEnum;
 import me.kpali.wolfflow.core.event.TaskStatusEventPublisher;
-import me.kpali.wolfflow.core.exception.*;
+import me.kpali.wolfflow.core.exception.InvalidTaskFlowException;
+import me.kpali.wolfflow.core.exception.TaskExecuteException;
+import me.kpali.wolfflow.core.exception.TaskFlowExecuteException;
+import me.kpali.wolfflow.core.exception.TaskFlowInterruptedException;
+import me.kpali.wolfflow.core.exception.TaskFlowRollbackException;
+import me.kpali.wolfflow.core.exception.TaskInterruptedException;
+import me.kpali.wolfflow.core.exception.TaskLogException;
+import me.kpali.wolfflow.core.exception.TaskRollbackException;
+import me.kpali.wolfflow.core.exception.TaskStopException;
 import me.kpali.wolfflow.core.executor.ITaskFlowExecutor;
 import me.kpali.wolfflow.core.logger.ITaskLogger;
-import me.kpali.wolfflow.core.model.*;
+import me.kpali.wolfflow.core.model.Link;
+import me.kpali.wolfflow.core.model.Task;
+import me.kpali.wolfflow.core.model.TaskContextKey;
+import me.kpali.wolfflow.core.model.TaskFlow;
+import me.kpali.wolfflow.core.model.TaskFlowContextKey;
+import me.kpali.wolfflow.core.model.TaskLog;
 import me.kpali.wolfflow.core.monitor.IMonitor;
 import me.kpali.wolfflow.core.util.IdGenerator;
 import me.kpali.wolfflow.core.util.TaskFlowUtils;
@@ -19,8 +32,18 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 任务流执行器的默认实现
@@ -243,6 +266,18 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                                 task.afterExecute(context);
                                 idToTaskStatusMap.put(task.getId(), TaskStatusEnum.EXECUTE_SUCCESS.getCode());
                                 this.taskStatusEventPublisher.publishEvent(task, executeTaskFlow.getId(), context, TaskStatusEnum.EXECUTE_SUCCESS.getCode(), null, true);
+                            } catch (TaskInterruptedException e) {
+                                String msg = e.getMessage();
+                                if (msg == null) {
+                                    msg = e.toString();
+                                }
+                                logger.error("Task [" + task.getId() + "] execution terminated! cause: " + msg, e);
+                                idToTaskStatusMap.put(task.getId(), TaskStatusEnum.EXECUTE_STOPPED.getCode());
+                                try {
+                                    this.taskStatusEventPublisher.publishEvent(task, executeTaskFlow.getId(), context, TaskStatusEnum.EXECUTE_STOPPED.getCode(), msg, true);
+                                } catch (Exception e1) {
+                                    logger.error("Failed to publish task status event! " + e1.getMessage(), e1);
+                                }
                             } catch (Exception e) {
                                 String msg = e.getMessage();
                                 if (msg == null) {
@@ -258,7 +293,8 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                             }
                         });
                     } else if (requireToStop &&
-                            (TaskStatusEnum.EXECUTING.getCode().equals(taskStatus) || TaskStatusEnum.MANUAL_CONFIRM.getCode().equals(taskStatus))) {
+                            (TaskStatusEnum.EXECUTING.getCode().equals(taskStatus)
+                                    || TaskStatusEnum.MANUAL_CONFIRM.getCode().equals(taskStatus))) {
                         decreaseStatusCheckTime();
                         Task task = idToTaskMap.get(taskId);
                         idToTaskStatusMap.put(task.getId(), TaskStatusEnum.STOPPING.getCode());
@@ -283,12 +319,14 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                             }
                         }
                         idToTaskStatusMap.remove(taskId);
-                    } else if (TaskStatusEnum.EXECUTE_FAILURE.getCode().equals(taskStatus) || TaskStatusEnum.SKIPPED.getCode().equals(taskStatus)) {
+                    } else if (TaskStatusEnum.EXECUTE_FAILURE.getCode().equals(taskStatus)
+                            || TaskStatusEnum.EXECUTE_STOPPED.getCode().equals(taskStatus)
+                            || TaskStatusEnum.SKIPPED.getCode().equals(taskStatus)) {
                         decreaseStatusCheckTime();
                         if (TaskStatusEnum.EXECUTE_FAILURE.getCode().equals(taskStatus)) {
                             isSuccess = false;
                         }
-                        // 执行失败 或者 跳过，将子任务状态设置为跳过，并将此任务移除状态检查
+                        // 执行失败 或 执行停止 或 跳过，将子任务状态设置为跳过，并将此任务移除状态检查
                         List<Long> childTaskIds = idToChildTaskIds4ExecMap.get(taskId);
                         for (Long childTaskId : childTaskIds) {
                             idToTaskStatusMap.put(childTaskId, TaskStatusEnum.SKIPPED.getCode());
@@ -297,7 +335,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                         }
                         idToTaskStatusMap.remove(taskId);
                     } else {
-                       increaseStatusCheckTime();
+                        increaseStatusCheckTime();
                     }
                 }
             }
@@ -489,6 +527,18 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                                 task.afterRollback(context);
                                 idToTaskStatusMap.put(task.getId(), TaskStatusEnum.ROLLBACK_SUCCESS.getCode());
                                 this.taskStatusEventPublisher.publishEvent(task, rollbackTaskFlow.getId(), context, TaskStatusEnum.ROLLBACK_SUCCESS.getCode(), null, true);
+                            } catch (TaskInterruptedException e) {
+                                String msg = e.getMessage();
+                                if (msg == null) {
+                                    msg = e.toString();
+                                }
+                                logger.error("Task [" + task.getId() + "] rollback terminated! cause: " + msg, e);
+                                idToTaskStatusMap.put(task.getId(), TaskStatusEnum.ROLLBACK_STOPPED.getCode());
+                                try {
+                                    this.taskStatusEventPublisher.publishEvent(task, rollbackTaskFlow.getId(), context, TaskStatusEnum.ROLLBACK_STOPPED.getCode(), msg, true);
+                                } catch (Exception e1) {
+                                    logger.error("Failed to publish task status event! " + e1.getMessage(), e1);
+                                }
                             } catch (Exception e) {
                                 String msg = e.getMessage();
                                 if (msg == null) {
@@ -504,7 +554,8 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                             }
                         });
                     } else if (requireToStop &&
-                            (TaskStatusEnum.ROLLING_BACK.getCode().equals(taskStatus) || TaskStatusEnum.MANUAL_CONFIRM.getCode().equals(taskStatus))) {
+                            (TaskStatusEnum.ROLLING_BACK.getCode().equals(taskStatus)
+                                    || TaskStatusEnum.MANUAL_CONFIRM.getCode().equals(taskStatus))) {
                         decreaseStatusCheckTime();
                         Task task = idToTaskMap.get(taskId);
                         idToTaskStatusMap.put(task.getId(), TaskStatusEnum.STOPPING.getCode());
@@ -529,10 +580,13 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                             }
                         }
                         idToTaskStatusMap.remove(taskId);
-                    } else if (TaskStatusEnum.ROLLBACK_FAILURE.getCode().equals(taskStatus)) {
+                    } else if (TaskStatusEnum.ROLLBACK_FAILURE.getCode().equals(taskStatus)
+                            || TaskStatusEnum.ROLLBACK_STOPPED.getCode().equals(taskStatus)) {
                         decreaseStatusCheckTime();
-                        isSuccess = false;
-                        // 回滚失败，将此任务及所有子任务移除状态检查
+                        if (TaskStatusEnum.ROLLBACK_FAILURE.getCode().equals(taskStatus)) {
+                            isSuccess = false;
+                        }
+                        // 回滚失败 或 回滚中止，将此任务及所有子任务移除状态检查
                         idToTaskStatusMap.remove(taskId);
                         List<Long> allChildTaskIds = this.listAllChildTaskIdList(taskId, idToChildTaskIds4ExecMap);
                         for (Long childTaskId : allChildTaskIds) {

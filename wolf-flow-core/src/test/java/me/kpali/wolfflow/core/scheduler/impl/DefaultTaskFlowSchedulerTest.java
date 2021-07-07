@@ -236,7 +236,7 @@ public class DefaultTaskFlowSchedulerTest extends BaseTest {
         this.waitDoneAndPrintLog(taskFlowId, taskFlowLogId);
 
         TaskFlowLog taskFlowLog = this.taskFlowLogger.get(taskFlowLogId);
-        assertEquals(TaskFlowStatusEnum.EXECUTE_FAILURE.getCode(), taskFlowLog.getStatus());
+        assertEquals(TaskFlowStatusEnum.EXECUTE_STOPPED.getCode(), taskFlowLog.getStatus());
     }
 
     @Test

@@ -12,13 +12,20 @@ import me.kpali.wolfflow.core.event.ScheduleStatusEventPublisher;
 import me.kpali.wolfflow.core.event.TaskFlowStatusEventPublisher;
 import me.kpali.wolfflow.core.event.TaskStatusEventPublisher;
 import me.kpali.wolfflow.core.exception.InvalidCronExpressionException;
+import me.kpali.wolfflow.core.exception.TaskFlowInterruptedException;
 import me.kpali.wolfflow.core.exception.TaskFlowStopException;
 import me.kpali.wolfflow.core.exception.TaskFlowTriggerException;
 import me.kpali.wolfflow.core.exception.TryLockException;
 import me.kpali.wolfflow.core.executor.ITaskFlowExecutor;
 import me.kpali.wolfflow.core.logger.ITaskFlowLogger;
 import me.kpali.wolfflow.core.logger.ITaskLogger;
-import me.kpali.wolfflow.core.model.*;
+import me.kpali.wolfflow.core.model.ClusterConstants;
+import me.kpali.wolfflow.core.model.TaskFlow;
+import me.kpali.wolfflow.core.model.TaskFlowContextKey;
+import me.kpali.wolfflow.core.model.TaskFlowExecRequest;
+import me.kpali.wolfflow.core.model.TaskFlowLog;
+import me.kpali.wolfflow.core.model.TaskFlowStatus;
+import me.kpali.wolfflow.core.model.TaskLog;
 import me.kpali.wolfflow.core.monitor.IMonitor;
 import me.kpali.wolfflow.core.querier.ITaskFlowQuerier;
 import me.kpali.wolfflow.core.scheduler.ITaskFlowScheduler;
@@ -31,8 +38,18 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 任务流调度器的默认实现
@@ -161,6 +178,17 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                                     this.taskFlowExecutor.afterExecute(taskFlow, context);
                                     // 任务流执行成功
                                     this.taskFlowStatusEventPublisher.publishEvent(taskFlow, context, TaskFlowStatusEnum.EXECUTE_SUCCESS.getCode(), null, true);
+                                } catch (TaskFlowInterruptedException e) {
+                                    String msg = e.getMessage();
+                                    if (msg == null) {
+                                        msg = e.toString();
+                                    }
+                                    logger.error("Task flow [" + taskFlow.getId() + "] execution terminated! cause: " + e.getMessage(), e);
+                                    try {
+                                        this.taskFlowStatusEventPublisher.publishEvent(taskFlow, context, TaskFlowStatusEnum.EXECUTE_STOPPED.getCode(), msg, true);
+                                    } catch (Exception e1) {
+                                        logger.error("Failed to publish task flow status event! " + e1.getMessage(), e1);
+                                    }
                                 } catch (Exception e) {
                                     String msg = e.getMessage();
                                     if (msg == null) {
@@ -185,6 +213,17 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                                     this.taskFlowExecutor.afterRollback(taskFlow, context);
                                     // 任务流回滚成功
                                     this.taskFlowStatusEventPublisher.publishEvent(taskFlow, context, TaskFlowStatusEnum.ROLLBACK_SUCCESS.getCode(), null, true);
+                                } catch (TaskFlowInterruptedException e) {
+                                    String msg = e.getMessage();
+                                    if (msg == null) {
+                                        msg = e.toString();
+                                    }
+                                    logger.error("Task flow [" + taskFlow.getId() + "] rollback terminated! cause: " + msg, e);
+                                    try {
+                                        this.taskFlowStatusEventPublisher.publishEvent(taskFlow, context, TaskFlowStatusEnum.ROLLBACK_STOPPED.getCode(), msg, true);
+                                    } catch (Exception e1) {
+                                        logger.error("Failed to publish task flow status event! " + e1.getMessage(), e1);
+                                    }
                                 } catch (Exception e) {
                                     String msg = e.getMessage();
                                     if (msg == null) {
@@ -459,21 +498,31 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                         taskFlowLog.setMessage(null);
                     } else {
                         // 任务流所在节点已消亡，则强制停止任务流
-                        // 修改进行中的任务状态为执行失败
+                        // 修改进行中的任务状态为 执行中止 或 回滚中止
                         List<TaskLog> taskLogList = this.taskLogger.list(taskFlowLogId);
                         if (taskLogList != null) {
                             for (TaskLog taskLog : taskLogList) {
                                 if (this.taskLogger.isInProgress(taskLog)) {
-                                    taskLog.setStatus(TaskStatusEnum.EXECUTE_FAILURE.getCode());
-                                    taskLog.setMessage("Task execution is terminated");
+                                    if (!taskFlowLog.getRollback()) {
+                                        taskLog.setStatus(TaskStatusEnum.EXECUTE_STOPPED.getCode());
+                                        taskLog.setMessage("Task execution is terminated");
+                                    } else {
+                                        taskLog.setStatus(TaskStatusEnum.ROLLBACK_STOPPED.getCode());
+                                        taskLog.setMessage("Task rollback is terminated");
+                                    }
                                     this.taskLogger.update(taskLog);
                                     this.taskStatusEventPublisher.publishEvent(taskLog.getTask(), taskLog.getTaskFlowId(), taskLog.getContext(), taskLog.getStatus(), taskLog.getMessage(), false);
                                 }
                             }
                         }
-                        // 修改任务流状态为执行失败
-                        taskFlowLog.setStatus(TaskFlowStatusEnum.EXECUTE_FAILURE.getCode());
-                        taskFlowLog.setMessage("Task flow execution is terminated");
+                        // 修改任务流状态为 执行中止 或 回滚中止
+                        if (!taskFlowLog.getRollback()) {
+                            taskFlowLog.setStatus(TaskFlowStatusEnum.EXECUTE_STOPPED.getCode());
+                            taskFlowLog.setMessage("Task flow execution is terminated");
+                        } else {
+                            taskFlowLog.setStatus(TaskFlowStatusEnum.ROLLBACK_STOPPED.getCode());
+                            taskFlowLog.setMessage("Task flow rollback is terminated");
+                        }
                     }
                     this.taskFlowLogger.update(taskFlowLog);
                     this.taskFlowStatusEventPublisher.publishEvent(taskFlowLog.getTaskFlow(), taskFlowLog.getContext(), taskFlowLog.getStatus(), taskFlowLog.getMessage(), false);

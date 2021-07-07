@@ -11,6 +11,7 @@ public enum TaskStatusEnum {
     EXECUTING("EXECUTING", "Executing"),
     EXECUTE_SUCCESS("EXECUTE_SUCCESS", "Execute success"),
     EXECUTE_FAILURE("EXECUTE_FAILURE", "Execute failure"),
+    EXECUTE_STOPPED("EXECUTE_STOPPED", "Execute stopped"),
 
     STOPPING("STOPPING", "Stopping"),
     SKIPPED("SKIPPED", "Skipped"),
@@ -19,7 +20,8 @@ public enum TaskStatusEnum {
     WAIT_FOR_ROLLBACK("WAIT_FOR_ROLLBACK", "Wait for rollback"),
     ROLLING_BACK("ROLLING_BACK", "Rolling back"),
     ROLLBACK_SUCCESS("ROLLBACK_SUCCESS", "Rollback success"),
-    ROLLBACK_FAILURE("ROLLBACK_FAILURE", "Rollback failure");
+    ROLLBACK_FAILURE("ROLLBACK_FAILURE", "Rollback failure"),
+    ROLLBACK_STOPPED("ROLLBACK_STOPPED", "Rollback stopped");
 
     private String code;
     private String name;
