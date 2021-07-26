@@ -38,35 +38,11 @@ public class Task implements Serializable {
         this.manual = manual;
     }
 
-    public void executePreCheck(ConcurrentHashMap<String, Object> context) throws TaskExecuteException {
-        // 不作任何操作
-    }
-
-    public void beforeExecute(ConcurrentHashMap<String, Object> context) throws TaskExecuteException {
-        // 不做任何操作
-    }
-
     public void execute(ConcurrentHashMap<String, Object> context) throws TaskExecuteException, TaskInterruptedException {
         // 不做任何操作
     }
 
-    public void afterExecute(ConcurrentHashMap<String, Object> context) throws TaskExecuteException {
-        // 不做任何操作
-    }
-
-    public void beforeRollback(ConcurrentHashMap<String, Object> context) throws TaskRollbackException {
-        // 不做任何操作
-    }
-
-    public void rollbackPreCheck(ConcurrentHashMap<String, Object> context) throws TaskRollbackException {
-        // 不作任何操作
-    }
-
     public void rollback(ConcurrentHashMap<String, Object> context) throws TaskRollbackException, TaskInterruptedException {
-        // 不做任何操作
-    }
-
-    public void afterRollback(ConcurrentHashMap<String, Object> context) throws TaskRollbackException {
         // 不做任何操作
     }
 

@@ -26,7 +26,6 @@ import me.kpali.wolfflow.core.model.TaskFlowExecRequest;
 import me.kpali.wolfflow.core.model.TaskFlowLog;
 import me.kpali.wolfflow.core.model.TaskFlowStatus;
 import me.kpali.wolfflow.core.model.TaskLog;
-import me.kpali.wolfflow.core.monitor.IMonitor;
 import me.kpali.wolfflow.core.querier.ITaskFlowQuerier;
 import me.kpali.wolfflow.core.scheduler.ITaskFlowScheduler;
 import me.kpali.wolfflow.core.scheduler.impl.quartz.MyDynamicScheduler;
@@ -98,9 +97,6 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
     @Autowired
     private IdGenerator idGenerator;
 
-    @Autowired
-    private IMonitor monitor;
-
     @Override
     public void startup() {
         if (this.started) {
@@ -163,7 +159,6 @@ public class DefaultTaskFlowScheduler implements ITaskFlowScheduler {
                                             new LinkedBlockingQueue<Runnable>(1024),
                                             this.schedulerThreadFactory,
                                             new ThreadPoolExecutor.AbortPolicy());
-                                    this.monitor.monitor(this.schedulerThreadPool, "task-flow-scheduler");
                                 }
                             }
                         }

@@ -22,7 +22,6 @@ import me.kpali.wolfflow.core.model.TaskContextKey;
 import me.kpali.wolfflow.core.model.TaskFlow;
 import me.kpali.wolfflow.core.model.TaskFlowContextKey;
 import me.kpali.wolfflow.core.model.TaskLog;
-import me.kpali.wolfflow.core.monitor.IMonitor;
 import me.kpali.wolfflow.core.util.IdGenerator;
 import me.kpali.wolfflow.core.util.TaskFlowUtils;
 import me.kpali.wolfflow.core.util.context.TaskContextWrapper;
@@ -71,9 +70,6 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
 
     @Autowired
     private IdGenerator idGenerator;
-
-    @Autowired
-    private IMonitor monitor;
 
     private static final long STATUS_CHECK_INTERVAL_MIN = 5;
     private static final long STATUS_CHECK_INTERVAL_MAX = 5000;
@@ -156,11 +152,6 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                     taskFlowContextWrapper.putTaskContext(task.getId().toString(), lastTaskContext);
                 }
             }
-
-            // 预检查要执行的任务
-            for (Task task : executeTaskFlow.getTaskList()) {
-                task.executePreCheck(context);
-            }
         } catch (Exception e) {
             throw new TaskFlowExecuteException(e);
         }
@@ -183,7 +174,6 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                                 new LinkedBlockingQueue<Runnable>(1024),
                                 this.executorThreadFactory,
                                 new ThreadPoolExecutor.AbortPolicy());
-                        this.monitor.monitor(this.executorThreadPool, "task-flow-executor");
                     }
                 }
             }
@@ -261,9 +251,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                                     }
                                 }
                                 this.taskStatusEventPublisher.publishEvent(task, executeTaskFlow.getId(), context, statusCode, null, true);
-                                task.beforeExecute(context);
                                 task.execute(context);
-                                task.afterExecute(context);
                                 idToTaskStatusMap.put(task.getId(), TaskStatusEnum.EXECUTE_SUCCESS.getCode());
                                 this.taskStatusEventPublisher.publishEvent(task, executeTaskFlow.getId(), context, TaskStatusEnum.EXECUTE_SUCCESS.getCode(), null, true);
                             } catch (TaskInterruptedException e) {
@@ -424,11 +412,6 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                     taskFlowContextWrapper.putTaskContext(task.getId().toString(), lastTaskContext);
                 }
             }
-
-            // 预检查要回滚的任务
-            for (Task task : rollbackTaskFlow.getTaskList()) {
-                task.rollbackPreCheck(context);
-            }
         } catch (Exception e) {
             throw new TaskFlowRollbackException(e);
         }
@@ -522,9 +505,7 @@ public class DefaultTaskFlowExecutor implements ITaskFlowExecutor {
                                     }
                                 }
                                 this.taskStatusEventPublisher.publishEvent(task, rollbackTaskFlow.getId(), context, statusCode, null, true);
-                                task.beforeRollback(context);
                                 task.rollback(context);
-                                task.afterRollback(context);
                                 idToTaskStatusMap.put(task.getId(), TaskStatusEnum.ROLLBACK_SUCCESS.getCode());
                                 this.taskStatusEventPublisher.publishEvent(task, rollbackTaskFlow.getId(), context, TaskStatusEnum.ROLLBACK_SUCCESS.getCode(), null, true);
                             } catch (TaskInterruptedException e) {
