@@ -11,7 +11,7 @@
     <name>wolf-flow-core ${project.version}</name>
 
     <properties>
-        <jackson.version>2.10.2</jackson.version>
+        <jackson.version>2.12.6.1</jackson.version>
         <quartz.version>2.3.0</quartz.version>
         <guava.version>20.0</guava.version>
         <micrometer.version>1.6.0</micrometer.version>
